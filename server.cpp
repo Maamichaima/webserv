@@ -24,14 +24,57 @@ void accept_new_connection(int server_socket, fd_set *all_sockets, int *fd_max)
         *fd_max = client_fd; // Met à jour la plus grande socket
     }
     printf("[Server] Accepted new connection on client socket %d.\n", client_fd);
-    // memset(&msg_to_send, '\0', sizeof msg_to_send);
-    // sprintf(msg_to_send, "Welcome. You are client fd [%d]\n", client_fd);
-    // status = send(client_fd, msg_to_send, strlen(msg_to_send), 0);
-    // if (status == -1) {
-    //     fprintf(stderr, "[Server] Send error to client %d: %s\n", client_fd, strerror(errno));
-    // }
 }
+void read_data_from_socket(int socket, fd_set *all_sockets, int fd_max, int server_socket)
+{
+    char buffer[BUFSIZ];
+    char msg_to_send[BUFSIZ];
+    int bytes_read;
+    int status;
+    memset(&buffer, '\0', sizeof buffer);
+    bytes_read = recv(socket, buffer, BUFSIZ, 0);
+    if (bytes_read <= 0) {
+        if (bytes_read == 0) {
+            printf("[%d] Client socket closed connection.\n", socket);
+        }
+        else {
+            fprintf(stderr, "[Server] Recv error: %s\n", strerror(errno));
+        }
+        close(socket); // Ferme la socket
+        FD_CLR(socket, all_sockets); // Enlève la socket de l'ensemble
+    }
 
+    else {
+
+        // Renvoie le message reçu à toutes les sockets connectées
+
+        // à part celle du serveur et celle qui l'a envoyée
+
+        printf("[%d] Got message: %s", socket, buffer);
+
+        // memset(&msg_to_send, '\0', sizeof msg_to_send);
+
+        // sprintf(msg_to_send, "[%d] says: %s", socket, buffer);
+
+        // for (int j = 0; j <= fd_max; j++) {
+
+        //     if (FD_ISSET(j, all_sockets) && j != server_socket && j != socket) {
+
+        //         status = send(j, msg_to_send, strlen(msg_to_send), 0);
+
+        //         if (status == -1) {
+
+        //             fprintf(stderr, "[Server] Send error to client fd %d: %s\n", j, strerror(errno));
+
+        //         }
+
+        //     }
+
+        }
+
+    // }
+
+}
 int main(int c, char **v)
 {
 	struct sockaddr_in sa;
@@ -110,7 +153,7 @@ int main(int c, char **v)
 			}
 			else
 			{
-
+                read_data_from_socket(i, &all_sockets, fd_max, socket_fd);
 			}
 		}
 	}
