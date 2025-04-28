@@ -8,7 +8,6 @@
 #include <iostream>
 
 void accept_new_connection(int server_socket, fd_set *all_sockets, int *fd_max)
-
 {
     int client_fd;
     char msg_to_send[BUFSIZ];
@@ -25,6 +24,7 @@ void accept_new_connection(int server_socket, fd_set *all_sockets, int *fd_max)
     }
     printf("[Server] Accepted new connection on client socket %d.\n", client_fd);
 }
+
 void read_data_from_socket(int socket, fd_set *all_sockets, int fd_max, int server_socket)
 {
     char buffer[BUFSIZ];
@@ -43,37 +43,17 @@ void read_data_from_socket(int socket, fd_set *all_sockets, int fd_max, int serv
         close(socket); // Ferme la socket
         FD_CLR(socket, all_sockets); // Enlève la socket de l'ensemble
     }
-
-    else {
-
-        // Renvoie le message reçu à toutes les sockets connectées
-
-        // à part celle du serveur et celle qui l'a envoyée
-
+    else 
+	{
         printf("[%d] Got message: %s", socket, buffer);
-
-        // memset(&msg_to_send, '\0', sizeof msg_to_send);
-
-        // sprintf(msg_to_send, "[%d] says: %s", socket, buffer);
-
-        // for (int j = 0; j <= fd_max; j++) {
-
-        //     if (FD_ISSET(j, all_sockets) && j != server_socket && j != socket) {
-
-        //         status = send(j, msg_to_send, strlen(msg_to_send), 0);
-
-        //         if (status == -1) {
-
-        //             fprintf(stderr, "[Server] Send error to client fd %d: %s\n", j, strerror(errno));
-
-        //         }
-
-        //     }
-
-        }
-
-    // }
-
+		std::string message = "Hello, server!";
+		ssize_t bytesSent = send(socket, message.c_str(), message.length(), 0);
+		if (bytesSent < 0) {
+			std::cerr << "Send failed.\n";
+		} else {
+			std::cout << "Sent " << bytesSent << " bytes.\n";
+		}
+	}
 }
 int main(int c, char **v)
 {
@@ -139,47 +119,20 @@ int main(int c, char **v)
         }
         else if (status == 0) 
 		{
-            // Aucun descipteur de fichier de socket n'est prêt pour la lecture
+			// Aucun descipteur de fichier de socket n'est prêt pour la lecture
             std::cout << "[Server] Waiting...\n";
             continue;
         }
+		// std::cout << "hh\n";
 		for (int i = 0; i <= fd_max; i++)
 		{
-			if(FD_ISSET(i, &read_fds) != 1)
+			if(!FD_ISSET(i, &read_fds))
 				continue;
 			if(i == socket_fd)
-			{
 				accept_new_connection(socket_fd, &all_sockets, &fd_max);
-			}
 			else
-			{
                 read_data_from_socket(i, &all_sockets, fd_max, socket_fd);
-			}
 		}
 	}
-
-	//accepet()
-	// printf("En attente de connexion...\n");
-	// addr_size = sizeof client_addr;
-	// client_fd = accept(socket_fd, (struct sockaddr *)&sa, &addr_size);
-	// if(client_fd == -1)
-	// {
-	// 	printf("accept error\n");
-	// 	return 1;
-	// }
-	// printf("sffff rat taccepta\n");
-
-	// //recv()
-	// char buffer[1024];
-	// int byt_recu = recv(client_fd, buffer, sizeof(sa), 0);
-	// if(byt_recu == -1)
-	// {
-	// 	printf("recv error\n");
-	// 	return 1;
-	// }
-	// printf("bytes reçus : %d\n", byt_recu);
-	// printf("message : %s\n", buffer);
-	// close(client_fd);
-	// close(socket_fd);
-	return 10;
+	return 0;
 }

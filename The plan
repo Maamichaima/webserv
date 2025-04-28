@@ -1,0 +1,7 @@
+function (std::sring buffer, std::string del)
+
+client data = class struct ; buffer
+
+map<int, data> clients
+
+clients[fd];
