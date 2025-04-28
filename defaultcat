@@ -1,0 +1,7 @@
+server {
+	# return 404 both via IPv4/6 when no other configuration handles the host
+	# '[::]:80' is neccessary for IPv6 - see https://serverfault.com/a/842515
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	return 404;
+}
