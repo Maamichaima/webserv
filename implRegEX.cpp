@@ -110,7 +110,6 @@ void parce_(std::deque<RegEx>& dq, std::string str, int &i)
 		exit (1);
 	} 
 	s = str.substr(i, pos - i);
-	// std::cout << "hadiiii -> " << s << std::endl;
 	dq.push_back(RegEx(s, CHARSET));
 	i = pos;
 }
@@ -143,7 +142,6 @@ std::deque<RegEx> parce_expretion(std::string str)//p.**
 			i = i + 2;
 			continue;
 		case '?':
-		// std::cout << "hh\n";
 			parce_optional(dq);
 			i++;
 			continue;
@@ -156,10 +154,8 @@ std::deque<RegEx> parce_expretion(std::string str)//p.**
 			i++;
 			continue;
 		default:
-			// std::cout << str[i] << std::endl;
 			dq.push_back(RegEx(str[i], LITTERAL));
 			dq.back().quantifier = EXACTLY_ONE;
-			// std::cout << "content " << dq.back().content << " type " << dq.back().type << "\n";
 			i++;
 			continue;
 		}
@@ -178,7 +174,6 @@ void print_stack(std::stack<BacktrackElement> backtrackStack)
 	}
 }
 
-std::stack<BacktrackElement> backtrackStack;
 
 bool tryBacktrack(std::stack<BacktrackElement> &backtrackStack, size_t &index, std::deque<RegEx>::iterator &it)
 {
@@ -203,19 +198,16 @@ bool tryBacktrack(std::stack<BacktrackElement> &backtrackStack, size_t &index, s
 
 int inRange(std::string str, char c)
 {
-	// std::cout << str << " " << c << "\n";
 	if(str.size() == 3 && str[1] == '-')
 	{
-		if(c < str[0] && c > str[2])
+		if(c < str[0] || c > str[2])
 		return 0;
 	}
 	else
 	{
-		// std::cout << str[0] << " " << str[1] << " " << str[2] << "\n";
 		int pos = str.find(c);
-		std::cout << pos << '\n';
 		if(pos == std::string::npos)
-			return 0;
+		return 0;
 	}
 	return 1;
 }
@@ -225,23 +217,16 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
     size_t i = 0;
     size_t tmp = 0;
     std::deque<RegEx>::iterator it = dq.begin();
-
+	std::stack<BacktrackElement> backtrackStack;
 
     while (it != dq.end())
     {
-		if (i >= str.size())
-		{
-			if (tryBacktrack(backtrackStack, i, it))
-				continue ;
-			return false;
-		}
 		char c = str[i];
         if (it->type == LITTERAL)
         {
-			// std::cout << str[i] << "\n";
 			if (it->quantifier == EXACTLY_ONE)
             {
-				if (c != it->content)
+				if (c != it->content || i >= str.size())
 				{
 					if (tryBacktrack(backtrackStack, i, it))
 						continue ;
@@ -253,6 +238,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
             }
             else if (it->quantifier == ZERO_OR_MORE)
             {
+		// std::cout << c <<std::endl;
 				int j = 0;
 				while (str[i] && str[i] == it->content)
 				{
@@ -264,8 +250,8 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
             }
             else if (it->quantifier == ZERO_OR_ONE)
             {
-				std::cout << "hhh\n";
-				if (c == it->content)
+				std::cout <<"hh\n";
+				if (c == it->content && i < str.size())
 				{
 					backtrackStack.push({true, 1, *it});
                     i++;
@@ -273,7 +259,6 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 				else
 				{
 					backtrackStack.push({true, 0, *it});
-					i++;
 				}
                 it++;
             }
@@ -282,7 +267,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 		{
 			if (it->quantifier == EXACTLY_ONE)
 			{
-				if (!isdigit(c))
+				if (!std::isdigit(c) || i >= str.size())
 				{
 					if (tryBacktrack(backtrackStack, i, it))
 						continue;
@@ -295,7 +280,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 			else if (it->quantifier == ZERO_OR_MORE)
 			{
 				int j = 0;
-				while (str[i] && isdigit(str[i]))
+				while (str[i] && std::isdigit(str[i]))
 				{
 					j++;
 					i++;
@@ -305,7 +290,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 			}
 			else if (it->quantifier == ZERO_OR_ONE)
 			{
-				if (isdigit(c))
+				if (std::isdigit(c) && i < str.size())
 				{
 					backtrackStack.push({true, 1, *it});
 					i++;
@@ -319,7 +304,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 		{
 			if (it->quantifier == EXACTLY_ONE)
 			{
-				if (isdigit(c))
+				if (std::isdigit(c) || i >= str.size())
 				{
 					if (tryBacktrack(backtrackStack, i, it))
 						continue;
@@ -332,7 +317,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 			else if (it->quantifier == ZERO_OR_MORE)
 			{
 				int j = 0;
-				while (str[i] && !isdigit(str[i]))
+				while (str[i] && !std::isdigit(str[i]))
 				{
 					j++;
 					i++;
@@ -342,7 +327,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 			}
 			else if (it->quantifier == ZERO_OR_ONE)
 			{
-				if (!isdigit(c))
+				if (!std::isdigit(c) && i < str.size())
 				{
 					backtrackStack.push({true, 1, *it});
 					i++;
@@ -356,10 +341,10 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 		{
 			if (it->quantifier == EXACTLY_ONE)
 			{
-				if (!inRange(it->cc, str[i]))
+				if (!inRange(it->cc, str[i]) || i >= str.size())
 				{
 					if (tryBacktrack(backtrackStack, i, it))
-					continue;
+						continue;
 					return false;
 				}
 				backtrackStack.push({false, 1, *it});
@@ -377,9 +362,9 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 				backtrackStack.push({true, j, *it});
 				it++;
 			}
-			else if (it->quantifier == ZERO_OR_ONE)
+			else if(it->quantifier == ZERO_OR_ONE)
 			{
-				if (!inRange(it->cc, str[i]))
+				if (!inRange(it->cc, str[i]) && i < str.size())
 				{
 					backtrackStack.push({true, 1, *it});
 					i++;
@@ -426,46 +411,122 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 				it++;
 			}
 		}
+		else if(it->type == WHITESPACE)
+		{
+			if (it->quantifier == EXACTLY_ONE)
+			{
+				if (!std::isspace(c) || i >= str.size())
+				{
+					if (tryBacktrack(backtrackStack, i, it))
+						continue;
+					return false;
+				}
+				backtrackStack.push({false, 1, *it});
+				i++;
+				it++;
+			}
+			else if (it->quantifier == ZERO_OR_MORE)
+			{
+				int j = 0;
+				while (str[i] && std::isspace(str[i]))
+				{
+					j++;
+					i++;
+				}
+				backtrackStack.push({true, j, *it});
+				it++;
+			}
+			else if (it->quantifier == ZERO_OR_ONE)
+			{
+				if (std::isspace(c) && i < str.size())
+				{
+					backtrackStack.push({true, 1, *it});
+					i++;
+				}
+				else
+				{
+					backtrackStack.push({true, 0, *it});
+				}
+				it++;
+			}
+		}
+		else if(it->type == NOTWHITESPACE)
+		{
+			if (it->quantifier == EXACTLY_ONE)
+			{
+				if (std::isspace(c) || i >= str.size())
+				{
+					if (tryBacktrack(backtrackStack, i, it))
+						continue;
+					return false;
+				}
+				backtrackStack.push({false, 1, *it});
+				i++;
+				it++;
+			}
+			else if (it->quantifier == ZERO_OR_MORE)
+			{
+				int j = 0;
+				while (str[i] && !std::isspace(str[i]))
+				{
+					j++;
+					i++;
+				}
+				backtrackStack.push({true, j, *it});
+				it++;
+			}
+			else if (it->quantifier == ZERO_OR_ONE)
+			{
+				if (!std::isspace(c) && i < str.size())
+				{
+					backtrackStack.push({true, 1, *it});
+					i++;
+				}
+				else
+				{
+					backtrackStack.push({true, 0, *it});
+				}
+				it++;
+			}
+		}
+
         else
         {
             std::cout << "Error: Unsupported type in RegEx" << std::endl;
             return false;
         }
     }
-	std::cout << i << "\n";
-	// std::cout <<"hh\n";
     return (i == str.size() && it == dq.end());
 }
 
 bool isMatch(std::string ex, std::string testStr)
 {
 	std::deque<RegEx> dq = parce_expretion(ex);
-
 	if (test(testStr, dq))
 	{
-        std::cout << "Matched!" << std::endl;
+        // std::cout << "Matched!" << std::endl;
 		return true;
 	}
     else
 	{
-        std::cout << "Not matched!" << std::endl;
+        // std::cout << "Not matched!" << std::endl;
 		return false;
 	}
 }
 
 // int main()
 // {
-//     std::string ex = "/.*";//*+
+//     std::string ex = "\\S+: .+\r\n";//*+
 //     std::deque<RegEx> dq = parce_expretion(ex);
 
-// 	print(dq);
+// 	// print(dq);
 
-//     std::string testStr = "/fhbjhb";
+//     std::string testStr = "hhhh:dg\r\n";
 //     if (test(testStr, dq))
 //         std::cout << "Matched!" << std::endl;
 //     else
 //         std::cout << "Not matched!" << std::endl;
-// 	print_stack(backtrackStack);
+// 	// print_stack(backtrackStack);
 // 	// isMatch("[A-Z]*", "HFFKJV");
 //     return 0;
 // }
