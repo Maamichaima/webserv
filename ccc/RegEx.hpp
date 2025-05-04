@@ -49,9 +49,3 @@ struct BacktrackElement
 	RegEx regex;
 };
 bool isMatch(std::string ex, std::string testStr);
-// Element 1: content = g, quantifier = 0, type = 1
-// Element 2: content = g, quantifier = 1, type = 1
-// Element 3: content = b, quantifier = 0, type = 1
-// Element 4: content = h, quantifier = 0, type = 1
-// Element 5: content = s, quantifier = 0, type = 1
-// Element 6: content = d, quantifier = 2, type = 1
