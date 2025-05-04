@@ -1,12 +1,22 @@
 #pragma once
 
 #include <iostream>
+#include <map>
+
+struct data_request
+{
+    std::string method;
+    std::string path;
+    std::map<std::string, std::string> headrs;
+}typedef data_request;
+
 
 class client
 {
     private:
         std::string buffer;
         int fd_socket;
+        data_request data_rq;
     public:
         client();
         client(std::string buff, int fd);

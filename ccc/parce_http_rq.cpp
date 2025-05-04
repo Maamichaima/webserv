@@ -15,21 +15,18 @@ std::string get_line(std::string str)
     size_t pos = str.find("\r\n", i);
     if (pos == std::string::npos)
     {
-        // No more \r\n found, return the rest of the string
         line = str.substr(i);
-        i = str.size(); // move index to end
+        i = str.size();
         return line;
     }
-
-    // Extract line including \r\n
     line = str.substr(i, pos - i + 2);
-    i = pos + 2; // move index to after \r\n
+    i = pos + 2;
     return line;
 }
 
-int check_ismethod(std::string str)//, int &pos1, int &flag)
+int check_ismethod(std::string str)
 {
-	if(!isMatch("[A-Z]+", str))//.substr(0, pos1)))
+	if(!isMatch("[A-Z]+", str))
 	{
 		std::cout<< str << "\n";
 		return 0;
@@ -37,24 +34,23 @@ int check_ismethod(std::string str)//, int &pos1, int &flag)
 	return 1;
 }
 
-int check_ispath(std::string str)//, int &pos, int &flag)
+int check_ispath(std::string str)
 {
-	if(!isMatch("/.*", str))//.substr(start)))
+	if(!isMatch("/.*", str))
 	{
-		// std::cout <<"hadi----" <<  str<< "--\n";
 		return 0;
 	}
 	return 1;
 }
 
-int is_whitespace(char c)// deja kayena
+int is_whitespace(char c)
 {
 	if(c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == '\n')
 		return 1;
 	return 0;
 }
 
-int valid_n_vr(std::string str)//213abc \d+  
+int valid_n_vr(std::string str)
 {
 	int i = 0;
 	while(str[i])
@@ -75,7 +71,6 @@ int valid_n_vr(std::string str)//213abc \d+
 		}
 		i++;
 	}
-	//empty
 	return 1;
 }
 
@@ -95,25 +90,19 @@ std::deque<std::string> split(const std::string& str, char delimiter)
 	return result;
 }
 
-int check_version(std::string str)//, int &pos, int &flag)
+int check_version(std::string str)
 {
 	std::string ver = "HTTP/";
-	// std::cout << str << "\n";
 	int size = str.length();
 	if(size > 5)
 		size = 5;
-	// std::cout << "--" << ver.substr(0, size) << "--" << str.substr(0, size) << "--\n";
 	if(!isMatch(ver.substr(0, size), str.substr(0, size)))
 		return 0;
-	// std::cout << "--" << str.substr(size, str.length()) << "--\n";
 	std::deque<std::string> num = split(str.substr(size, str.length()), '.');
 	if(num.size() == 2)
 	{
-		// std::cout << "---" << str.substr(size, str.length()) << "--\n";
 		if(str[size] && !isMatch("\\d+\\.\\d+\r\n", str.substr(size, str.length())))
 		{
-			// std::cout <<"hh\n";
-
 			return 0;
 		}
 	}
@@ -129,8 +118,7 @@ int check_version(std::string str)//, int &pos, int &flag)
 	return 1;
 }
 
-//flag hwa bach ghan3rfo achmen part 
-int pars_startligne(std::string str)// zidi ila kant kamla ??
+int pars_startligne(std::string str)
 {
 	if(!isMatch("[A-Z]+ /.* HTTP/\\d+\\.\\d+\r\n", str))
 	{
@@ -143,13 +131,12 @@ int parce_header(std::string str)
 {
 	if(!isMatch("\\S+: .+\r\n", str))
 	{
-		// std::cout << "hh\n";
 		return 0;
 	}
 	return 1;
 }
 	
-int parce(std::string http_rq)// jm3 hena koulchi 
+int parce(std::string http_rq)
 {
 	std::string start_line = get_line(http_rq);
 	if(pars_startligne(start_line))
@@ -171,16 +158,6 @@ int parce(std::string http_rq)// jm3 hena koulchi
 		}
 		header = get_line(http_rq);
 	}
+	std::cout << "hani saliit -> " << get_line(http_rq);
 	return 1;
 }
-
-// int main()
-// {
-// 	std::string htt = "HTT /j HTTP/4.6\r\nhhhh: dg\r\n";
-// 	if(parce(htt))
-// 		std::cout << "Naziii\n";
-// 	else
-// 		std::cout << "rjee3 rjee3 \n";
-// }
-
-//GET /JHFD HTTP/3.5\r\n
