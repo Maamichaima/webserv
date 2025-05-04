@@ -136,76 +136,22 @@ int pars_startligne(std::string str)// zidi ila kant kamla ??
 	{
 		return 0;
 	}
-	// std::deque<std::string> dq = split(str, ' ');
-	// int count = dq.size();
-	// int i = 0;
-
-	// while (i < count)
-	// {
-	// 	switch (i)
-	// 	{
-	// 		case 0:
-	// 			if(!check_ismethod(dq[i]))
-	// 			{
-	// 				// std::cout << "method \n";
-	// 				return 0;
-	// 			}
-	// 			break;
-	// 		case 1:
-	// 			if(!check_ispath(dq[i]))
-	// 			{
-	// 				// std::cout << "path \n";
-	// 				return 0;
-	// 			}
-	// 			break;
-	// 		case 2:
-	// 			if(!check_version(dq[i]))
-	// 			{
-	// 				// std::cout << "version \n";
-	// 				return 0;
-	// 			}
-	// 			break;
-	// 		default:
-	// 			break;
-	// 	}
-	// 	i++;
-	// }
 	return 1;
 }
 
 int parce_header(std::string str)
 {
-	// if(str.find("\r\n") != std::string::npos)
-	// {
-		if(!isMatch("\\S+: .+\r\n", str))
-		{
-			// std::cout << "hh\n";
-			return 0;
-		}
-	// }
-	// else
-	// {
-	// 	std::deque<std::string> s = split(str, ' ');
-	// 	if(s.size() == 2)
-	// 	{
-	// 		if(!isMatch("\\S+:", s[0]) || !isMatch(".+", s[1]))
-	// 			return 0;
-	// 	}
-	// 	else if(s.size() == 1)
-	// 	{
-	// 		if(!isMatch("\\S+:?", s[0]))
-	// 			return 0;
-	// 	}
-	// 	else
-	// 		return 0;
-	// }
+	if(!isMatch("\\S+: .+\r\n", str))
+	{
+		// std::cout << "hh\n";
+		return 0;
+	}
 	return 1;
 }
 	
 int parce(std::string http_rq)// jm3 hena koulchi 
 {
 	std::string start_line = get_line(http_rq);
-		// std::cout << "start_line = " << start_line;
 	if(pars_startligne(start_line))
 		std::cout << "start line valide \n";
 	else
@@ -216,8 +162,6 @@ int parce(std::string http_rq)// jm3 hena koulchi
 	std::string header = get_line(http_rq);
 	while (header != "\r\n")
 	{
-		// std::cout << "henaaa\n";
-		// std::cout << "header = " << header;
 		if(parce_header(header))
 			std::cout << "headr valide \n";
 		else
@@ -230,14 +174,13 @@ int parce(std::string http_rq)// jm3 hena koulchi
 	return 1;
 }
 
-int main()
-{
-	// std::string htt = "GET /ggg///////lllll HTTP/1.1\r\nHost: localhost:1234\r\nConnection: keep-alive\r\nCache-Control: max-age=0\r\nsec-ch-ua: \"Google Chrome\";v=\"135\", \"Not-A.Brand\";v=\"8\", \"Chromium\";v=\"135\"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: \"macOS\"\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nAccept-Encoding: gzip, deflate, br, zstd\r\nAccept-Language: fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6";
-	std::string htt = "HTT /j HTTP/4.6\r\nhhhh: dg\r\n";
-	if(parce(htt))
-		std::cout << "Naziii\n";
-	else
-		std::cout << "rjee3 rjee3 \n";
-}
+// int main()
+// {
+// 	std::string htt = "HTT /j HTTP/4.6\r\nhhhh: dg\r\n";
+// 	if(parce(htt))
+// 		std::cout << "Naziii\n";
+// 	else
+// 		std::cout << "rjee3 rjee3 \n";
+// }
 
 //GET /JHFD HTTP/3.5\r\n
