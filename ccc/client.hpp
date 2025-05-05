@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <map>
+#include <vector>
+#include <deque>
 
 struct data_request
 {
@@ -24,4 +26,9 @@ class client
         client &operator=(const client &obj);
         ~client();
         void parce_buffer();
+        void setDateToStruct();
+        void printClient();
 };
+
+std::string get_line(std::string str);
+std::deque<std::string> split(const std::string& str, char delimiter);
