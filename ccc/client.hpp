@@ -4,12 +4,15 @@
 #include <map>
 #include <vector>
 #include <deque>
+#include <fstream>
+#include <sstream>
 
 struct data_request
 {
     std::string method;
     std::string path;
     std::map<std::string, std::string> headrs;
+    std::stringstream body;
 }typedef data_request;
 
 
@@ -27,8 +30,9 @@ class client
         ~client();
         void parce_buffer();
         void setDateToStruct();
+        void parceBody();
         void printClient();
 };
 
-std::string get_line(std::string str);
+std::string get_line(std::string str, int flagStart);
 std::deque<std::string> split(const std::string& str, char delimiter);
