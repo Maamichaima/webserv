@@ -5,6 +5,7 @@ int main()
     try
     {
         client client("GET / HTTP/2.6\r\nhhh: ds\r\n\r\njhgbdjbhjbjhbdf\r\n", 0);
+        client.printClient();
     }
     catch(const std::exception& e)
     {
