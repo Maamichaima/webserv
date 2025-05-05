@@ -4,11 +4,12 @@
 #include <vector>
 #include "RegEx.hpp"
 #include <map>
-std::string get_line(std::string str)
+std::string get_line(std::string str, int flagStart)
 {
     static size_t i = 0;
     std::string line;
-
+	if(flagStart == 0)
+		i = 0;
     if (i >= str.size())
         return "\r\n";
 
@@ -138,7 +139,7 @@ int parce_header(std::string str)
 	
 int parce(std::string http_rq)
 {
-	std::string start_line = get_line(http_rq);
+	std::string start_line = get_line(http_rq, 1);
 	if(pars_startligne(start_line))
 		std::cout << "start line valide \n";
 	else
@@ -146,7 +147,7 @@ int parce(std::string http_rq)
 		std::cout << "start line problem \n";
 		return 0;
 	}
-	std::string header = get_line(http_rq);
+	std::string header = get_line(http_rq, 1);
 	while (header != "\r\n")
 	{
 		if(parce_header(header))
@@ -156,8 +157,8 @@ int parce(std::string http_rq)
 			std::cout << "headrs prob \n";
 			return 0;
 		}
-		header = get_line(http_rq);
+		header = get_line(http_rq, 1);
 	}
-	std::cout << "hani saliit -> " << get_line(http_rq);
+	std::cout << "hani saliit -> " << get_line(http_rq, 1);
 	return 1;
 }

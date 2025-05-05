@@ -10,8 +10,8 @@ client::client(std::string buff, int fd)
     this->buffer = buff;
     this->fd_socket = fd;
     parcere parc(buff);
-    /// khode les information o3mer data_request ?
     this->setDateToStruct();
+    this->parceBody();
 }
 
 client::~client()
@@ -20,27 +20,54 @@ client::~client()
 
 void client::setDateToStruct()
 {
-    std::string str = get_line(this->buffer);
+    std::string str = get_line(this->buffer, 0);
     std::deque<std::string> startLine = split(str, ' ');
     this->data_rq.method = startLine[0];
     this->data_rq.path = startLine[1];
-    str = get_line(this->buffer);
+    str = get_line(this->buffer, 1);
     while(str != "\r\n")
     {
         std::deque<std::string> headr = split(str, ' ');
-        this->data_rq.headrs[headr[0]] = headr[1];
-        str = get_line(this->buffer);
+        this->data_rq.headrs[headr[0].substr(0, headr[0].size() - 1)] = headr[1];
+        str = get_line(this->buffer, 1);
+    }
+    str = get_line(this->buffer, 1);
+    while (str != "\r\n")
+    {
+        this->data_rq.body << str;
+        str = get_line(this->buffer, 1);
+    }
+    this->data_rq.body << "\r\n";
+}
+
+void checkBodyEncoding(std::stringstream str)
+{
+    std::string line = get_line(str.str(), 0);
+    while(1)
+    {
+        if()
     }
 }
+
+void client::parceBody()
+{
+    std::map<std::string, std::string>::iterator it = this->data_rq.headrs.find("Transfer-Encoding");
+    if(it != this->data_rq.headrs.end())
+    {
+        // checkBodyEncoding(this->data_rq.body);
+    }
+}
+
 void client::printClient()
 {
-    // std::cout << "Method --> " << this->data_rq.method << std::endl;
-    // std::cout << "Path --> " << this->data_rq.path << std::endl;
+    std::cout << "Method --> " << this->data_rq.method << std::endl;
+    std::cout << "Path --> " << this->data_rq.path << std::endl;
 
-    // std::map<std::string, std::string>::iterator it;
-    // for(it = this->data_rq.headrs.begin(); it != this->data_rq.headrs.end(); it++)
-    // {
-    //     std::cout << "key : " << it->first << " value : " << it->second << std::endl;
+    std::map<std::string, std::string>::iterator it;
+    for(it = this->data_rq.headrs.begin(); it != this->data_rq.headrs.end(); it++)
+    {
+        std::cout << "key : " << it->first << " value : " << it->second << std::endl;
 
-    // }
+    }
+    std::cout << data_rq.body.str();
 }
