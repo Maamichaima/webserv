@@ -40,12 +40,18 @@ void client::setDateToStruct()
     this->data_rq.body << "\r\n";
 }
 
-void checkBodyEncoding(std::stringstream str)
+void checkBodyEncoding(std::string str)
 {
-    std::string line = get_line(str.str(), 0);
-    while(1)
+    std::string line = get_line(str, 0);
+
+    // std::cout << "hh\n";
+    while(line != "\r\n")
     {
-        if()
+        // if(line)
+        // std::cout << atoi(line.c_str());
+        if(atoi(line.c_str()) != get_line(str, 1).size() - 2)
+            std::cout << "errooor\n";
+        line = get_line(str, 1);
     }
 }
 
@@ -54,7 +60,7 @@ void client::parceBody()
     std::map<std::string, std::string>::iterator it = this->data_rq.headrs.find("Transfer-Encoding");
     if(it != this->data_rq.headrs.end())
     {
-        // checkBodyEncoding(this->data_rq.body);
+        checkBodyEncoding(this->data_rq.body.str());
     }
 }
 
