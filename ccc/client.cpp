@@ -9,9 +9,19 @@ client::client(std::string buff, int fd)
 {
     this->buffer = buff;
     this->fd_socket = fd;
-    parcere parc(buff);
-    this->setDateToStruct();
-    this->parceBody();
+    // parcere parc(buff);
+    // this->setDateToStruct();
+    // this->parceBody();
+}
+
+client &client::operator=(const client &obj)
+{
+    if(this != &obj)
+    {
+        this->buffer = obj.buffer;
+        this->fd_socket = obj.fd_socket;
+    }
+    return *this;
 }
 
 client::~client()
@@ -44,13 +54,10 @@ void checkBodyEncoding(std::string str)
 {
     std::string line = get_line(str, 0);
 
-    // std::cout << "hh\n";
     while(line != "\r\n")
     {
-        // if(line)
-        // std::cout << atoi(line.c_str());
         if(atoi(line.c_str()) != get_line(str, 1).size() - 2)
-            std::cout << "errooor\n";
+            throw std::runtime_error("errooor\n");
         line = get_line(str, 1);
     }
 }
@@ -59,9 +66,9 @@ void client::parceBody()
 {
     std::map<std::string, std::string>::iterator it = this->data_rq.headrs.find("Transfer-Encoding");
     if(it != this->data_rq.headrs.end())
-    {
         checkBodyEncoding(this->data_rq.body.str());
-    }
+    // else
+        
 }
 
 void client::printClient()
@@ -76,4 +83,9 @@ void client::printClient()
 
     }
     std::cout << data_rq.body.str();
+}
+
+void client::setBuffer(std::string str)
+{
+    this->buffer += str;
 }
