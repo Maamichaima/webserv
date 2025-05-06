@@ -32,6 +32,7 @@ class client
         void setDateToStruct();
         void parceBody();
         void printClient();
+        void setBuffer(std::string str);
 };
 
 std::string get_line(std::string str, int flagStart);
