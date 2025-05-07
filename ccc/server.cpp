@@ -18,7 +18,7 @@ void accept_new_connection(int server_socket, fd_set *all_sockets, int *fd_max)
     int status;
 
     client_fd = accept(server_socket, NULL, NULL);
-    clients[client_fd] = client("", client_fd);
+    clients[client_fd] = client();
     if (client_fd == -1) {
         fprintf(stderr, "[Server] Accept error: %s\n", strerror(errno));
         return ;
@@ -30,16 +30,19 @@ void accept_new_connection(int server_socket, fd_set *all_sockets, int *fd_max)
     printf("[Server] Accepted new connection on client socket %d.\n", client_fd);
 }
 
-void read_data_from_socket(int socket, fd_set *all_sockets, int fd_max, int server_socket)
+int read_data_from_socket(int socket, fd_set *all_sockets, int fd_max, int server_socket)
 {
-    char buffer[10];
+    char buffer[12];
     // char msg_to_send[1024];
     int bytes_read;
     int status;
     memset(&buffer, '\0', sizeof buffer);
     bytes_read = recv(socket, buffer, 10, 0);
-	clients[socket].setBuffer(buffer);
-    std::cout << "buffer --> " << buffer << "\n";
+	clients[socket].setBuffer(buffer);//if mafihach \r\n continue ?
+	// std::string c = buffer;
+	// if(c.find("\r\n") == std::string::npos)
+	// 	return 0;
+    // std::cout << "buffer --> " << buffer << "-----\n";
     // if (bytes_read <= 0) {
     //     if (bytes_read == 0) {
             // printf("[%d] Client socket closed connection.\n", socket);
@@ -61,6 +64,7 @@ void read_data_from_socket(int socket, fd_set *all_sockets, int fd_max, int serv
 	// 		std::cout << "Sent " << bytesSent << " bytes.\n";
 	// 	}
 	// }
+	return 1;
 }
 int main(int c, char **v)
 {
@@ -112,6 +116,7 @@ int main(int c, char **v)
 	FD_ZERO(&all_sockets);
 	FD_SET(socket_fd, &all_sockets);
 	fd_max = socket_fd;
+	int flag = 0;
 	while(1)
 	{
 		read_fds = all_sockets;
@@ -138,7 +143,7 @@ int main(int c, char **v)
 			if(i == socket_fd)
 				accept_new_connection(socket_fd, &all_sockets, &fd_max);
 			else
-                read_data_from_socket(i, &all_sockets, fd_max, socket_fd);
+                flag = read_data_from_socket(i, &all_sockets, fd_max, socket_fd);
 		}
 	}
 	return 0;

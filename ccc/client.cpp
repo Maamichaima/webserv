@@ -9,7 +9,7 @@ client::client(std::string buff, int fd)
 {
     this->buffer = buff;
     this->fd_socket = fd;
-    // parcere parc(buff);
+    this->flag = 0;
     // this->setDateToStruct();
     // this->parceBody();
 }
@@ -53,11 +53,11 @@ void client::setDateToStruct()
 void checkBodyEncoding(std::string str)
 {
     std::string line = get_line(str, 0);
-
+    
     while(line != "\r\n")
     {
         if(atoi(line.c_str()) != get_line(str, 1).size() - 2)
-            throw std::runtime_error("errooor\n");
+        throw std::runtime_error("errooor\n");
         line = get_line(str, 1);
     }
 }
@@ -66,26 +66,29 @@ void client::parceBody()
 {
     std::map<std::string, std::string>::iterator it = this->data_rq.headrs.find("Transfer-Encoding");
     if(it != this->data_rq.headrs.end())
-        checkBodyEncoding(this->data_rq.body.str());
+    checkBodyEncoding(this->data_rq.body.str());
     // else
-        
+    
 }
 
 void client::printClient()
 {
     std::cout << "Method --> " << this->data_rq.method << std::endl;
     std::cout << "Path --> " << this->data_rq.path << std::endl;
-
+    
     std::map<std::string, std::string>::iterator it;
     for(it = this->data_rq.headrs.begin(); it != this->data_rq.headrs.end(); it++)
     {
         std::cout << "key : " << it->first << " value : " << it->second << std::endl;
-
+        
     }
     std::cout << data_rq.body.str();
 }
 
 void client::setBuffer(std::string str)
 {
-    this->buffer += str;
+    std::cout <<"hada buffer l9dim "<<  this->buffer << "---- hada li zdna lih " << str << "\n";
+    this->buffer.append(str);
+    if(this->buffer.find("\r\n") != std::string::npos)
+        parcere parc(buffer, flag);
 }
