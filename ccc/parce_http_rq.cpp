@@ -121,8 +121,11 @@ int check_version(std::string str)
 
 int pars_startligne(std::string str)
 {
+	// if(str.find("\r\n") == std::string::npos)
+	// 	return 2;
 	if(!isMatch("[A-Z]+ /.* HTTP/\\d+\\.\\d+\r\n", str))
 	{
+		std::cout << "hh\n";
 		return 0;
 	}
 	return 1;
@@ -130,35 +133,55 @@ int pars_startligne(std::string str)
 
 int parce_header(std::string str)
 {
+	// if(str.find("\r\n") == std::string::npos)
+	// 	return 2;
 	if(!isMatch("\\S+: .+\r\n", str))
-	{
 		return 0;
-	}
 	return 1;
 }
-	
-int parce(std::string http_rq)
+
+int parce(std::string http_rq, int &flag)
 {
 	std::string start_line = get_line(http_rq, 1);
-	if(pars_startligne(start_line))
-		std::cout << "start line valide \n";
-	else
-	{
-		std::cout << "start line problem \n";
-		return 0;
-	}
-	std::string header = get_line(http_rq, 1);
-	while (header != "\r\n")
-	{
-		if(parce_header(header))
-			std::cout << "headr valide \n";
+	if(flag == 0){
+		if(start_line.find("\r\n") == std::string::npos)
+			return 2;
+		else if(pars_startligne(start_line))
+		{
+			std::cout << start_line << " start line valide \n";
+			flag = 1;//hezi data dyaalek bach tmshiha
+		}
 		else
 		{
-			std::cout << "headrs prob \n";
+			std::cout << "=====" << start_line << "===== start line problem \n";
 			return 0;
 		}
-		header = get_line(http_rq, 1);
 	}
-	std::cout << "hani saliit -> " << get_line(http_rq, 1);
+	if(flag == 1)
+	{
+		std::string header = get_line(http_rq, 1);
+		while (header != "\r\n")
+		{
+			std::cout << "headr ==" << header << "==\n";
+			if(header.find("\r\n") == std::string::npos)
+			{
+				return 2;
+			}
+			if(parce_header(header))
+				std::cout << "headr valide \n";
+			else
+			{
+				std::cout << header << " headrs problem \n";
+				return 0;
+			}
+			header = get_line(http_rq, 1);
+		}
+		// std::cout << "hani saliit -> " << get_line(http_rq, 1);
+	}
 	return 1;
 }
+
+// int main()
+// {
+// 	std::cout << "line ->==" << get_line("shdg\r\ndsfhhhs");
+// }

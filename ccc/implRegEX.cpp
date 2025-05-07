@@ -520,12 +520,11 @@ bool isMatch(std::string ex, std::string testStr)
 //     std::deque<RegEx> dq = parce_expretion(ex);
 
 // 	// print(dq);
-
-//     std::string testStr = "hhhh:dg\r\n";
-//     if (test(testStr, dq))
-//         std::cout << "Matched!" << std::endl;
-//     else
-//         std::cout << "Not matched!" << std::endl;
+//     // std::string testStr = "hhhh:dg\r\n";
+//     // if (test(testStr, dq))
+//     //     std::cout << "Matched!" << std::endl;
+//     // else
+//     //     std::cout << "Not matched!" << std::endl;
 // 	// print_stack(backtrackStack);
 // 	// isMatch("[A-Z]*", "HFFKJV");
 //     return 0;

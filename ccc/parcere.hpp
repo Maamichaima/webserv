@@ -7,10 +7,10 @@ class parcere
     public:
         
     public:
-        parcere(std::string str);
+        parcere(std::string str, int &flag);
         parcere();
         parcere(const parcere &obj);
         parcere &operator=(const parcere &obj);
         ~parcere();
 };
-int parce(std::string http_rq);
+int parce(std::string http_rq, int &flag);

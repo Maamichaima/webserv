@@ -22,6 +22,8 @@ class client
         std::string buffer;
         int fd_socket;
         data_request data_rq;
+        int flag;
+        // parcere parc;
     public:
         client();
         client(std::string buff, int fd);
