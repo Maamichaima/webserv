@@ -1,17 +1,14 @@
 #include "client.hpp"
-#include "parcere.hpp"
 
 client::client()
 {
 }
 
-client::client(std::string buff, int fd)
+client::client(std::string buff, int fd): parc(parcere())
 {
     this->buffer = buff;
     this->fd_socket = fd;
     this->flag = 0;
-    // this->setDateToStruct();
-    // this->parceBody();
 }
 
 client &client::operator=(const client &obj)
@@ -28,37 +25,33 @@ client::~client()
 {
 }
 
-void client::setDateToStruct()
+void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int flag)
 {
-    std::string str = get_line(this->buffer, 0);
-    std::deque<std::string> startLine = split(str, ' ');
-    this->data_rq.method = startLine[0];
-    this->data_rq.path = startLine[1];
-    str = get_line(this->buffer, 1);
-    while(str != "\r\n")
+    std::cout << "buffer -> " << buffer << "\n";
+    if(flag == 1)
     {
+        std::string str = get_line(buffer);
+        std::deque<std::string> startLine = split(str, ' ');
+        data_rq.method = startLine[0];
+        data_rq.path = startLine[1];
+    }
+    if(flag == 2)
+    {
+        std::string str = get_line(buffer);
         std::deque<std::string> headr = split(str, ' ');
-        this->data_rq.headrs[headr[0].substr(0, headr[0].size() - 1)] = headr[1];
-        str = get_line(this->buffer, 1);
+        data_rq.headrs[headr[0]] = headr[1];
     }
-    str = get_line(this->buffer, 1);
-    while (str != "\r\n")
-    {
-        this->data_rq.body << str;
-        str = get_line(this->buffer, 1);
-    }
-    this->data_rq.body << "\r\n";
 }
 
 void checkBodyEncoding(std::string str)
 {
-    std::string line = get_line(str, 0);
+    std::string line = get_line(str);
     
     while(line != "\r\n")
     {
-        if(atoi(line.c_str()) != get_line(str, 1).size() - 2)
+        if(atoi(line.c_str()) != get_line(str).size() - 2)
         throw std::runtime_error("errooor\n");
-        line = get_line(str, 1);
+        line = get_line(str);
     }
 }
 
@@ -79,16 +72,17 @@ void client::printClient()
     std::map<std::string, std::string>::iterator it;
     for(it = this->data_rq.headrs.begin(); it != this->data_rq.headrs.end(); it++)
     {
-        std::cout << "key : " << it->first << " value : " << it->second << std::endl;
+        std::cout << "key --> " << it->first << " value --> " << it->second << std::endl;
         
     }
-    std::cout << data_rq.body.str();
+    // std::cout << data_rq.body.str();
 }
 
 void client::setBuffer(std::string str)
 {
-    std::cout <<"hada buffer l9dim "<<  this->buffer << "---- hada li zdna lih " << str << "\n";
+    // std::cout <<"hada buffer l9dim "<<  this->buffer << "---- hada li zdna lih " << str << "\n";
     this->buffer.append(str);
-    if(this->buffer.find("\r\n") != std::string::npos)
-        parcere parc(buffer, flag);
+    // if(this->buffer.find("\r\n") != std::string::npos)
+    parc.parcHttpCall(*this);
+    // this->printClient();
 }

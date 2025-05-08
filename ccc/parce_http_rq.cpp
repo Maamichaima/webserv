@@ -4,24 +4,21 @@
 #include <vector>
 #include "RegEx.hpp"
 #include <map>
-std::string get_line(std::string str, int flagStart)
-{
-    static size_t i = 0;
-    std::string line;
-	if(flagStart == 0)
-		i = 0;
-    if (i >= str.size())
-        return "\r\n";
 
+std::string get_line(std::string str)
+{
+    size_t i = 0;
+    std::string line;
     size_t pos = str.find("\r\n", i);
     if (pos == std::string::npos)
     {
         line = str.substr(i);
-        i = str.size();
+        // i = str.size();
         return line;
     }
     line = str.substr(i, pos - i + 2);
     i = pos + 2;
+
     return line;
 }
 
@@ -139,49 +136,3 @@ int parce_header(std::string str)
 		return 0;
 	return 1;
 }
-
-int parce(std::string http_rq, int &flag)
-{
-	std::string start_line = get_line(http_rq, 1);
-	if(flag == 0){
-		if(start_line.find("\r\n") == std::string::npos)
-			return 2;
-		else if(pars_startligne(start_line))
-		{
-			std::cout << start_line << " start line valide \n";
-			flag = 1;//hezi data dyaalek bach tmshiha
-		}
-		else
-		{
-			std::cout << "=====" << start_line << "===== start line problem \n";
-			return 0;
-		}
-	}
-	if(flag == 1)
-	{
-		std::string header = get_line(http_rq, 1);
-		while (header != "\r\n")
-		{
-			std::cout << "headr ==" << header << "==\n";
-			if(header.find("\r\n") == std::string::npos)
-			{
-				return 2;
-			}
-			if(parce_header(header))
-				std::cout << "headr valide \n";
-			else
-			{
-				std::cout << header << " headrs problem \n";
-				return 0;
-			}
-			header = get_line(http_rq, 1);
-		}
-		// std::cout << "hani saliit -> " << get_line(http_rq, 1);
-	}
-	return 1;
-}
-
-// int main()
-// {
-// 	std::cout << "line ->==" << get_line("shdg\r\ndsfhhhs");
-// }

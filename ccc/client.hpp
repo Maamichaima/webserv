@@ -7,6 +7,9 @@
 #include <fstream>
 #include <sstream>
 
+#include "parcere.hpp"
+// class parcere;
+
 struct data_request
 {
     std::string method;
@@ -19,19 +22,18 @@ struct data_request
 class client
 {
     private:
+    public:
         std::string buffer;
         int fd_socket;
         data_request data_rq;
         int flag;
-        // parcere parc;
-    public:
+        parcere parc;
         client();
         client(std::string buff, int fd);
         client(const client &obj);
         client &operator=(const client &obj);
         ~client();
-        void parce_buffer();
-        void setDateToStruct();
+        // void parce_buffer();
         void parceBody();
         void printClient();
         void setBuffer(std::string str);
