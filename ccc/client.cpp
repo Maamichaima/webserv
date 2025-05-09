@@ -39,8 +39,8 @@ void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int fl
     if(flag == 1)
     {
         std::string str = get_line(buffer);
-        std::deque<std::string> headr = split(str, ' ');
-        data_rq.headrs[headr[0]] = headr[1];
+        std::deque<std::string> headr = split(str, ':');//hmrdeeg
+        data_rq.headrs[headr[0]] = headr[1].substr(1);
     }
 }
 
@@ -76,7 +76,7 @@ void client::printClient()
         std::cout << "key --> " << it->first << " value --> " << it->second << std::endl;
         
     }
-    // std::cout << data_rq.body.str();
+    std::cout << data_rq.body;
 }
 
 void client::setBuffer(std::string str)

@@ -74,31 +74,30 @@ int parcere::parce(client &client)
 	if(client.flag == 2)
 	{
 		client.printClient();
-		// std::map<std::string, std::string>::iterator it = client.data_rq.headrs.find("Transfer-Encoding");
-		// if(it != client.data_rq.headrs.end() && it->second == "chunked")
-		// {
-		// 	std::cout << "hanii \n";
-		// }
-			exit (0);
-		// 	else
-		// 	{
-		// 		it = client.data_rq.headrs.find("Content-Length");
-		// 		//3 cases 
-		// 		//fhdjbhjfdjhbfdjbh
-		// 		client.data_rq.size_body = client.buffer.size();
-		// 		if(client.data_rq.size_body <= atoi(it->second.c_str()))
-		// 		{
-		// 			client.data_rq.body.append(client.buffer);
-		// 		}
-		// 		else if(client.data_rq.size_body > atoi(it->second.c_str()))
-		// 		{
-		// 			throw std::runtime_error("Body is larger than Content-Length");
-		// 		}
-		// 		// else
-		// 		// {
+		std::map<std::string, std::string>::iterator it = client.data_rq.headrs.find("Transfer-Encoding");
+		if(it != client.data_rq.headrs.end() && it->second == "chunked")
+		{
+			std::cout << "hanii \n";
+		}
+		else
+		{
+			it = client.data_rq.headrs.find("Content-Length");
+			//3 cases 
+			client.data_rq.size_body = client.buffer.size();
+			if(client.data_rq.size_body <= atoi(it->second.c_str()))
+			{
+				client.data_rq.body.append(client.buffer);
+			}
+			else if(client.data_rq.size_body > atoi(it->second.c_str()))
+			{
+				std::cout << client.data_rq.body << "\n";
+				throw std::runtime_error("Body is larger than Content-Length");
+			}
+			// else
+			// {
 
-		// 		// }
-		// 	}
+			// }
+		}
 	}
 	return 1;
 }
