@@ -15,7 +15,8 @@ struct data_request
     std::string method;
     std::string path;
     std::map<std::string, std::string> headrs;
-    std::stringstream body;
+    std::string body;
+    int size_body;
 }typedef data_request;
 
 

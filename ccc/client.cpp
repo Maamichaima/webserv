@@ -9,6 +9,7 @@ client::client(std::string buff, int fd): parc(parcere())
     this->buffer = buff;
     this->fd_socket = fd;
     this->flag = 0;
+    this->data_rq.size_body = 0;
 }
 
 client &client::operator=(const client &obj)
@@ -28,14 +29,14 @@ client::~client()
 void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int flag)
 {
     std::cout << "buffer -> " << buffer << "\n";
-    if(flag == 1)
+    if(flag == 0)
     {
         std::string str = get_line(buffer);
         std::deque<std::string> startLine = split(str, ' ');
         data_rq.method = startLine[0];
         data_rq.path = startLine[1];
     }
-    if(flag == 2)
+    if(flag == 1)
     {
         std::string str = get_line(buffer);
         std::deque<std::string> headr = split(str, ' ');
@@ -50,7 +51,7 @@ void checkBodyEncoding(std::string str)
     while(line != "\r\n")
     {
         if(atoi(line.c_str()) != get_line(str).size() - 2)
-        throw std::runtime_error("errooor\n");
+            throw std::runtime_error("errooor\n");
         line = get_line(str);
     }
 }
@@ -58,8 +59,8 @@ void checkBodyEncoding(std::string str)
 void client::parceBody()
 {
     std::map<std::string, std::string>::iterator it = this->data_rq.headrs.find("Transfer-Encoding");
-    if(it != this->data_rq.headrs.end())
-    checkBodyEncoding(this->data_rq.body.str());
+    // if(it != this->data_rq.headrs.end())
+    // checkBodyEncoding(this->data_rq.body.str());
     // else
     
 }
