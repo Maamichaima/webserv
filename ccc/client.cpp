@@ -10,6 +10,7 @@ client::client(std::string buff, int fd): parc(parcere())
     this->fd_socket = fd;
     this->flag = 0;
     this->data_rq.size_body = 0;
+    this->data_rq.size_chunked = -1;
 }
 
 client &client::operator=(const client &obj)
@@ -28,7 +29,7 @@ client::~client()
 
 void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int flag)
 {
-    std::cout << "buffer -> " << buffer << "\n";
+    // std::cout << "buffer -> " << buffer << "\n";
     if(flag == 0)
     {
         std::string str = get_line(buffer);
@@ -40,7 +41,11 @@ void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int fl
     {
         std::string str = get_line(buffer);
         std::deque<std::string> headr = split(str, ':');//hmrdeeg
-        data_rq.headrs[headr[0]] = headr[1].substr(1);
+        data_rq.headrs[headr[0]] = headr[1].substr(1, headr[1].size() - 3);
+    }
+    if(flag == 2)
+    {
+        data_rq.body.append(buffer);
     }
 }
 
@@ -76,7 +81,7 @@ void client::printClient()
         std::cout << "key --> " << it->first << " value --> " << it->second << std::endl;
         
     }
-    std::cout << data_rq.body;
+    std::cout << "this is our body " << data_rq.body;
 }
 
 void client::setBuffer(std::string str)
