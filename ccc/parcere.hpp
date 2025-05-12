@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include "RegEx.hpp"
 struct data_request;
 class client;
 class parcere

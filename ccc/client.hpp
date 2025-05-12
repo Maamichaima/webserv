@@ -9,7 +9,6 @@
 
 #include "parcere.hpp"
 // class parcere;
-
 struct data_request
 {
     std::string method;
@@ -17,6 +16,7 @@ struct data_request
     std::map<std::string, std::string> headrs;
     std::string body;
     int size_body;
+    int size_chunked;
 }typedef data_request;
 
 
