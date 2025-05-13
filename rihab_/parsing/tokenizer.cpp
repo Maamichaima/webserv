@@ -1,7 +1,7 @@
 #include "tokenizer.hpp"
-#include "Server.hpp"
+#include "../ServerManager.hpp"
+#include <cstddef>
 #include <utility>
-
 
 bool    Tokenizer::tokenizeString(std::string line)
     {
@@ -89,11 +89,12 @@ bool location::validParameter(Tokenizer& tokenizer) {
 std::vector<std::string> peekValues(Tokenizer& tokenizer) {//pick
     std::vector<std::string> vec;
     
-    while (tokenizer.peek() != ";")  { //check the end of vector 
+    while (tokenizer.hasMore() && tokenizer.peek() != ";")  { //check the end of vector 
         vec.push_back(tokenizer.peek());
         tokenizer.advance();
     }
-    //if end throw error
+    if(!tokenizer.hasMore())
+        throw std::runtime_error("Unexpected end of input");
     
     return vec;
 }
@@ -128,17 +129,15 @@ std::vector<std::string> splitServerConfig(const std::string& input) {
 }
 
 
-bool    Tokenizer::parse() {
+bool    Tokenizer::parse(ServerManager &manager) {
     while (hasMore()) {
-        if (peek() == "server") {
+        if (peek() == "server") { // make sure it's the first element in the server or it's preceded by }
             advance();
             if (peek() == "{") {
                 advance();
                 Server server;
                 server.createServer(*this);
-                // if (server.createServer(*this)) {
-                //     servers.push_back(server);
-                // }
+                manager.addServer(server);
             }
         } else {
             std::cout << "Error: server keyword not found" << std::endl;
@@ -151,11 +150,11 @@ bool    Tokenizer::parse() {
     return true;
 }
 
-
-int main(int argc, char **argv) {
+bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
+{
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
-        return 1;
+        return false;
     }
 
     std::string line;
@@ -163,12 +162,10 @@ int main(int argc, char **argv) {
     
     if (!inputFile.is_open()) {
         std::cerr << "Failed to open file: " << argv[1] << std::endl;
-        return 1;
+        return false;
     }
     
-    Tokenizer tokenizer;
-    //std::vector<Server> servers;
-    
+    Tokenizer tokenizer; 
     while (std::getline(inputFile, line)) {
         if (line.empty()) {
             continue;
@@ -178,12 +175,13 @@ int main(int argc, char **argv) {
     std::vector<std::string>::iterator it;
     
     tokenizer.initialize();
-    // while(tokenizer.current != tokenizer.end)
-    // {
-    //     std::cout <<*tokenizer.current << std::endl;
-    //     tokenizer.current++;
-    // }
-    tokenizer.parse();
+   
+    tokenizer.parse(manager);
+ 
     
-    return 0;
+    return (true);
+    
+
+         
 }
+Tokenizer::~Tokenizer(){}

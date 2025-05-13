@@ -7,11 +7,12 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <unistd.h>
+#include <cstdio>
 
 
-
-
-
+class Server;
+class ServerManager;
 class Tokenizer
 {
     public:
@@ -24,22 +25,17 @@ class Tokenizer
     void    advance();
     std::string peek();
     bool hasMore();
-    bool parse();
-    ~Tokenizer(){}
+    bool parse(ServerManager &manager);
+    ~Tokenizer();
     
 };
 
-struct location{
 
-    std::string path;
-    std::map<std::string, std::vector<std::string> > infos;
-    bool validParameter(Tokenizer& tokenizer);
-
-};
 
 
 std::vector<std::string> splitServerConfig(const std::string& input) ;
 void print_map(const std::map<std::string, std::vector<std::string> > params) ;
 std::vector<std::string> peekValues(Tokenizer& tokenizer) ;
+
 
 #endif

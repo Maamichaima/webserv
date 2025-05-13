@@ -1,5 +1,6 @@
 #include "Socket.hpp"
 
+
 void update_Socket(int fd_socket)
 {
     if (fcntl(fd_socket, F_SETFL, O_NONBLOCK) == -1) {
@@ -19,11 +20,11 @@ int main()
                   "Server: webserver-c\r\n"
                   "Content-type: text/html\r\n\r\n"
                   "<html>hello, world</html>\r\n";
-    socket.initialize();
+    socket.initialize(8080);
     socket.create_Socket();
     socket.bind_Socket();
     socket.listen_socket();
-    socket.update_Socket();
+   // socket.update_Socket();
     struct sockaddr_in client_addr;
     int client_addrlen = sizeof(client_addr);
 
@@ -135,49 +136,50 @@ int main()
 
 
         
-        //get client infos(ip addr / port)
-        // int sockn = getsockname(new_socket, (struct sockaddr *)&client_addr,
-        //                           (socklen_t *)&client_addrlen);
-        // if (sockn < 0) {
-        //     perror("webserver (getsockname)");
-        //     continue;
-        // }
-        // std::cout << "IP address : " << inet_ntoa(client_addr.sin_addr) << "  Port : " << ntohs(client_addr.sin_port) << std::endl;
         
-        // //read data from client 
-        // int valread = read(new_socket, buffer, BUFFER_SIZE);
-        // if (valread < 0) {
-        //     perror("webserver (read)");
-        //     continue;
-        // }
-        // else
-        //     std::cout << "send data ====> " << buffer <<  std::endl;
-
-
-
-        // // write data to client 
-        // int valwrite = write(new_socket, resp, strlen(resp));
-        // if (valwrite < 0) {
-        //     perror("webserver (write)");
-        //     continue;
-        // }
-     
     }
     
-
-
     
-   
-
-
-
-
-  // Close socket
-  close(new_socket);
-  close(socket.fd_socket);
-  return 0;
-
     
-
+    
+    
+    
+    
+    
+    
+    // Close socket
+    close(new_socket);
+    close(socket.fd_socket);
+    return 0;
+    
+    
+    
 }
 
+
+//get client infos(ip addr / port)
+// int sockn = getsockname(new_socket, (struct sockaddr *)&client_addr,
+//                           (socklen_t *)&client_addrlen);
+// if (sockn < 0) {
+//     perror("webserver (getsockname)");
+//     continue;
+// }
+// std::cout << "IP address : " << inet_ntoa(client_addr.sin_addr) << "  Port : " << ntohs(client_addr.sin_port) << std::endl;
+
+// //read data from client 
+// int valread = read(new_socket, buffer, BUFFER_SIZE);
+// if (valread < 0) {
+//     perror("webserver (read)");
+//     continue;
+// }
+// else
+//     std::cout << "send data ====> " << buffer <<  std::endl;
+
+
+
+// // write data to client 
+// int valwrite = write(new_socket, resp, strlen(resp));
+// if (valwrite < 0) {
+//     perror("webserver (write)");
+//     continue;
+// }
