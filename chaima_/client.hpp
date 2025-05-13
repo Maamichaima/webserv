@@ -13,10 +13,11 @@ struct data_request
 {
     std::string method;
     std::string path;
-    std::map<std::string, std::string> headrs;
+    std::map<std::string, std::string> headers;
     std::string body;
     int size_body;
     int size_chunked;
+    int flag_chunked;
 }typedef data_request;
 
 
