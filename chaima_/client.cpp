@@ -33,27 +33,7 @@ client::~client()
 {
 }
 
-void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int flag)
-{
-    // std::cout << "buffer -> " << buffer << "\n";
-    if(flag == 0)
-    {
-        std::string str = get_line(buffer);
-        std::deque<std::string> startLine = split(str, ' ');
-        data_rq.method = startLine[0];
-        data_rq.path = startLine[1];
-    }
-    if(flag == 1)
-    {
-        std::string str = get_line(buffer);
-        std::deque<std::string> headr = split(str, ':');//hmrdeeg
-        data_rq.headers[headr[0]] = headr[1].substr(1, headr[1].size() - 3);
-    }
-    if(flag == 2)
-    {
-        data_rq.body.append(buffer);
-    }
-}
+
 
 void checkBodyEncoding(std::string str)
 {
