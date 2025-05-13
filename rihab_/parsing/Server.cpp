@@ -1,5 +1,13 @@
 #include "Server.hpp"
 
+int Server::index = 0;
+
+Server::Server() {
+    index++;
+}
+    
+Server::~Server(){}
+
 void    Server::createLocation(Tokenizer& tokenizer) {
     std::map<std::string, std::vector<std::string> > locationParams;
     
@@ -12,8 +20,6 @@ void    Server::createLocation(Tokenizer& tokenizer) {
     loc.validParameter( tokenizer);
     
     tokenizer.advance(); // Skip '}'
-    std::cout << "<---------------location-------------------->" << std::endl;
-    print_map(loc.infos);
     
     // Create and store the location
     loc.path = path;
@@ -25,18 +31,21 @@ void    Server::createLocation(Tokenizer& tokenizer) {
 bool Server::createParam(Tokenizer& tokenizer) {
     std::string key = tokenizer.peek();
     std::map<std::string, std::vector<std::string> >::iterator it;
-    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page") {
+    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key == "host") {
         tokenizer.advance();
         std::vector<std::string> newValues = peekValues(tokenizer);
         it = params.find(key);
-        if(it != params.end())
+        if(it != params.end()) //if the parameter already existe 
         {
             it->second.insert(it->second.end(), newValues.begin(), newValues.end());
-        }
+        }   
         else{
 
             params.insert(std::make_pair(key, newValues));//insert 
         }
+        // if (!param_Syntaxe(key,it->second))
+        //     return false;
+
         tokenizer.advance();
     } else {
         std::cout << key << " not a required parameter" << std::endl;
@@ -66,10 +75,6 @@ bool Server::createServer(Tokenizer& tokenizer) {
             createParam(tokenizer);
         }
     }
-    
-    std::cout << "<---------------params-------------------->" << std::endl;
-    print_map(params);
-    
     if (!tokenizer.hasMore()) {
         return false;
     }
@@ -78,3 +83,127 @@ bool Server::createServer(Tokenizer& tokenizer) {
 }
 
 
+int Server::getPort() {
+    std::map<std::string, std::vector<std::string> >::iterator it = params.find("listen");
+
+    if (it != params.end() && !it->second.empty())
+        return atoi(it->second[0].c_str());
+
+    return(8080);
+}
+
+std::string Server::geIpAddress(){
+
+    // std::map<std::string, std::vector<std::string> >::iterator it = params.find("host");
+    // if (it != params.end() && !it->second.empty())
+    //     return (it->second[0]);
+    return("127.0.0.1");
+}
+
+bool Server::initialize() {
+    int port = getPort();
+    socket.initialize(port);
+    
+    if (!socket.create_Socket()) {
+        return false;
+    }
+    
+    //set socket option reuse
+    // if(!socket.set_nonblocking())
+    //     return false;
+
+    if (!socket.bind_Socket()) {
+        return false;
+    }
+    
+    if (!socket.listen_socket()) {
+        return false;
+    }
+    
+    std::cout << "Server initialized on port " << port << std::endl;
+    return true;
+}
+
+int Server::getSocketFd()  {
+    return socket.fd_socket;
+}
+
+std::map<std::string, std::vector<std::string> >& Server::getParameters()  {
+    return params;
+}
+
+std::vector<location>& Server::getLocations()  {
+    return locations;
+}
+
+Socket & Server::getSocket(){
+    return socket;
+}
+
+// int Server::acceptConnection(){
+//     Epoll_events cnx = socket.event;
+//     char buffer[BUFFER_SIZE];
+//     int numEvents = epoll_wait(cnx.get_epollFd(),cnx.events,MAX_EVENTS,-1);
+//     if(numEvents < 0){
+//         std::cerr <<"epoll_wait failed" << std::endl; 
+//     }
+
+//     for(int i = 0; i < numEvents; i++){
+//         int currentFd = cnx.events[i].data.fd;
+
+//         if(currentFd == socket.getSocketFd()){ // it can be more than one socket in the server
+//                 int client_fd = accept(socket.getSocketFd(),(struct sockaddr *)&(socket.host_addr),(socklen_t *)&socket.host_addrlen);
+//                 if (client_fd < 0) {
+//                     if (errno != EAGAIN && errno != EWOULDBLOCK) {
+//                         std::cerr << "accept failed" << std::endl;
+//                     }
+//                     continue;
+//                 }
+//                 std::cout << "connection accepted from client " <<std::endl;
+           
+//                 if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
+//                     // perror("fcntl F_SETFL O_NONBLOCK");
+//                     close(client_fd);
+//                     continue;
+//                 }
+//                 socket.event.Add_new_event(client_fd);
+//         }
+//         else if(cnx.events[i].events & EPOLLIN){
+
+//             bool closeConnection = false;
+        
+//                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE - 1,0);
+//                 if (bytesRead < 0) {
+                    
+//                     if (errno == EAGAIN || errno == EWOULDBLOCK) {
+//                         // No data available, not an error
+//                         std::cout << "No data available on socket " << currentFd << std::endl;
+//                     } else {
+//                         perror("read failed");
+//                         closeConnection = true;
+//                     }
+//                 }
+//                 else if (bytesRead == 0){
+//                     std::cout << "Client disconnected" << std::endl;
+//                     closeConnection = true;
+//                     break;
+//                 }
+//                 else{
+
+//                     buffer[bytesRead] = '\0';
+//                     std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
+//                     if (write(currentFd,  "buffer received \n", 18) < 0) {
+//                         perror("write failed");
+//                         closeConnection = true;
+//                         break;
+//                     }
+//                 }
+
+//                 if (closeConnection) {
+//                     close(currentFd);
+//                 }
+//         }
+//     }
+
+//     return 0;
+// }
