@@ -32,8 +32,14 @@ class client
         parcere parc;
         client();
         client(std::string buff, int fd);
-        client(const client &obj);
-        client &operator=(const client &obj);
+        client(const client &obj)
+        {
+
+        }
+        client &operator=(const client &obj)
+        {
+
+        }
         ~client();
         // void parce_buffer();
         void parceBody();
@@ -41,5 +47,5 @@ class client
         void setBuffer(std::string str);
 };
 
-std::string get_line(std::string str, int flagStart);
+std::string get_line(std::string str);
 std::deque<std::string> split(const std::string& str, char delimiter);

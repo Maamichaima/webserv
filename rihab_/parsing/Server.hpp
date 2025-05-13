@@ -6,6 +6,7 @@
 #include "../Socket.hpp"
 
 #include "tokenizer.hpp"
+// #include "../../chaima_/client.hpp"
 
 class ServerManager;
 
@@ -30,6 +31,8 @@ class Server{
         std::map<std::string,std::vector<std::string> > params;
         std::vector<location> locations ;
         Socket socket;
+        // std::map<int, client> clients;
+
         
     public:
         Server();
