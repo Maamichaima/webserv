@@ -4,11 +4,11 @@ CXX = c++
 CXXFLAGS = -g 
 #-Wall -Wextra -Werror -std=c++98 
 
-CPPFILES =  server.cpp Socket.cpp
+CPPFILES =  main.cpp Socket.cpp ServerManager.cpp ./parsing/Server.cpp ./parsing/tokenizer.cpp ./parsing/check_syntaxe.cpp
 
 OFILES = ${CPPFILES:.cpp=.o}
 
-EXECUTABLE = Socket
+EXECUTABLE = Server
 
 all : $(EXECUTABLE)
 
