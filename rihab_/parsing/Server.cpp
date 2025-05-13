@@ -43,8 +43,8 @@ bool Server::createParam(Tokenizer& tokenizer) {
 
             params.insert(std::make_pair(key, newValues));//insert 
         }
-        // if (!param_Syntaxe(key,it->second))
-        //     return false;
+        if (!param_Syntaxe(key,params[key]))
+            return false;
 
         tokenizer.advance();
     } else {
@@ -83,35 +83,31 @@ bool Server::createServer(Tokenizer& tokenizer) {
 }
 
 
-int Server::getPort() {
+std::string Server::getPort() {
     std::map<std::string, std::vector<std::string> >::iterator it = params.find("listen");
 
     if (it != params.end() && !it->second.empty())
-        return atoi(it->second[0].c_str());
+        return it->second[0];
 
-    return(8080);
+    return("8080");
 }
 
-std::string Server::geIpAddress(){
+std::string Server::getIpAddress(){
 
-    // std::map<std::string, std::vector<std::string> >::iterator it = params.find("host");
-    // if (it != params.end() && !it->second.empty())
-    //     return (it->second[0]);
+    std::map<std::string, std::vector<std::string> >::iterator it = params.find("host");
+    if (it != params.end() && !it->second.empty())
+        return (it->second[0]);
     return("127.0.0.1");
 }
 
 bool Server::initialize() {
-    int port = getPort();
-    socket.initialize(port);
+   
+    socket.initialize(getPort(),getIpAddress());
     
     if (!socket.create_Socket()) {
         return false;
     }
     
-    //set socket option reuse
-    // if(!socket.set_nonblocking())
-    //     return false;
-
     if (!socket.bind_Socket()) {
         return false;
     }
@@ -120,7 +116,7 @@ bool Server::initialize() {
         return false;
     }
     
-    std::cout << "Server initialized on port " << port << std::endl;
+    std::cout << "Server initialized on port " << getPort() << std::endl;
     return true;
 }
 

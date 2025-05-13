@@ -36,8 +36,8 @@ class Server{
         bool    createServer(Tokenizer& tokenizer);
         bool    createParam(Tokenizer& tokenizer);
         void    createLocation(Tokenizer& tokenizer);
-        int getPort();
-        std::string geIpAddress();
+        std::string getPort();
+        std::string getIpAddress();
         size_t getMaxBodySize();
         std::vector<std::string> getServerNames();
         std::string get_error_page();
