@@ -38,7 +38,9 @@ int read_data_from_socket(int socket, fd_set *all_sockets, int fd_max, int serve
     int status;
     memset(&buffer, '\0', sizeof buffer);
     bytes_read = recv(socket, buffer, 10, 0);
-	clients[socket].setBuffer(buffer);//if mafihach \r\n continue ?
+	std::cout << strlen(buffer) << std::endl;
+	// if(strlen(buffer) != 0)
+		clients[socket].setBuffer(buffer);
 	// std::string c = buffer;
 	// if(c.find("\r\n") == std::string::npos)
 	// 	return 0;

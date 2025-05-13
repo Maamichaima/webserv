@@ -2,6 +2,12 @@
 
 client::client()
 {
+	this->flag = 0;
+    this->data_rq.size_body = 0;
+    this->data_rq.size_chunked = -1;
+	this->data_rq.flag_chunked = 0;
+	// std::cout << data_rq.size_chunked << "\n";
+	// exit (0);
 }
 
 client::client(std::string buff, int fd): parc(parcere())
@@ -41,7 +47,7 @@ void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int fl
     {
         std::string str = get_line(buffer);
         std::deque<std::string> headr = split(str, ':');//hmrdeeg
-        data_rq.headrs[headr[0]] = headr[1].substr(1, headr[1].size() - 3);
+        data_rq.headers[headr[0]] = headr[1].substr(1, headr[1].size() - 3);
     }
     if(flag == 2)
     {
@@ -63,8 +69,8 @@ void checkBodyEncoding(std::string str)
 
 void client::parceBody()
 {
-    std::map<std::string, std::string>::iterator it = this->data_rq.headrs.find("Transfer-Encoding");
-    // if(it != this->data_rq.headrs.end())
+    std::map<std::string, std::string>::iterator it = this->data_rq.headers.find("Transfer-Encoding");
+    // if(it != this->data_rq.headers.end())
     // checkBodyEncoding(this->data_rq.body.str());
     // else
     
@@ -76,7 +82,7 @@ void client::printClient()
     std::cout << "Path --> " << this->data_rq.path << std::endl;
     
     std::map<std::string, std::string>::iterator it;
-    for(it = this->data_rq.headrs.begin(); it != this->data_rq.headrs.end(); it++)
+    for(it = this->data_rq.headers.begin(); it != this->data_rq.headers.end(); it++)
     {
         std::cout << "key --> " << it->first << " value --> " << it->second << std::endl;
         
@@ -89,6 +95,7 @@ void client::setBuffer(std::string str)
     // std::cout <<"hada buffer l9dim "<<  this->buffer << "---- hada li zdna lih " << str << "\n";
     this->buffer.append(str);
     // if(this->buffer.find("\r\n") != std::string::npos)
-    parc.parcHttpCall(*this);
+    // if(this->flag != 3)
+		parc.parcHttpCall(*this);
     // this->printClient();
 }

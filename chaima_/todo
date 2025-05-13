@@ -5,3 +5,6 @@
 //map<int, data> clients
 
 // clients[fd];
+
+int readLite(std::string buffer, std::string &str, size_t size);
+9ra mn buffer size oheto f str

@@ -1,8 +1,8 @@
-SRC = main.cpp BitcoinExchange.cpp
+SRC = chaima_/mainRegEx.cpp /chaima_/client.cpp /chaima
 OBJ = ${SRC:.cpp=.o}
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98  
 CXX = c++
-NAME = btc
+NAME = webserv
 
 all : ${NAME}
 
