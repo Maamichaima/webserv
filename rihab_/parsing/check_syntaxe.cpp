@@ -158,7 +158,14 @@ bool    check_error_page(std::vector<std::string> values){
     
     return true;
 }
+bool    check_host(std::vector<std::string> values){
 
+    if (values.size() != 1)
+        return false;
+    if(!valide_ip_address(values[0]))
+        return false;
+    return true;
+}
 bool check_client_max_body_size(std::vector<std::string> values){
     if (values.size() != 1)
         return false;
@@ -194,6 +201,9 @@ bool    param_Syntaxe(std::string key, std::vector<std::string> values){ // it =
     }
     else if(key == "server_name" || key == "server_names" ){ //Setup the server_names or not.
         return(check_server_names(values));
+    }
+    else if(key == "host"){
+        return(check_host(values));
     }
     else if( key == "error_page")
     {

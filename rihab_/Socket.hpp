@@ -1,5 +1,6 @@
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
+#include <cstddef>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -10,6 +11,8 @@
 #include <fcntl.h>
 #include <cstdio>
 #include <algorithm>
+#include <sys/types.h>
+#include <netdb.h>
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
@@ -58,11 +61,12 @@ class Socket{
 
     int fd_socket; //getters setters
     struct sockaddr_in host_addr;
+    struct addrinfo *host_info;
     int host_addrlen;
     Epoll_events event;
 
     Socket() :fd_socket(-1), host_addrlen(0) {
-        
+        host_info = NULL;
         memset(&host_addr, 0, sizeof(host_addr));
     }
 
@@ -74,19 +78,25 @@ class Socket{
     int getSocketFd(){
         return(fd_socket);
     }
-    void    initialize(int port){
+    void    initialize(std::string port, std::string add_ip){
+        struct addrinfo hints;
+        std::memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET;  
+        hints.ai_socktype = SOCK_STREAM;      
+        hints.ai_flags = AI_PASSIVE;
 
-        memset(&host_addr, 0, sizeof(host_addr));
-        host_addr.sin_family = AF_INET;
-        host_addr.sin_addr.s_addr = htonl(INADDR_ANY);//getaddrinfo()
-        host_addr.sin_port = htons(port); // convert from host byte order to network bytes order 
-        host_addrlen = sizeof(host_addr);
+    
+        int status = getaddrinfo(add_ip.c_str(), port.c_str(), &hints, &host_info);
+        if (status != 0) {
+            std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
+            exit(EXIT_FAILURE);
+        }
 
     }
 
     bool create_Socket(){
 
-        fd_socket = socket(AF_INET, SOCK_STREAM, 0);
+        fd_socket = socket(host_info->ai_family ,host_info->ai_socktype, host_info->ai_protocol);
         if (fd_socket == -1) {
             perror("socket failed");
             return false;
@@ -99,20 +109,15 @@ class Socket{
             return false;
         }
 
-        // if(!event.create_fd_epoll())
-        //     return false;
-        
-        // if(!event.Add_new_event(fd_socket))
-        //     return false;
-
         std::cout << "socket created successfully\n" <<std::endl;
         return true;
     }
 
     bool   bind_Socket(){
            
-        if (bind(fd_socket, (struct sockaddr *)&host_addr, host_addrlen) < 0) {
+        if (bind(fd_socket, host_info->ai_addr, host_info->ai_addrlen) < 0) {
             perror("bind failed");
+            close(fd_socket);
             return false;
         }
         std::cout << "socket successfully bound to address\n" << std::endl;

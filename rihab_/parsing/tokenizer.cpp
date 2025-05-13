@@ -76,6 +76,7 @@ bool location::validParameter(Tokenizer& tokenizer) {
 
             infos.insert(std::make_pair(key, newValues));//insert 
         }
+        
         tokenizer.advance(); 
     }
     

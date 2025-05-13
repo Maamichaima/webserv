@@ -140,7 +140,7 @@ class ServerManager{
             it = std::find(fds.begin(),fds.end(),currentFd);
             if(it != fds.end()){ // it can be more than one socket in the server // 
                 Server *server = get_serverById(*it);
-                int client_fd = accept(server->getSocketFd(),(struct sockaddr *)&(server->getSocket().host_addr),(socklen_t *)&server->getSocket().host_addrlen);
+                int client_fd = accept(server->getSocketFd(),(server->getSocket().host_info->ai_addr),&server->getSocket().host_info->ai_addrlen);
                 if (client_fd < 0) {
                     if (errno != EAGAIN && errno != EWOULDBLOCK) {
                         std::cerr << "accept failed" << std::endl;
@@ -178,7 +178,7 @@ class ServerManager{
                             break;
                         }
                     }
-
+                        
                     if (closeConnection) {
                         close(currentFd);
                     }
