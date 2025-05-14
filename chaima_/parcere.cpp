@@ -49,7 +49,7 @@ int parcere::parce(client &client)
 		else if(pars_startligne(start_line))
 		{
 			// std::cout << "hada 9beel ->" << client.buffer << "\n";
-			std::cout << start_line << " start line valide \n";
+			// std::cout << start_line << " start line valide \n";
 			this->setDateToStruct(client.data_rq, start_line, client.flag);
 			client.flag = 1;//hezi data dyaalek bach tmshiha
 			client.buffer.erase(0, start_line.size());
@@ -69,7 +69,7 @@ int parcere::parce(client &client)
 			// std::cout << "header ==" << header << "==\n";
 			if(parce_header(header))
 			{
-				std::cout << header << "header valide \n";
+				// std::cout << header << "header valide \n";
 				// client.flag = 2;
 				this->setDateToStruct(client.data_rq, header, client.flag);
 				client.buffer.erase(0, header.size());
@@ -143,7 +143,9 @@ int parcere::parce(client &client)
 			}
 			else
 			{
-				exit (0);
+				// client.flag = 3;
+				client.printClient();
+				// exit (0);
 			}
 		}
 		
@@ -154,6 +156,11 @@ int parcere::parce(client &client)
 		exit (0);
 	}
 	return 1;
+
+
+
+
+
 }
 
 void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int flag)

@@ -11,9 +11,8 @@ int main(int argc,char **argv){
     
     manager.printAllServerInfo();
     manager.initializeAll();
-    manager.getAllSocketFds();
-    std::vector<Server> server = manager.get_server();
-
+    
+   
 
     while(1)
     {
