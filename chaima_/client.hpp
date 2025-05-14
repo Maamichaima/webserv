@@ -32,14 +32,11 @@ class client
         parcere parc;
         client();
         client(std::string buff, int fd);
-        client(const client &obj)
-        {
+        // client(const client &obj)
+        // {
 
-        }
-        client &operator=(const client &obj)
-        {
-
-        }
+        // }
+        client &operator=(const client &obj);
         ~client();
         // void parce_buffer();
         void parceBody();
