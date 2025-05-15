@@ -100,7 +100,7 @@ void ServerManager::printAllServerInfo() {
 
 bool ServerManager::Add_new_event(int fd_socket){
     struct epoll_event event;
-    event.events = EPOLLIN | EPOLLET;
+    event.events = EPOLLIN | EPOLLET | EPOLLOUT;
     event.data.fd = fd_socket;
     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd_socket, &event) < 0) {
         perror("epoll_ctl failed for client socket");
@@ -117,12 +117,13 @@ void    ServerManager::handle_cnx()
     char buffer[BUFFER_SIZE];
     std::vector<int> fds = getAllSocketFds();
     std::vector<int>::iterator it;
-    int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,-1);
+    int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
     if(numEvents < 0){
         std::cerr <<"epoll_wait failed" << std::endl; 
     }
 
 for(int i = 0; i < numEvents; i++){
+    
     int currentFd = events[i].data.fd; 
     it = std::find(fds.begin(),fds.end(),currentFd);
     if(it != fds.end()){ // it can be more than one socket in the server // 
@@ -143,7 +144,7 @@ for(int i = 0; i < numEvents; i++){
             continue;
            
     }
-    else if(events[i].events & EPOLLIN){
+    else if(events[i].events & EPOLLIN || events[i].events & EPOLLOUT){
 
         bool closeConnection = false;
             
@@ -172,11 +173,13 @@ for(int i = 0; i < numEvents; i++){
                 //     closeConnection = true;
                 //     break;
                 // }
+                // if(clients[currentFd].flag == 3)
+                    //ghadir khdemteek 
             }
                 
-            if (closeConnection) {
-                close(currentFd);
-            }
+            // if (closeConnection) {
+            //     close(currentFd);
+            // }
     }
 }
 }

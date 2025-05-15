@@ -43,6 +43,7 @@ class client
         void parceBody();
         void printClient();
         void setBuffer(std::string str);
+        int checkRequestProgress();
 };
 
 std::string get_line(std::string str);

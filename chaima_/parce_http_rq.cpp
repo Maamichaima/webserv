@@ -72,7 +72,6 @@ int valid_n_vr(std::string str)
 	return 1;
 }
 
-
 std::deque<std::string> split(const std::string& str, char delimiter)
 {
 	std::deque<std::string> result;

@@ -33,7 +33,7 @@ std::string get_line_size(std::string str, int size)
 	std::string sub;
 
 	if(size > str.size())
-		return str;
+	return str;
 	sub = str.substr(0, size);
 	return sub;
 }
@@ -41,6 +41,7 @@ std::string get_line_size(std::string str, int size)
 int parcere::parce(client &client)
 {
 	// std::cout << client.flag << "\n";
+	// std::cout << "checking body.............\n";
 	if(client.flag == 0)
 	{
 	    std::string start_line = get_line(client.buffer);
@@ -85,8 +86,12 @@ int parcere::parce(client &client)
 		{
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
-			client.data_rq.size_body = atoi(client.data_rq.headers["Content-length"].c_str());
+			client.data_rq.size_body = atoi(client.data_rq.headers["Content-Length"].c_str());
 		}
+		// else if(header == "")
+		// {
+		// 	client.flag = 3;
+		// }
 	}
 	if(client.flag == 2)
 	{
@@ -137,24 +142,28 @@ int parcere::parce(client &client)
 			if(client.data_rq.size_body)
 			{
 				std::string body = get_line_size(client.buffer, client.data_rq.size_body);
+				// std::cout << body << "\n";
 				this->setDateToStruct(client.data_rq, body, client.flag);
 				client.data_rq.size_body -= body.size();
+				// std::cout << client.data_rq.size_body << "\n";
 				client.buffer.erase(0, body.size());
+				// exit (0);
 			}
 			else
 			{
-				// client.flag = 3;
-				client.printClient();
+				// std::cout << "hh\n";
+				client.flag = 3;
+				// client.printClient();
 				// exit (0);
 			}
 		}
 		
 	}
-	if(client.flag == 3)
-	{
-		client.printClient();
-		exit (0);
-	}
+	// if(client.flag == 3)
+	// {
+	// 	client.printClient();
+	// 	exit (0);
+	// }
 	return 1;
 
 
