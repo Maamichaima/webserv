@@ -55,10 +55,11 @@ bool    valide_ip_address(const std::string & ip)
         if (num < 0 || num > 255)
             return false;
     }
+
     return true;
 }
 
-bool check_listen( std::vector<std::string> values)
+bool check_listen( std::vector<std::string> values,Server &server)
 {
     if(values.empty())
         return false;
@@ -76,12 +77,18 @@ bool check_listen( std::vector<std::string> values)
             {   
                 if (!valide_ip_address(host))
                     return false;
+                server.set_IpAddress(host);
             }
             else
                 return false;
-            if (!validate_port(port))
+            if(!port.empty())
+            {
+                if (!validate_port(port))
+                    return false;
+                server.set_Port(port);
+            }
+            else
                 return false;
-
         }
         else
         {
@@ -98,11 +105,13 @@ bool check_listen( std::vector<std::string> values)
             {
                 if (!validate_port(value))
                     return false;
+                server.set_Port(value);
             }
             else
-                if (!valide_ip_address(value))
+            {    if (!valide_ip_address(value))
                     return false;
-
+                server.set_IpAddress(value);
+            }
         }
         ++it;
     }
@@ -158,14 +167,7 @@ bool    check_error_page(std::vector<std::string> values){
     
     return true;
 }
-bool    check_host(std::vector<std::string> values){
 
-    if (values.size() != 1)
-        return false;
-    if(!valide_ip_address(values[0]))
-        return false;
-    return true;
-}
 bool check_client_max_body_size(std::vector<std::string> values){
     if (values.size() != 1)
         return false;
@@ -193,17 +195,14 @@ bool check_client_max_body_size(std::vector<std::string> values){
 }
 
 
-bool    param_Syntaxe(std::string key, std::vector<std::string> values){ // it = params.begin()
+bool    param_Syntaxe(std::string key, std::vector<std::string> values,Server &server){ // it = params.begin()
     
 
     if(key =="listen"){
-        return (check_listen(values));
+        return (check_listen(values,server));
     }
     else if(key == "server_name" || key == "server_names" ){ //Setup the server_names or not.
         return(check_server_names(values));
-    }
-    else if(key == "host"){
-        return(check_host(values));
     }
     else if( key == "error_page")
     {

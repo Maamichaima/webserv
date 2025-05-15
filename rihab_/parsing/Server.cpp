@@ -4,11 +4,20 @@ int Server::index = 0;
 
 Server::Server() {
     index++;
+    ip_address = "127.0.0.1";
 }
     
 Server::~Server(){}
 
-void    Server::createLocation(Tokenizer& tokenizer) {
+void Server::set_IpAddress(std::string ip){
+    ip_address = ip;
+}
+
+void    Server::set_Port(std::string port){
+   this->port.push_back(port);
+}
+
+bool    Server::createLocation(Tokenizer& tokenizer) {
     std::map<std::string, std::vector<std::string> > locationParams;
     
     tokenizer.advance(); 
@@ -17,21 +26,22 @@ void    Server::createLocation(Tokenizer& tokenizer) {
     tokenizer.advance(); 
     
     location loc;
-    loc.validParameter( tokenizer);
+    if(!loc.validParameter( tokenizer))
+        return false;
     
     tokenizer.advance(); // Skip '}'
     
     // Create and store the location
     loc.path = path;
-    locations.push_back(loc);
+    locations[path] = loc;
     
-    return;
+    return true;
 }
 
 bool Server::createParam(Tokenizer& tokenizer) {
     std::string key = tokenizer.peek();
     std::map<std::string, std::vector<std::string> >::iterator it;
-    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key == "host") {
+    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" ) {
         tokenizer.advance();
         std::vector<std::string> newValues = peekValues(tokenizer);
         it = params.find(key);
@@ -43,7 +53,7 @@ bool Server::createParam(Tokenizer& tokenizer) {
 
             params.insert(std::make_pair(key, newValues));//insert 
         }
-        if (!param_Syntaxe(key,params[key]))
+        if (!param_Syntaxe(key,params[key],*this))
             return false;
 
         tokenizer.advance();
@@ -70,9 +80,12 @@ bool Server::createParam(Tokenizer& tokenizer) {
 bool Server::createServer(Tokenizer& tokenizer) {
     while (tokenizer.hasMore() && tokenizer.peek() != "}") {
         if (tokenizer.peek() == "location") {
-            createLocation(tokenizer);
+            if(!createLocation(tokenizer))
+                return false;
+
         } else {
-            createParam(tokenizer);
+            if(!createParam(tokenizer))
+                return false;
         }
     }
     if (!tokenizer.hasMore()) {
@@ -84,20 +97,14 @@ bool Server::createServer(Tokenizer& tokenizer) {
 
 
 std::string Server::getPort() {
-    std::map<std::string, std::vector<std::string> >::iterator it = params.find("listen");
-
-    if (it != params.end() && !it->second.empty())
-        return it->second[0];
-
+    if(!port.empty())
+        return(port[0]);
     return("8080");
 }
 
 std::string Server::getIpAddress(){
 
-    std::map<std::string, std::vector<std::string> >::iterator it = params.find("host");
-    if (it != params.end() && !it->second.empty())
-        return (it->second[0]);
-    return("127.0.0.1");
+    return(ip_address);
 }
 
 bool Server::initialize() {
@@ -128,13 +135,93 @@ std::map<std::string, std::vector<std::string> >& Server::getParameters()  {
     return params;
 }
 
-std::vector<location>& Server::getLocations()  {
-    return locations;
+location & Server::getLocations(std::string key)  {
+    return locations[key];
 }
 
 Socket & Server::getSocket(){
     return socket;
 }
+
+  
+  void Server::printLocations() {
+    std::cout << "Server Locations:" << std::endl;
+    
+    if (locations.empty()) {
+        std::cout << "  No locations defined." << std::endl;
+        return;
+    }
+    
+    for (std::map<std::string, location>::const_iterator it = locations.begin(); 
+         it != locations.end(); ++it) {
+        
+        std::cout << "Location key: " << it->first << std::endl;
+    
+        // Print infos map
+        std::cout << "  Infos:" << std::endl;
+        if (it->second.infos.empty()) {
+            std::cout << "    No infos defined." << std::endl;
+        } else {
+            for (std::map<std::string, std::vector<std::string> >::const_iterator infoIt = it->second.infos.begin();
+                 infoIt != it->second.infos.end(); ++infoIt) {
+                
+                std::cout << "    " << infoIt->first << ": ";
+                
+                // Print the vector of strings
+                std::cout << "[";
+                for (size_t i = 0; i < infoIt->second.size(); ++i) {
+                    if (i > 0) std::cout << ", ";
+                    std::cout << infoIt->second[i];
+                }
+                std::cout << "]" << std::endl;
+            }
+        }
+        std::cout << std::endl;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // int Server::acceptConnection(){
 //     Epoll_events cnx = socket.event;
