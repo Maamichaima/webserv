@@ -149,7 +149,7 @@ for(int i = 0; i < numEvents; i++){
         bool closeConnection = false;
             
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE - 1,0);
-            std::cout << buffer << "\n";
+            // std::cout << buffer << "\n";
            
             if (bytesRead < 0) {
                 
