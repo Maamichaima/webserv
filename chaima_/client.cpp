@@ -86,9 +86,9 @@ int client::checkRequestProgress()
 	std::map<std::string, std::string>::iterator it = this->data_rq.headers.find("Transfer-Encoding");
 	std::map<std::string, std::string>::iterator it1 = this->data_rq.headers.find("Content-Length");
     
-	std::cout << this->flag << "\n";//== 2;
-	std::cout << (it == this->data_rq.headers.end()) << "\n";//== 2;
-	std::cout << (it1 == this->data_rq.headers.end() )<< "\n";//== 2;
+	// std::cout << this->flag << "\n";//== 2;
+	// std::cout << (it == this->data_rq.headers.end()) << "\n";//== 2;
+	// std::cout << (it1 == this->data_rq.headers.end() )<< "\n";//== 2;
     if(this->flag == 3)
         return 1;
     else if(this->flag == 2 && (it == this->data_rq.headers.end() && it1 == this->data_rq.headers.end()))
@@ -101,5 +101,5 @@ void client::parseRequest()
 	parc.parcHttpCall(*this);
     if(checkRequestProgress())
 	    this->printClient();
-	this->printClient();
+	    // this->printClient();
 }

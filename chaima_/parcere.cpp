@@ -42,6 +42,8 @@ int parcere::parce(client &client)
 {
 	// std::cout << client.flag << "\n";
 	// std::cout << "checking body.............\n";
+	// std::cout << client.buffer << "\n";
+
 	if(client.flag == 0)
 	{
 	    std::string start_line = get_line(client.buffer);
@@ -67,11 +69,10 @@ int parcere::parce(client &client)
 		std::string header = get_line(client.buffer);
 		while (header != "\r\n" && header.find("\r\n") != std::string::npos)
 		{
-			// std::cout << "header ==" << header << "==\n";
 			if(parce_header(header))
 			{
+				// std::cout << "header ==" << header << "==\n";
 				// std::cout << header << "header valide \n";
-				// client.flag = 2;
 				this->setDateToStruct(client.data_rq, header, client.flag);
 				client.buffer.erase(0, header.size());
 			}
@@ -84,14 +85,12 @@ int parcere::parce(client &client)
 		}
 		if(header == "\r\n")
 		{
+			std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("Content-Length");
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
-			client.data_rq.size_body = atoi(client.data_rq.headers["Content-Length"].c_str());
+			if(it != client.data_rq.headers.end())
+				client.data_rq.size_body = atoi(client.data_rq.headers["Content-Length"].c_str());
 		}
-		// else if(header == "")
-		// {
-		// 	client.flag = 3;
-		// }
 	}
 	if(client.flag == 2)
 	{
@@ -105,6 +104,7 @@ int parcere::parce(client &client)
 				// std ::cout <<  "hada -> " << client.data_rq.size_chunked << " " << body << "\n";
 				if(isMatch("[0123456789abcdef]+\r\n", body))
 				{
+					std::cout << body << "\n";
 					client.data_rq.flag_chunked = client.data_rq.size_chunked = std::stoi(body, 0, 16);
 					this->setDateToStruct(client.data_rq, body, client.flag);
 					client.buffer.erase(0, body.size());
@@ -146,27 +146,13 @@ int parcere::parce(client &client)
 				// std::cout << body << "\n";
 				this->setDateToStruct(client.data_rq, body, client.flag);
 				client.data_rq.size_body -= body.size();
-				// std::cout << client.data_rq.size_body << "\n";
 				client.buffer.erase(0, body.size());
 				if(client.data_rq.size_body == 0)
 					client.flag = 3;
-				// exit (0);
 			}
-			// else
-			// {
-			// 	// std::cout << "hh\n";
-			// 	client.flag = 3;
-			// 	// client.printClient();
-			// 	// exit (0);
-			// }
 		}
 		
 	}
-	// if(client.flag == 3)
-	// {
-	// 	client.printClient();
-	// 	exit (0);
-	// }
 	return 1;
 }
 
