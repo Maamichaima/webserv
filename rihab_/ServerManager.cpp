@@ -76,21 +76,12 @@ void ServerManager::printAllServerInfo() {
         if (parameters.empty()) {
             std::cout << "    None" << std::endl;
         } else{
+            std::cout << "    Port " << server.getPort()<< std::endl;
+            std::cout << "    IP_address "<< server.getIpAddress() << std::endl;
             print_map(parameters);
         }
-
-        std::vector<location> locations = server.getLocations();
-        std::cout << "  Locations:" << std::endl;
-        if(locations.empty()){
-            std::cout << "    None" << std::endl;
-        }
-        else {
-            for (size_t j = 0; j < locations.size(); j++) {
-               std::cout << "location #" << j << "  ==>path " << locations[j].path << std::endl;
-               print_map(locations[j].infos);
-            }
+        server.printLocations();
         
-        }
         std::cout << std::endl;
         
     }

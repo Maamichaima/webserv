@@ -28,31 +28,36 @@ class Server{
     private:
     
         static int index ;
+        std::string ip_address;
+        std::vector<std::string> port;
         std::map<std::string,std::vector<std::string> > params;
-        std::vector<location> locations ;
+        std::map<std::string,location> locations ;
         Socket socket;
         
         
-        public:
+    public:
         Server();
         bool    createServer(Tokenizer& tokenizer);
         bool    createParam(Tokenizer& tokenizer);
-        void    createLocation(Tokenizer& tokenizer);
+        bool    createLocation(Tokenizer& tokenizer);
         std::string getPort();
+        void set_Port(std::string );
+        void set_IpAddress(std::string);
         std::string getIpAddress();
         size_t getMaxBodySize();
         std::vector<std::string> getServerNames();
         std::string get_error_page();
         //const location* getLocation(const std::string& uri);
-        std::vector<location>& getLocations() ;
+        location & getLocations(std::string key ) ;
         std::map<std::string, std::vector<std::string> >& getParameters() ;
         bool initialize();
         Socket & getSocket();
         int getSocketFd();
         int acceptConnection();
+        void printLocations();
         ~Server();
     };
 
     bool   parceConfigFile(int argc,char **argv,ServerManager &manager);
-    bool    param_Syntaxe(std::string key, std::vector<std::string> values);
+    bool    param_Syntaxe(std::string key, std::vector<std::string> values,Server &server);
 #endif

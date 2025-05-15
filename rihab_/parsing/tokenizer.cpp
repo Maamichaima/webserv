@@ -132,12 +132,13 @@ std::vector<std::string> splitServerConfig(const std::string& input) {
 
 bool    Tokenizer::parse(ServerManager &manager) {
     while (hasMore()) {
-        if (peek() == "server") { // make sure it's the first element in the server or it's preceded by }
+        if (peek() == "server" ) { // make sure it's the first element in the server or it's preceded by }
             advance();
             if (peek() == "{") {
                 advance();
                 Server server;
-                server.createServer(*this);
+                if (!server.createServer(*this))
+                    return false;
                 manager.addServer(server);
             }
         } else {
@@ -173,11 +174,11 @@ bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
         }
         tokenizer.tokenizeString(line);
     }
-    std::vector<std::string>::iterator it;
     
     tokenizer.initialize();
    
-    tokenizer.parse(manager);
+    if(!tokenizer.parse(manager))
+        return false;
  
     
     return (true);
