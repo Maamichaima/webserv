@@ -1,7 +1,7 @@
 
 CXX = c++
 
-# CXXFLAGS = -g -fsanitize=address  
+# CXXFLAGS = -g -std=c++98 #-fsanitize=address  
 # -Wall -Wextra -Werror -std=c++98 
 
 CPPFILES =  rihab_/main.cpp rihab_/Socket.cpp rihab_/ServerManager.cpp rihab_/parsing/Server.cpp rihab_/parsing/tokenizer.cpp \

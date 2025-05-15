@@ -149,7 +149,7 @@ for(int i = 0; i < numEvents; i++){
         bool closeConnection = false;
             
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE - 1,0);
-            
+            std::cout << buffer << "\n";
            
             if (bytesRead < 0) {
                 
@@ -166,6 +166,7 @@ for(int i = 0; i < numEvents; i++){
 
                 buffer[bytesRead] = '\0';
                 clients[currentFd].setBuffer(buffer);
+                clients[currentFd].parseRequest();
                 // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
                 std::memset(buffer, 0, BUFFER_SIZE);
                 // if (write(currentFd,  "buffer received \n", 18) < 0) {

@@ -95,6 +95,7 @@ int parcere::parce(client &client)
 	}
 	if(client.flag == 2)
 	{
+
 		std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("Transfer-Encoding");
 		if(it != client.data_rq.headers.end() && it->second == "chunked")
 		{
@@ -147,15 +148,17 @@ int parcere::parce(client &client)
 				client.data_rq.size_body -= body.size();
 				// std::cout << client.data_rq.size_body << "\n";
 				client.buffer.erase(0, body.size());
+				if(client.data_rq.size_body == 0)
+					client.flag = 3;
 				// exit (0);
 			}
-			else
-			{
-				// std::cout << "hh\n";
-				client.flag = 3;
-				// client.printClient();
-				// exit (0);
-			}
+			// else
+			// {
+			// 	// std::cout << "hh\n";
+			// 	client.flag = 3;
+			// 	// client.printClient();
+			// 	// exit (0);
+			// }
 		}
 		
 	}
@@ -165,11 +168,6 @@ int parcere::parce(client &client)
 	// 	exit (0);
 	// }
 	return 1;
-
-
-
-
-
 }
 
 void parcere::setDateToStruct(data_request &data_rq, std::string &buffer, int flag)
