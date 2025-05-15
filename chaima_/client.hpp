@@ -44,6 +44,7 @@ class client
         void printClient();
         void setBuffer(std::string str);
         int checkRequestProgress();
+        void parseRequest();
 };
 
 std::string get_line(std::string str);
