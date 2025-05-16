@@ -16,7 +16,7 @@ int main(int argc,char **argv){
 
     while(1)
     {
-        // std::cout << "hh\n";
+        
         manager.handle_cnx();
           
     }

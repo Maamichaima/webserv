@@ -4,18 +4,18 @@
 #include <utility>
 
 bool    Tokenizer::tokenizeString(std::string line)
-    {
-        std::stringstream s(line);
-        std::string word;
-        
-        while(s >> word) {
-            std::vector<std::string> parts = splitServerConfig(word);
-            tokens.insert(tokens.end(), parts.begin(), parts.end());
-        }
-        
-        return true;
-        
+{
+    std::stringstream s(line);
+    std::string word;
+    
+    while(s >> word) {
+        std::vector<std::string> parts = splitServerConfig(word);
+        tokens.insert(tokens.end(), parts.begin(), parts.end());
     }
+    
+    return true;
+    
+}
 
 
 void Tokenizer::initialize() {
@@ -55,16 +55,16 @@ void print_map(std::map<std::string, std::vector<std::string> > params) {
     }
 }
 
-// check syntax
-
-// listen 
-
 bool location::validParameter(Tokenizer& tokenizer) {
     std::string key;
     std::map<std::string, std::vector<std::string> >::iterator it;
     while (tokenizer.hasMore() && tokenizer.peek() != "}") {
         key = tokenizer.peek();
-        // check key 
+        if(!check_locations_key(key))
+        {
+            std::cerr << "location key invaid" << std::endl;
+            return false;
+        }
         tokenizer.advance();
         std::vector<std::string> newValues = peekValues(tokenizer);
         it = infos.find(key);
