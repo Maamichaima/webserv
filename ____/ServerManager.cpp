@@ -104,7 +104,6 @@ bool ServerManager::Add_new_event(int fd_socket){
 
 void    ServerManager::handle_cnx()
 {
-
     char buffer[BUFFER_SIZE];
     std::vector<int> fds = getAllSocketFds();
     std::vector<int>::iterator it;

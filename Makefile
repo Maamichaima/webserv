@@ -4,22 +4,29 @@ CXX = c++
 # CXXFLAGS = -g -std=c++98 #-fsanitize=address  
 # -Wall -Wextra -Werror -std=c++98 
 
-CPPFILES =  rihab_/main.cpp rihab_/Socket.cpp rihab_/ServerManager.cpp rihab_/parsing/Server.cpp rihab_/parsing/tokenizer.cpp \
-rihab_/parsing/check_syntaxe.cpp chaima_/parcere.cpp chaima_/parce_http_rq.cpp chaima_/client.cpp chaima_/implRegEX.cpp \
- chaima_/RegEx_utils.cpp chaima_/RegEx.cpp
+CPPFILES =  main.cpp srcs/Socket.cpp srcs/ServerManager.cpp srcs/Server.cpp srcs/parsing/tokenizer.cpp \
+srcs/parsing/check_syntaxe.cpp srcs/parsing/parser.cpp srcs/parsing/parce_http_rq.cpp srcs/client.cpp RegEx/implRegEX.cpp \
+RegEx/RegEx.cpp
 OFILES = ${CPPFILES:.cpp=.o}
 
 EXECUTABLE = Server
 
 all : $(EXECUTABLE)
 
-$(EXECUTABLE) : $(OFILES)
-				$(CXX) $(OFILES)  -o $(EXECUTABLE) $(CXXFLAGS)
+$(EXECUTABLE): $(OFILES)
+	@$(CXX) $(OFILES) -o $(EXECUTABLE) $(CXXFLAGS)
+	@echo "✅ \033[1;32mCompilation successful!\033[0m "
 
-clean :
-			rm -rf  ${OFILES}
+%.o: %.cpp
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-fclean : clean
-			rm  -rf ${EXECUTABLE}
+clean:
+	@rm -rf ${OFILES}
+	@echo "🧹 \033[1;33mObject files removed.\033[0m"
+
+fclean: clean
+	@rm -rf ${EXECUTABLE}
+	@echo "🗑️ \033[1;31mExecutable removed.\033[0m​"
+
 	
 re: fclean all
