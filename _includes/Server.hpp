@@ -16,24 +16,21 @@ struct location{
     std::map<std::string, std::vector<std::string> > infos;
     bool validParameter(Tokenizer& tokenizer);
     bool check_locations_key(std::string key);
-    std::string getPath();
+    std::string getPath() const {return path;}
     std::vector<std::string>* getInfos(std::string key);
 };
 
 
 class Server{
 
-    private:
-    
+    public:
+
         static int index ;
         std::string ip_address;
         std::vector<std::string> port;
         std::map<std::string,std::vector<std::string> > params;
         std::map<std::string,location> locations ;
         Socket socket;
-        
-        
-    public:
         Server();
         bool    createServer(Tokenizer& tokenizer);
         bool    createParam(Tokenizer& tokenizer);
