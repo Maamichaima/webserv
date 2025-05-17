@@ -15,6 +15,7 @@ class parser
         parser &operator=(const parser &obj);
         ~parser();
         int parse(client &client);
+        int check_http_body_rules(client client);
         void setDateToStruct(data_request &data_rq, std::string &buffer, int flag);
 };
 int parse_header(std::string str);

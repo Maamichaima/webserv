@@ -6,8 +6,6 @@ client::client()
 	this->data_rq.size_body = 0;
 	this->data_rq.size_chunked = -1;
 	this->data_rq.flag_chunked = 0;
-	// std::cout << data_rq.size_chunked << "\n";
-	// exit (0);
 }
 
 client::client(std::string buff, int fd) : parc(parser())
@@ -48,9 +46,6 @@ void client::parceBody()
 {
 	std::map<std::string,
 		std::string>::iterator it = this->data_rq.headers.find("Transfer-Encoding");
-	// if(it != this->data_rq.headers.end())
-	// checkBodyEncoding(this->data_rq.body.str());
-	// else
 }
 
 void client::printClient()
@@ -60,7 +55,6 @@ void client::printClient()
 	std::map<std::string, std::string>::iterator it;
 	for (it = this->data_rq.headers.begin(); it != this->data_rq.headers.end(); it++)
 	{
-		// std::cout << "hh\n";
 		std::cout << "key --> " << it->first << " value --> " << it->second << std::endl;
 	}
 	std::cout << "this is our body " << data_rq.body << "\n";
@@ -68,17 +62,7 @@ void client::printClient()
 
 void client::setBuffer(std::string str)
 {
-	// std::cout <<"hada buffer l9dim "<<  this->buffer << "---- hada li zdna lih " << str << "\n";
 	this->buffer.append(str);
-	// std::cout << "\033[31m" << "haniii!" << "\033[0m" << std::endl;
-	// if(this->buffer.find("\r\n") != std::string::npos)
-	// if(this->flag != 3)
-	// parc.parcHttpCall(*this);
-    // if(checkRequestProgress())
-	//     this->printClient();
-
-	// if(str.size() == 0)
-	//     this->flag = -1;
 }
 
 int client::checkRequestProgress() 
@@ -101,8 +85,7 @@ void client::parseRequest()
 	parc.parcHttpCall(*this);
     if(checkRequestProgress())
 	{
+		// parc.check_http_body_rules(*this);
 	    this->printClient();
-			
 	}
-	    // this->printClient();
 }
