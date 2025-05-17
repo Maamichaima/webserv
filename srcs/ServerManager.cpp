@@ -1,5 +1,5 @@
 #include "../_includes/ServerManager.hpp"
-#include "../_includes/Server.hpp"
+
 size_t ServerManager::numServer = 0;
 
 
@@ -58,21 +58,18 @@ Server* ServerManager::findServerByFd(int fd) {
     return NULL;
 }
 void ServerManager::printAllServerInfo() {
+
     if(servers.empty()){
         std::cout << "No servers configured." << std::endl;
         return;
     }
-
     std::cout << "----- SERVER INFORMATION -----" << std::endl;
-
     for (size_t i = 0; i < servers.size(); i++) {
 
         Server& server = servers[i];
         std::cout << "Server #" << (i + 1) << ":" << std::endl;
-
         std::map<std::string, std::vector<std::string> > parameters = server.getParameters();
         std::cout <<  "  Parameters:" << std::endl;
-
         if (parameters.empty()) {
             std::cout << "    None" << std::endl;
         } else{
@@ -80,12 +77,10 @@ void ServerManager::printAllServerInfo() {
             std::cout << "    IP_address "<< server.getIpAddress() << std::endl;
             print_map(parameters);
         }
-        server.printLocations();
-        
+        server.printLocations();  
         std::cout << std::endl;
         
     }
-
     std::cout << "----- END SERVER INFORMATION -----" << std::endl;
 }
 
@@ -113,7 +108,6 @@ void    ServerManager::handle_cnx()
     }
     for(int i = 0; i < numEvents; i++){
         
-        std::cout << "hh\n";
         int currentFd = events[i].data.fd; 
         it = std::find(fds.begin(),fds.end(),currentFd);
         if(it != fds.end()){ // it can be more than one socket in the server // 
@@ -122,29 +116,27 @@ void    ServerManager::handle_cnx()
             int client_fd = accept(server->getSocketFd(),(server->getSocket().host_info->ai_addr),&server->getSocket().host_info->ai_addrlen);
             std::cout << client_fd << "\n";
 
-        if (client_fd < 0) {
-            if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                std::cerr << "accept failed" << std::endl;
+            if (client_fd < 0) {
+                if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                    std::cerr << "accept failed" << std::endl;
+                }
+                continue;
             }
-            continue;
-        }
-        clients[client_fd];
-        clients[client_fd].server_fd = server->getSocketFd();
-        std::cout << "connection accepted from client " <<std::endl;
-        if(!Add_new_event(client_fd))
-            continue;
+            clients[client_fd];
+            clients[client_fd].server_fd = server->getSocketFd();
+            std::cout << "connection accepted from client " <<std::endl;
+            if(!Add_new_event(client_fd))
+                continue;
            
-    }
-    else if(events[i].events & EPOLLIN || events[i].events & EPOLLOUT){
+        }
+        else if(events[i].events & EPOLLIN){
 
-        bool closeConnection = false;
-            
+            bool closeConnection = false;
+                
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE - 1,0);
             // std::cout << buffer << "\n";
-           
+        
             if (bytesRead < 0) {
-                
-                
                     perror("read failed");
                     closeConnection = true;
             }
@@ -156,8 +148,8 @@ void    ServerManager::handle_cnx()
             else{
 
                 buffer[bytesRead] = '\0';
+                // std::cout << buffer << std::endl;
                 clients[currentFd].setBuffer(buffer);
-                clients[currentFd].parseRequest();
                 // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
                 std::memset(buffer, 0, BUFFER_SIZE);
                 // if (write(currentFd,  "buffer received \n", 18) < 0) {
@@ -172,6 +164,14 @@ void    ServerManager::handle_cnx()
             // if (closeConnection) {
             //     close(currentFd);
             // }
+        }
+        if (!clients[currentFd].checkRequestProgress())
+            clients[currentFd].parseRequest();
+        else if (events[i].events & EPOLLOUT)
+        {
+            //send responde
+            std::cout << "sending........\n";
+        }
+
     }
-}
 }

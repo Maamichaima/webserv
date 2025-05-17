@@ -4,7 +4,8 @@
 
 bool   validate_port(const std::string& port){
 
-    for(char c : port){
+    for(int i  ; i < port.size() ;i++){
+        char c = port[i];
         if(!isdigit(c))
             return false;
     }
@@ -42,12 +43,14 @@ bool    valide_ip_address(const std::string & ip)
     if(octets.size() != 4)
         return false;
 
-    for(const std::string octet : octets)
+    for(int i  ; i < octets.size() ;i++)
     {
+        const std::string octet = octets[i];
         if(octet.empty())
             return false;
-        for (char c : octet)
+        for (int i  ; i < octet.size() ;i++)
         {
+            char c = octet[i];
             if (!isdigit(c))
                 return false;
         }
@@ -93,8 +96,9 @@ bool check_listen( std::vector<std::string> values,Server &server)
         else
         {
             bool is_port = true; 
-            for (char c : value)
+            for (int i  ; i < value.size() ;i++)
             {
+                char c = value[i];
                 if (!isdigit(c))
                 {
                     is_port = false;
@@ -123,8 +127,9 @@ bool check_server_names(std::vector<std::string> values)
     if (values.empty())
         return false;
         
-    for (std::string name : values)
+    for (int i  ; i < values.size() ;i++)
     {
+        std::string name = values[i];
         if (name.empty())
             return false;
     }
@@ -144,8 +149,9 @@ bool    check_error_page(std::vector<std::string> values){
         {
             const std::string& code = values[i];
             
-            for (char c : code)
+            for (int i  ; i < code.size() ;i++)  
             {
+                char c = code[i];
                 if (!isdigit(c))
                     return false;
             }
