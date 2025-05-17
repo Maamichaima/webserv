@@ -117,11 +117,9 @@ int check_version(std::string str)
 
 int parse_startligne(std::string str)
 {
-	// if(str.find("\r\n") == std::string::npos)
-	// 	return 2;
 	if(!isMatch("[A-Z]+ /.* HTTP/\\d+\\.\\d+\r\n", str))
 	{
-		std::cout << "hh\n";
+		// std::cout << "hh\n";
 		return 0;
 	}
 	return 1;
@@ -129,8 +127,6 @@ int parse_startligne(std::string str)
 
 int parse_header(std::string str)
 {
-	// if(str.find("\r\n") == std::string::npos)
-	// 	return 2;
 	if(!isMatch("\\S+: .+\r\n", str))
 		return 0;
 	return 1;
