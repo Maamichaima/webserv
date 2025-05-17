@@ -1,4 +1,5 @@
 #include "../_includes/ServerManager.hpp"
+# include "methods/GetMethod.hpp"
 
 size_t ServerManager::numServer = 0;
 
@@ -84,9 +85,27 @@ void ServerManager::printAllServerInfo() {
     std::cout << "----- END SERVER INFORMATION -----" << std::endl;
 }
 
+// khass rihab txouf fin dirha
+void printLocations(const Server& server) {
+    for (std::map<std::string, location>::const_iterator it = server.locations.begin(); it != server.locations.end(); ++it) {
+        std::cout << "Location path: " << it->second.getPath() << std::endl;
+
+        const std::map<std::string, std::vector<std::string> >& infos = it->second.infos;
+        for (std::map<std::string, std::vector<std::string> >::const_iterator info_it = infos.begin(); info_it != infos.end(); ++info_it) {
+            std::cout << "  " << info_it->first << " : ";
+            for (size_t i = 0; i < info_it->second.size(); ++i) {
+                std::cout << info_it->second[i];
+                if (i < info_it->second.size() - 1)
+                    std::cout << ", ";
+            }
+            std::cout << std::endl;
+        }
+    }
+}
+
 bool ServerManager::Add_new_event(int fd_socket){
     struct epoll_event event;
-    event.events = EPOLLIN | EPOLLET | EPOLLOUT;
+    event.events = EPOLLIN | EPOLLOUT;
     event.data.fd = fd_socket;
     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd_socket, &event) < 0) {
         perror("epoll_ctl failed for client socket");
@@ -150,15 +169,18 @@ void    ServerManager::handle_cnx()
                 buffer[bytesRead] = '\0';
                 // std::cout << buffer << std::endl;
                 clients[currentFd].setBuffer(buffer);
+                // this->servers[0].locations["/api"]; ??? !!!
                 // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
                 std::memset(buffer, 0, BUFFER_SIZE);
+                // string responce = handleGetRequest(clients[currentFd].data_rq, "root");
+                
                 // if (write(currentFd,  "buffer received \n", 18) < 0) {
                 //     perror("write failed");
                 //     closeConnection = true;
                 //     break;
                 // }
                 // if(clients[currentFd].flag == 3)
-                    //ghadir khdemteek 
+                    //ghadir khdemteek  GET / gerreg
             }
                 
             // if (closeConnection) {
@@ -170,8 +192,19 @@ void    ServerManager::handle_cnx()
         else if (events[i].events & EPOLLOUT)
         {
             //send responde
-            std::cout << "sending........\n";
+            // std::cout << "sending........\n";
+            // location* loc = getClosestLocation(servers[0], "/");
+            // cout << "methoddddddddddddddd : " << clients[currentFd].data_rq.method << endl;
+            // if (loc) {
+            //     std::cout << "Best location path: " << loc->getPath() << std::endl;
+            //     std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl;
+            //     std::string response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
+            //     cout << response << endl;
+            // }
+            send(currentFd,"salam cv bikhir", 15, 0);
         }
 
     }
 }
+
+// GET /tmp/index.html HTTP
