@@ -1,5 +1,6 @@
 #include "../../_includes/client.hpp"
 #include "../../_includes/parser.hpp"
+// #include "parser.hpp"
 parser::parser()
 {
 }
@@ -40,10 +41,6 @@ std::string get_line_size(std::string str, int size)
 
 int parser::parse(client &client)
 {
-	// std::cout << client.flag << "\n";
-	// std::cout << "checking body.............\n";
-	// std::cout << client.buffer << "\n";
-
 	if(client.flag == 0)
 	{
 	    std::string start_line = get_line(client.buffer);
@@ -51,12 +48,9 @@ int parser::parse(client &client)
 			return 2;
 		else if(parse_startligne(start_line))
 		{
-			// std::cout << "hada 9beel ->" << client.buffer << "\n";
-			// std::cout << start_line << " start line valide \n";
 			this->setDateToStruct(client.data_rq, start_line, client.flag);
 			client.flag = 1;//hezi data dyaalek bach tmshiha
 			client.buffer.erase(0, start_line.size());
-			// std::cout << "hada b3ed ->" << client.buffer << "\n";
 		}
 		else
 		{
@@ -71,8 +65,6 @@ int parser::parse(client &client)
 		{
 			if(parse_header(header))
 			{
-				// std::cout << "header ==" << header << "==\n";
-				// std::cout << header << "header valide \n";
 				this->setDateToStruct(client.data_rq, header, client.flag);
 				client.buffer.erase(0, header.size());
 			}
@@ -101,7 +93,6 @@ int parser::parse(client &client)
 			if(client.data_rq.size_chunked == -1)
 			{
 				std::string body = get_line(client.buffer);
-				// std ::cout <<  "hada -> " << client.data_rq.size_chunked << " " << body << "\n";
 				if(isMatch("[0123456789abcdef]+\r\n", body))
 				{
 					std::cout << body << "\n";
@@ -115,8 +106,6 @@ int parser::parse(client &client)
 			else if(client.data_rq.size_chunked > 0)
 			{
 				std::string body = get_line_size(client.buffer, client.data_rq.size_chunked);
-				// std ::cout <<  "hada -> " << client.data_rq.size_chunked << " " << body << "\n";
-				// std::string body_ = get_line(client.buffer);
 				client.data_rq.size_chunked -= body.size();
 				this->setDateToStruct(client.data_rq, body, client.flag);
 				client.buffer.erase(0, body.size());
@@ -124,7 +113,6 @@ int parser::parse(client &client)
 			else if(client.data_rq.size_chunked == 0)
 			{
 				std::string body = get_line(client.buffer);
-				// std ::cout <<  "hada -> " << client.data_rq.size_chunked << " " << body << "\n";
 				if(body == "\r\n")
 				{
 					client.data_rq.size_chunked = -1;
@@ -136,14 +124,12 @@ int parser::parse(client &client)
 				else
 					throw std::runtime_error("Body is larger than Content-Length");
 			}
-			// std::cout << " body valid \n";
 		}
 		else 
 		{
 			if(client.data_rq.size_body)
 			{
 				std::string body = get_line_size(client.buffer, client.data_rq.size_body);
-				// std::cout << body << "\n";
 				this->setDateToStruct(client.data_rq, body, client.flag);
 				client.data_rq.size_body -= body.size();
 				client.buffer.erase(0, body.size());
@@ -156,9 +142,33 @@ int parser::parse(client &client)
 	return 1;
 }
 
+int parser::check_http_body_rules(client client)
+{
+	if(client.data_rq.method != "GET" || client.data_rq.method != "POST" || client.data_rq.method != "DELET")
+		return 0;
+	
+	std::map<std::string, std::string>::iterator it_cLenght = client.data_rq.headers.find("Content-Length");
+	std::map<std::string, std::string>::iterator it_cEncoding = client.data_rq.headers.find("Transfer-Encoding");
+	std::map<std::string, std::string>::iterator it_Host = client.data_rq.headers.find("Host");
+	if(it_Host == client.data_rq.headers.end())
+		return 0;
+	if(client.data_rq.method == "GET")
+	{
+		// if()
+	}
+	else if(client.data_rq.method == "POST")
+	{
+		if(it_cEncoding == client.data_rq.headers.end() && it_cLenght == client.data_rq.headers.end())
+			return 0;//no boody??
+	}
+	else
+	{
+	}
+	return 1;
+}
+
 void parser::setDateToStruct(data_request &data_rq, std::string &buffer, int flag)
 {
-    // std::cout << "buffer -> " << buffer << "\n";
     if(flag == 0)
     {
         std::string str = get_line(buffer);
