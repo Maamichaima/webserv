@@ -129,7 +129,7 @@ void    ServerManager::handle_cnx()
                 continue;
            
         }
-        else if(events[i].events & EPOLLIN || events[i].events & EPOLLOUT){
+        else if(events[i].events & EPOLLIN){
 
             bool closeConnection = false;
                 
@@ -148,8 +148,8 @@ void    ServerManager::handle_cnx()
             else{
 
                 buffer[bytesRead] = '\0';
+                // std::cout << buffer << std::endl;
                 clients[currentFd].setBuffer(buffer);
-                clients[currentFd].parseRequest();
                 // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
                 std::memset(buffer, 0, BUFFER_SIZE);
                 // if (write(currentFd,  "buffer received \n", 18) < 0) {
@@ -165,5 +165,13 @@ void    ServerManager::handle_cnx()
             //     close(currentFd);
             // }
         }
+        if (!clients[currentFd].checkRequestProgress())
+            clients[currentFd].parseRequest();
+        else if (events[i].events & EPOLLOUT)
+        {
+            //send responde
+            std::cout << "sending........\n";
+        }
+
     }
 }
