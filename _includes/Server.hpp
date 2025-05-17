@@ -15,11 +15,9 @@ struct location{
     std::string path;
     std::map<std::string, std::vector<std::string> > infos;
     bool validParameter(Tokenizer& tokenizer);
-
+    bool check_locations_key(std::string key);
     std::string getPath();
-    std::string getInfos();
-    void printInfos();
-
+    std::vector<std::string>* getInfos(std::string key);
 };
 
 
