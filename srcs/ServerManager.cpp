@@ -31,7 +31,7 @@ bool ServerManager::initializeAll() {
             return false;
         }
         struct epoll_event event;
-        event.events = EPOLLIN | EPOLLET;
+        event.events = EPOLLIN  | EPOLLET;
         event.data.fd = servers[i].getSocketFd();
         if (epoll_ctl(epollFd, EPOLL_CTL_ADD, servers[i].getSocketFd(), &event) < 0) {
             perror("epoll_ctl failed for client socket");
@@ -161,6 +161,10 @@ void    ServerManager::handle_cnx()
             }
             else if (bytesRead == 0){
                 std::cout << "Client disconnected" << std::endl;
+                if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, nullptr) == -1) {
+                    perror("epoll_ctl: EPOLL_CTL_DEL");
+                // Handle error
+                }
                 closeConnection = true;
                 break;
             }
@@ -192,18 +196,19 @@ void    ServerManager::handle_cnx()
         else if (events[i].events & EPOLLOUT)
         {
             //send responde
-            // std::cout << "sending........\n";
-            // location* loc = getClosestLocation(servers[0], "/");
-            // cout << "methoddddddddddddddd : " << clients[currentFd].data_rq.method << endl;
-            // if (loc) {
-            //     std::cout << "Best location path: " << loc->getPath() << std::endl;
-            //     std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl;
-            //     std::string response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
-            //     cout << response << endl;
-            // }
-            send(currentFd,"salam cv bikhir", 15, 0);
-        }
+            // //std::cout << "sending........\n";
+            // send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nHello\r\nAmine",77, 0);
 
+            location* loc = getClosestLocation(servers[0], "/");
+            cout << "methoddddddddddddddd : " << clients[currentFd].data_rq.method << endl;
+            if (loc) {
+                std::cout << "Best location path: " << loc->getPath() << std::endl;
+                std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl;
+                std::string response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
+                cout << response << endl;
+            }
+            // send(currentFd,"salam cv bikhir", 15, 0);
+        }
     }
 }
 
