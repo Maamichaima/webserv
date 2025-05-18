@@ -30,7 +30,7 @@ bool ServerManager::initializeAll() {
             return false;
         }
         struct epoll_event event;
-        event.events = EPOLLIN | EPOLLET;
+        event.events = EPOLLIN ;
         event.data.fd = servers[i].getSocketFd();
         if (epoll_ctl(epollFd, EPOLL_CTL_ADD, servers[i].getSocketFd(), &event) < 0) {
             perror("epoll_ctl failed for client socket");
@@ -86,7 +86,7 @@ void ServerManager::printAllServerInfo() {
 
 bool ServerManager::Add_new_event(int fd_socket){
     struct epoll_event event;
-    event.events = EPOLLIN | EPOLLET | EPOLLOUT;
+    event.events = EPOLLIN | EPOLLOUT;
     event.data.fd = fd_socket;
     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd_socket, &event) < 0) {
         perror("epoll_ctl failed for client socket");
@@ -142,7 +142,11 @@ void    ServerManager::handle_cnx()
             }
             else if (bytesRead == 0){
                 std::cout << "Client disconnected" << std::endl;
-                closeConnection = true;
+                if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, nullptr) == -1) {
+                    perror("epoll_ctl: EPOLL_CTL_DEL");
+                // Handle error
+                }
+               // closeConnection = true;
                 break;
             }
             else{
@@ -170,7 +174,9 @@ void    ServerManager::handle_cnx()
         else if (events[i].events & EPOLLOUT)
         {
             //send responde
-            std::cout << "sending........\n";
+            //std::cout << "sending........\n";
+            send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nHello", 63, 0);
+
         }
 
     }
