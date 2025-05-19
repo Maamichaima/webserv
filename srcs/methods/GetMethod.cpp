@@ -64,16 +64,16 @@ std::string getMimeType(const std::string& path) {
 //
 string handleGetRequest(data_request &req, string root)
 {
+    // cout << "root : " << root << endl << endl;
     // 1 check method
     if (req.method == "GET")
     {
-        cout << "salam\n";
         //2 fullPath
         string fullPath = root + req.path;
         if (!fullPath.empty() && fullPath[fullPath.size() - 1] == '/') // ila t7a9ay y3ni rah folder
             fullPath += "index.html";
         
-        cout << "fullPath" << fullPath << endl;
+        cout << "fullPath : " << fullPath << endl;
 
         //3 exist file (path)
         if (!existFile(fullPath))
@@ -90,7 +90,7 @@ string handleGetRequest(data_request &req, string root)
         ait_responce << "Content-Type: " << getMimeType(fullPath) << "\r\n";
         ait_responce << "Content-Length: " << body.size() << "\r\n";
         ait_responce << "Connection: close\r\n\r\n";
-        ait_responce << body;
+        ait_responce << body << endl;
         return ait_responce.str();
     }
     return "amine";
