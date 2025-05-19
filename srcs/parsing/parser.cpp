@@ -184,7 +184,7 @@ void parser::setDateToStruct(data_request &data_rq, std::string &buffer, int fla
     }
     if(flag == 2)
     {
-		std::ofstream file("file.txt", std::ios::app);
+		std::ofstream file("ourBody.txt", std::ios::app);
         // data_rq.body.append(buffer);
 		file << buffer;
 		file.close();

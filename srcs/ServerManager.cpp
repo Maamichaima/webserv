@@ -195,6 +195,7 @@ void    ServerManager::handle_cnx()
             clients[currentFd].parseRequest();
         else if (events[i].events & EPOLLOUT)
         {
+            dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
             //send responde
             // //std::cout << "sending........\n";
             std::string response;
