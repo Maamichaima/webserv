@@ -1,6 +1,6 @@
 #include "../_includes/client.hpp"
 
-client::client()
+client::client() 
 {
 	this->flag = 0;
 	this->data_rq.size_body = 0;
@@ -57,7 +57,7 @@ void client::printClient()
 	{
 		std::cout << "key --> " << it->first << " value --> " << it->second << std::endl;
 	}
-	std::cout << "this is our body " << data_rq.body << "\n";
+	std::cout << "our body in file ourBody.txt\n";// << data_rq.body << "\n";
 }
 
 void client::setBuffer(std::string str)
@@ -85,7 +85,6 @@ void client::parseRequest()
 	parc.parcHttpCall(*this);
     if(checkRequestProgress())
 	{
-		// parc.check_http_body_rules(*this);
 	    this->printClient();
 	}
 }
