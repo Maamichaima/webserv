@@ -197,17 +197,20 @@ void    ServerManager::handle_cnx()
         {
             //send responde
             // //std::cout << "sending........\n";
-            // send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nHello\r\nAmine",77, 0);
-
+            std::string response;
             location* loc = getClosestLocation(servers[0], "/");
-            cout << "methoddddddddddddddd : " << clients[currentFd].data_rq.method << endl;
             if (loc) {
-                std::cout << "Best location path: " << loc->getPath() << std::endl;
-                std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl;
-                std::string response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
-                cout << response << endl;
+                std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
+                std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
+                response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
+                // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
             }
-            // send(currentFd,"salam cv bikhir", 15, 0);
+
+            cout << "response: "<< response << endl;
+            // send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello Amine",77, 0);
+            cout << "size : "<< response.size() << endl;
+            printf("%zu\n",strlen(response.c_str()));
+            send(currentFd, response.c_str(), strlen(response.c_str()), 0);
         }
     }
 }
