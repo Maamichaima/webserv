@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "parser.hpp"
+#include "Server.hpp"
 // class parser;
 struct data_request
 {
@@ -31,6 +32,7 @@ class client
         data_request data_rq;
         int flag;
         parser parc;
+        Server myServer;
         client();
         client(std::string buff, int fd);
         // client(const client &obj)
@@ -49,3 +51,5 @@ class client
 
 std::string get_line(std::string str);
 std::deque<std::string> split(const std::string& str, char delimiter);
+
+void post(const client &client, const Server& server);

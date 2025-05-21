@@ -1,5 +1,6 @@
 #include "../../_includes/client.hpp"
 #include "../../_includes/parser.hpp"
+#include "../methods/GetMethod.hpp"
 // #include "parser.hpp"
 parser::parser()
 {
@@ -48,7 +49,7 @@ int parser::parse(client &client)
 			return 2;
 		else if(parse_startligne(start_line))
 		{
-			this->setDateToStruct(client.data_rq, start_line, client.flag);
+			this->setDateToStruct(client.data_rq, start_line, client.flag, client.myServer);
 			client.flag = 1;//hezi data dyaalek bach tmshiha
 			client.buffer.erase(0, start_line.size());
 		}
@@ -65,7 +66,7 @@ int parser::parse(client &client)
 		{
 			if(parse_header(header))
 			{
-				this->setDateToStruct(client.data_rq, header, client.flag);
+				this->setDateToStruct(client.data_rq, header, client.flag, client.myServer);
 				client.buffer.erase(0, header.size());
 			}
 			else
@@ -97,7 +98,7 @@ int parser::parse(client &client)
 				{
 					std::cout << body << "\n";
 					client.data_rq.flag_chunked = client.data_rq.size_chunked = std::stoi(body, 0, 16);
-					this->setDateToStruct(client.data_rq, body, client.flag);
+					this->setDateToStruct(client.data_rq, body, client.flag, client.myServer);
 					client.buffer.erase(0, body.size());
 				}
 				else
@@ -107,7 +108,7 @@ int parser::parse(client &client)
 			{
 				std::string body = get_line_size(client.buffer, client.data_rq.size_chunked);
 				client.data_rq.size_chunked -= body.size();
-				this->setDateToStruct(client.data_rq, body, client.flag);
+				this->setDateToStruct(client.data_rq, body, client.flag, client.myServer);
 				client.buffer.erase(0, body.size());
 			}
 			else if(client.data_rq.size_chunked == 0)
@@ -116,7 +117,7 @@ int parser::parse(client &client)
 				if(body == "\r\n")
 				{
 					client.data_rq.size_chunked = -1;
-					this->setDateToStruct(client.data_rq, body, client.flag);
+					this->setDateToStruct(client.data_rq, body, client.flag, client.myServer);
 					client.buffer.erase(0, body.size());
 					if (client.data_rq.flag_chunked == 0)
 						client.flag = 3;
@@ -130,7 +131,7 @@ int parser::parse(client &client)
 			if(client.data_rq.size_body)
 			{
 				std::string body = get_line_size(client.buffer, client.data_rq.size_body);
-				this->setDateToStruct(client.data_rq, body, client.flag);
+				this->setDateToStruct(client.data_rq, body, client.flag, client.myServer);
 				client.data_rq.size_body -= body.size();
 				client.buffer.erase(0, body.size());
 				if(client.data_rq.size_body == 0)
@@ -167,7 +168,7 @@ int parser::check_http_body_rules(client client)
 	return 1;
 }
 
-void parser::setDateToStruct(data_request &data_rq, std::string &buffer, int flag)
+void parser::setDateToStruct(data_request &data_rq, std::string &buffer, int flag, const Server &server)
 {
     if(flag == 0)
     {
@@ -184,7 +185,11 @@ void parser::setDateToStruct(data_request &data_rq, std::string &buffer, int fla
     }
     if(flag == 2)
     {
-		std::ofstream file("ourBody.txt", std::ios::app);
+		location *loc = getClosestLocation(server, data_rq.path);
+		// if()
+		std::string name_file = loc->infos["upload_store"][0] + "ourBody.txt";
+		std::cout << "my body file " << name_file << "\n";
+		std::ofstream file(name_file, std::ios::app);
         // data_rq.body.append(buffer);
 		file << buffer;
 		file.close();

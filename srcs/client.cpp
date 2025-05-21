@@ -62,7 +62,7 @@ void client::printClient()
 
 void client::setBuffer(std::string str)
 {
-	this->buffer.append(str);
+	this->buffer.append(str, str.size());
 }
 
 int client::checkRequestProgress() 
