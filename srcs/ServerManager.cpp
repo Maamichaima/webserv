@@ -172,7 +172,9 @@ void    ServerManager::handle_cnx()
 
                 buffer[bytesRead] = '\0';
                 // std::cout << buffer << std::endl;
-                clients[currentFd].setBuffer(buffer);
+	            clients[currentFd].buffer.append(buffer, bytesRead);
+
+                // clients[currentFd].setBuffer(buffer);
                 // this->servers[0].locations["/api"]; ??? !!!
                 // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
                 std::memset(buffer, 0, BUFFER_SIZE);
@@ -192,26 +194,52 @@ void    ServerManager::handle_cnx()
             // }
         }
         if (!clients[currentFd].checkRequestProgress())
+        {
+            clients[currentFd].myServer = servers[0];
             clients[currentFd].parseRequest();
+
+        }
         else if (events[i].events & EPOLLOUT)
         {
-            dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
-            //send responde
-            // //std::cout << "sending........\n";
-            std::string response;
-            location* loc = getClosestLocation(servers[0], "/");
-            if (loc) {
-                std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
-                std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
-                response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
-                // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
-            }
+            // if(clients[currentFd].checkRequestProgress())
+            // {
+            //     std::ifstream file("/home/cmaami//webserv/www/ourBody.txt");
+            //     if (!file.is_open()) {Desktop
+            //         std::cerr << "Erreur d'ouverture du fichier" << std::endl;
+            //         exit (1);
+            //     }
+            //     file.read(buffer, BUFFER_SIZE);
+            //     std::streamsize bytesRead = file.gcount();
+            //     std::cout << buffer << "\n";
+            //     if (bytesRead > 0) {
+            //         if (send(currentFd, buffer, bytesRead, 0) < 0) {
+            //             std::cerr << "Erreur d'envoi" << std::endl;
+            //             exit (1);
+            //         }
+            //     }
+            //             exit (1);
+            std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 2\r\nConnection: close\r\n\r\nhh";
+            send(currentFd, response.c_str(), response.size(), 0);
 
-            cout << "response: "<< response << endl;
+            // }
+            // post(clients[currentFd], servers[0]);
+            // dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
+            // //send responde
+            // // //std::cout << "sending........\n";
+            // std::string response;
+            // location* loc = getClosestLocation(servers[0], "/");
+            // if (loc) {
+            //     std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
+            //     std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
+            //     response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
+            //     // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
+            // }
+
+            // cout << "response: "<< response << endl;
             // send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello Amine",77, 0);
-            cout << "size : "<< response.size() << endl;
-            printf("%zu\n",strlen(response.c_str()));
-            send(currentFd, response.c_str(), strlen(response.c_str()), 0);
+            // cout << "size : "<< response.size() << endl;
+            // printf("%zu\n",strlen(response.c_str()));
+            // send(currentFd, "<html>\n<h1>SALAM CV BIKHIR !!</h1>\n</html>", 50, 0);
         }
     }
 }
