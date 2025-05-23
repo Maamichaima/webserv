@@ -19,6 +19,7 @@ std::map<int,client>  ServerManager::get_clients(){
 size_t  ServerManager::getNumServer(){
     return numServer;
 }
+
 void ServerManager::addServer(Server& server) {
     
     servers.push_back(server);
@@ -205,14 +206,10 @@ void    ServerManager::handle_cnx()
                 response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
                 // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
             }
-
-            cout << "response: "<< response << endl;
-            // send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello Amine",77, 0);
-            cout << "size : "<< response.size() << endl;
-            printf("%zu\n",strlen(response.c_str()));
-            send(currentFd, response.c_str(), strlen(response.c_str()), 0);
-        }
+            send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
     }
+}
+
 }
 
 // GET /tmp/index.html HTTP
