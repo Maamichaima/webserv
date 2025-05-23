@@ -15,7 +15,7 @@ struct data_request
     std::string method;
     std::string path;
     std::map<std::string, std::string> headers;
-    std::string body;
+    std::string bodyNameFile;
     int size_body;
     int size_chunked;
     int flag_chunked;
@@ -44,7 +44,7 @@ class client
         // void parce_buffer();
         void parceBody();
         void printClient();
-        void setBuffer(std::string str);
+        void setBuffer(std::string str, ssize_t );
         int checkRequestProgress();
         void parseRequest();
 };

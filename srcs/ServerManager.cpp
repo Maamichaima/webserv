@@ -174,7 +174,7 @@ void    ServerManager::handle_cnx()
                 // std::cout << buffer << std::endl;
 	            clients[currentFd].buffer.append(buffer, bytesRead);
 
-                // clients[currentFd].setBuffer(buffer);
+                // clients[currentFd].setBuffer(buffer, bytesRead);
                 // this->servers[0].locations["/api"]; ??? !!!
                 // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
                 std::memset(buffer, 0, BUFFER_SIZE);
@@ -197,30 +197,11 @@ void    ServerManager::handle_cnx()
         {
             clients[currentFd].myServer = servers[0];
             clients[currentFd].parseRequest();
-
         }
         else if (events[i].events & EPOLLOUT)
         {
-            // if(clients[currentFd].checkRequestProgress())
-            // {
-            //     std::ifstream file("/home/cmaami//webserv/www/ourBody.txt");
-            //     if (!file.is_open()) {Desktop
-            //         std::cerr << "Erreur d'ouverture du fichier" << std::endl;
-            //         exit (1);
-            //     }
-            //     file.read(buffer, BUFFER_SIZE);
-            //     std::streamsize bytesRead = file.gcount();
-            //     std::cout << buffer << "\n";
-            //     if (bytesRead > 0) {
-            //         if (send(currentFd, buffer, bytesRead, 0) < 0) {
-            //             std::cerr << "Erreur d'envoi" << std::endl;
-            //             exit (1);
-            //         }
-            //     }
-            //             exit (1);
-            std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 2\r\nConnection: close\r\n\r\nhh";
+            std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 17\r\nConnection: close\r\n\r\nUpload succeeded.\n";
             send(currentFd, response.c_str(), response.size(), 0);
-
             // }
             // post(clients[currentFd], servers[0]);
             // dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");

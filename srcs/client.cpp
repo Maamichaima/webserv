@@ -45,7 +45,7 @@ void	checkBodyEncoding(std::string str)
 void client::parceBody()
 {
 	std::map<std::string,
-		std::string>::iterator it = this->data_rq.headers.find("Transfer-Encoding");
+		std::string>::iterator it = this->data_rq.headers.find("transfer-encoding");
 }
 
 void client::printClient()
@@ -60,15 +60,15 @@ void client::printClient()
 	std::cout << "our body in file ourBody.txt\n";// << data_rq.body << "\n";
 }
 
-void client::setBuffer(std::string str)
+void client::setBuffer(std::string str, ssize_t bytesRead)
 {
-	this->buffer.append(str, str.size());
+	this->buffer.append(str, bytesRead);
 }
 
 int client::checkRequestProgress() 
 {
-	std::map<std::string, std::string>::iterator it = this->data_rq.headers.find("Transfer-Encoding");
-	std::map<std::string, std::string>::iterator it1 = this->data_rq.headers.find("Content-Length");
+	std::map<std::string, std::string>::iterator it = this->data_rq.headers.find("transfer-encoding");
+	std::map<std::string, std::string>::iterator it1 = this->data_rq.headers.find("content-length");
     
 	// std::cout << this->flag << "\n";//== 2;
 	// std::cout << (it == this->data_rq.headers.end()) << "\n";//== 2;
