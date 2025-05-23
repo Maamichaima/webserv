@@ -19,6 +19,8 @@ struct data_request
     int size_body;
     int size_chunked;
     int flag_chunked;
+    int is_chunked;
+    
 }typedef data_request;
 
 

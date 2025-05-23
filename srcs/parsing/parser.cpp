@@ -79,6 +79,9 @@ int parser::parse(client &client)
 		if(header == "\r\n")
 		{
 			std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("content-length");
+		    std::map<std::string, std::string>::iterator it1 = client.data_rq.headers.find("transfer-encoding");
+            if(it != client.data_rq.headers.end() && it->second == "chunked")
+                client.data_rq.is_chunked = 1;
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
             client.data_rq.bodyNameFile = RandomString(5);
@@ -89,8 +92,7 @@ int parser::parse(client &client)
 	if(client.flag == 2)
 	{
 
-		std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("transfer-encoding");
-		if(it != client.data_rq.headers.end() && it->second == "chunked")
+		if(client.data_rq.is_chunked == 1)
 		{
 			if(client.data_rq.size_chunked == -1)
 			{

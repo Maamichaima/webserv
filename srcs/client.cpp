@@ -6,6 +6,7 @@ client::client()
 	this->data_rq.size_body = 0;
 	this->data_rq.size_chunked = -1;
 	this->data_rq.flag_chunked = 0;
+	this->data_rq.is_chunked = 0;
 }
 
 client::client(std::string buff, int fd) : parc(parser())
