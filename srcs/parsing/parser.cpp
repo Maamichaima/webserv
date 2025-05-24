@@ -26,7 +26,8 @@ parser::~parser()
 
 void parser::parcHttpCall(client &client)//client &client 
 {
-    if(!parse(client))
+	client.data_rq.flag_error = parse(client);
+    if(!client.data_rq.flag_error)
         throw std::runtime_error("rjee3 rje3 \n");
 }
 
