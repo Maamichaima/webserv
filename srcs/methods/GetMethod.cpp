@@ -60,23 +60,24 @@ string readFile(const string &fullPath)
 }
 
 std::string getMimeType(const std::string& path) {
+    cout << "******************path: " << path.substr(path.length() - 5) << endl;
     if (path.length() >= 5 && path.substr(path.length() - 5) == ".html") return "text/html";
     if (path.length() >= 4 && path.substr(path.length() - 4) == ".css") return "text/css";
     if (path.length() >= 3 && path.substr(path.length() - 3) == ".js") return "application/javascript";
     if (path.length() >= 4 && path.substr(path.length() - 4) == ".png") return "image/png";
     if (path.length() >= 4 && path.substr(path.length() - 4) == ".jpg") return "image/jpeg";
-    if (path.length() >= 5 && path.substr(path.length() - 5) == ".mp4") return "video/mp4";
+    if (path.length() >= 5 && path.substr(path.length() - 4) == ".mp4") return "video/mp4";
     return "text/plain";
 }
 //
-string handleGetRequest(data_request &req, string root)
+string handleGetRequest(data_request &req, string locationFile)
 {
-    // cout << "root : " << root << endl << endl;
+    // cout << "locationFile : " << locationFile << endl << endl;
     // 1 check method
     if (req.method == "GET")
     {
         //2 fullPath
-        string fullPath = root + req.path;
+        string fullPath = locationFile + req.path;
         if (!fullPath.empty() && fullPath[fullPath.size() - 1] == '/') // ila t7a9ay y3ni rah folder
             fullPath += "index.html";
         
