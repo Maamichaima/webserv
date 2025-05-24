@@ -6,6 +6,11 @@ int Server::index = 0;
 Server::Server() {
     index++;
     ip_address = "127.0.0.1";
+
+    for (std::vector<std::string>::iterator it = port.begin(); it != port.end(); ++it) {
+        comb[*it] = Socket();
+    }
+
 }
     
 Server::~Server(){}
@@ -94,10 +99,12 @@ bool Server::createServer(Tokenizer& tokenizer) {
 }
 
 
-std::string Server::getPort() {
+std::vector<std::string> Server::getPort() {
     if(!port.empty())
-        return(port[0]);
-    return("8080");
+        return(port);
+        //return a vector of ports if port empty set the fisrt elm of vector to default port
+    port.push_back("8080");  
+    return(port);
 }
 
 std::string Server::getIpAddress(){
@@ -105,29 +112,66 @@ std::string Server::getIpAddress(){
     return(ip_address);
 }
 
-bool Server::initialize() {
-   
-    socket.initialize(getPort(),getIpAddress());
-    
-    if (!socket.create_Socket()) {
-        return false;
+
+Socket* findExistingSocket(std::vector<Server>& servers, const std::string& port, int currentIndex)//
+{
+    for (int i = 0; i < currentIndex; i++) {
+        std::map<std::string, Socket>::iterator it = servers[i].comb.find(port);
+        if (it != servers[i].comb.end() && it->second.fd_socket != -1) {
+            return (&(it->second));
+        }
     }
+    return NULL;
+}
+
+bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
     
-    if (!socket.bind_Socket()) {
-        return false;
+   // initialize with  all the elm in the port vector 
+   //befor initializing we check if the fd_socket of a specific port already exist in a the vector of servers 
+   for(size_t i = 0; i < port.size(); i++)
+    {
+        std::string currentPort = port[i];
+
+        Socket* existingSocket = findExistingSocket(allServers, currentPort, currentIndex);
+        if(existingSocket != NULL)
+        {
+            comb[currentPort] = *existingSocket;
+            std::cout << "Server " << this->index 
+                      << " sharing existing socket for port " << currentPort 
+                      << " (fd: " << existingSocket->fd_socket << ")" << std::endl;
+        }
+        else{
+
+            Socket  *socket = &comb[port[i]];
+            socket->initialize(port[i],getIpAddress());
+        
+            if (!socket->create_Socket()) {
+                std::cerr << "Failed to create socket for port " << currentPort << std::endl;
+                return false;
+            }
+            std::cout << socket->fd_socket << std::endl;
+            if (!socket->bind_Socket()) {
+                std::cerr << "Failed to bind socket for port " << currentPort << std::endl;
+                return false;
+            }
+            
+            if (!socket->listen_socket()) {
+                std::cerr << "Failed to listen on socket for port " << currentPort << std::endl;
+                return false;
+            }
+            
+            std::cout << "Server " << this->index 
+                        << " created new socket for port " << currentPort 
+                        << " (fd: " << socket->fd_socket << ")" << std::endl; 
+           
+        }
     }
-    
-    if (!socket.listen_socket()) {
-        return false;
-    }
-    
-    std::cout << "Server initialized on port " << getPort() << std::endl;
     return true;
 }
 
-int Server::getSocketFd()  {
-    return socket.fd_socket;
-}
+// int Server::getSocketFd()  {
+//     return socket.fd_socket;
+// }
 
 std::map<std::string, std::vector<std::string> >& Server::getParameters()  {
     return params;
@@ -137,9 +181,9 @@ location & Server::getLocations(std::string key)  {
     return locations[key];
 }
 
-Socket & Server::getSocket(){
-    return socket;
-}
+// Socket & Server::getSocket(){
+//     return socket;
+// }
 
   
 void Server::printLocations() {
@@ -204,4 +248,5 @@ std::vector<std::string>* location::getInfos(std::string key){
     std::cout << "key is unavailable in the location" << std::endl;
     return(NULL);
 }
+
 
