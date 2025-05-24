@@ -1,5 +1,12 @@
 #include "../_includes/client.hpp"
 
+std::map<int, std::string> client::errorPages;
+
+// int setErrorPages(std::map<int, std::string> &errorPages)
+// {
+// 	std::ofstream 
+// }
+
 client::client() 
 {
 	this->flag = 0;
@@ -7,6 +14,7 @@ client::client()
 	this->data_rq.size_chunked = -1;
 	this->data_rq.flag_chunked = 0;
 	this->data_rq.is_chunked = 0;
+	this->data_rq.flag_error = 0;
 }
 
 client::client(std::string buff, int fd) : parc(parser())

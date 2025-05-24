@@ -20,7 +20,7 @@ struct data_request
     int size_chunked;
     int flag_chunked;
     int is_chunked;
-    
+    int flag_error;
 }typedef data_request;
 
 
@@ -35,6 +35,7 @@ class client
         int flag;
         parser parc;
         Server myServer;
+        static std::map<int, std::string> errorPages;
         client();
         client(std::string buff, int fd);
         // client(const client &obj)
