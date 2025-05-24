@@ -29,12 +29,12 @@ std::string getExtention(data_request data)
 
 void post(const client &client, std::string buffer)
 {
-    std::cout << "path request " << client.data_rq.path << std::endl;
+    // std::cout << "path request " << client.data_rq.path << std::endl;
     location *location = getClosestLocation(client.myServer, client.data_rq.path);
-    // std::cout << "location "<< << std::endl;
-    if(location)
+    std::map<std::string, std::vector<std::string>>::iterator it = location->infos.find("upload_store");
+    if(location && it != location->infos.end())
     {
-        std::cout << getExtention(client.data_rq) << "\n";
+        // std::cout << getExtention(client.data_rq) << "\n";
         std::string name_file = location->infos["upload_store"][0] + client.data_rq.bodyNameFile + "." + getExtention(client.data_rq);
 		// std::cout << "my body file " << name_file << "\n";
 		std::ofstream file(name_file, std::ios::app);
@@ -42,4 +42,6 @@ void post(const client &client, std::string buffer)
 		file << buffer;
 		file.close();
     }
+    else 
+        throw std::runtime_error("you need the upload store in your location ...");
 }
