@@ -1,11 +1,20 @@
 #include "../_includes/client.hpp"
 
+std::map<int, std::string> client::errorPages;
+
+// int setErrorPages(std::map<int, std::string> &errorPages)
+// {
+// 	std::ofstream 
+// }
+
 client::client() 
 {
 	this->flag = 0;
 	this->data_rq.size_body = 0;
 	this->data_rq.size_chunked = -1;
 	this->data_rq.flag_chunked = 0;
+	this->data_rq.is_chunked = 0;
+	this->data_rq.flag_error = 0;
 }
 
 client::client(std::string buff, int fd) : parc(parser())
@@ -45,7 +54,7 @@ void	checkBodyEncoding(std::string str)
 void client::parceBody()
 {
 	std::map<std::string,
-		std::string>::iterator it = this->data_rq.headers.find("Transfer-Encoding");
+		std::string>::iterator it = this->data_rq.headers.find("transfer-encoding");
 }
 
 void client::printClient()
@@ -60,15 +69,15 @@ void client::printClient()
 	std::cout << "our body in file ourBody.txt\n";// << data_rq.body << "\n";
 }
 
-void client::setBuffer(std::string str)
+void client::setBuffer(std::string str, ssize_t bytesRead)
 {
-	this->buffer.append(str);
+	this->buffer.append(str, bytesRead);
 }
 
 int client::checkRequestProgress() 
 {
-	std::map<std::string, std::string>::iterator it = this->data_rq.headers.find("Transfer-Encoding");
-	std::map<std::string, std::string>::iterator it1 = this->data_rq.headers.find("Content-Length");
+	std::map<std::string, std::string>::iterator it = this->data_rq.headers.find("transfer-encoding");
+	std::map<std::string, std::string>::iterator it1 = this->data_rq.headers.find("content-length");
     
 	// std::cout << this->flag << "\n";//== 2;
 	// std::cout << (it == this->data_rq.headers.end()) << "\n";//== 2;
