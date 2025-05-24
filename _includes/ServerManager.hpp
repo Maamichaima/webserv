@@ -5,7 +5,7 @@
 #include <cstddef>
 #include "client.hpp"
 #include "parser.hpp"
-
+#include <set>
 
 class ServerManager{
 
@@ -27,10 +27,8 @@ class ServerManager{
         void                    printAllServerInfo() ;
         bool                    Add_new_event(int fd_socket);
         void                    handle_cnx();
-
-
-
-
+        Socket*                 findSocketByFd(int fd);
+        std::map<int, Socket*>  getFdToSocketMap();
 
 
 };

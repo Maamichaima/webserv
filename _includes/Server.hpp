@@ -28,14 +28,15 @@ class Server{
         static int index ;
         std::string ip_address;
         std::vector<std::string> port;
+        std::map<std::string,Socket> comb;
         std::map<std::string,std::vector<std::string> > params;
         std::map<std::string,location> locations ;
-        Socket socket;
+        //Socket socket;
         Server();
         bool    createServer(Tokenizer& tokenizer);
         bool    createParam(Tokenizer& tokenizer);
         bool    createLocation(Tokenizer& tokenizer);
-        std::string getPort();
+        std::vector<std::string> getPort();
         void set_Port(std::string );
         void set_IpAddress(std::string);
         std::string getIpAddress();
@@ -45,7 +46,7 @@ class Server{
         //const location* getLocation(const std::string& uri);
         location & getLocations(std::string key ) ;
         std::map<std::string, std::vector<std::string> >& getParameters() ;
-        bool initialize();
+        bool    initialize(std::vector<Server>& allServers, int currentIndex);
         Socket & getSocket();
         int getSocketFd();
         int acceptConnection();

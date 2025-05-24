@@ -24,40 +24,80 @@ void ServerManager::addServer(Server& server) {
     servers.push_back(server);
 }
 
+bool check_multiple_port(std::vector<Server> servers ,int i){
+
+    std::map<std::string,Socket>::iterator pt1 = servers[i].comb.begin();
+    std::vector<Server>::iterator  it = servers.begin();
+    while(it != servers.end()){
+
+        std::map<std::string,Socket>::iterator pt2 = it->comb.begin();
+        while(pt2 != it->comb.end())
+        {
+            while (pt1 != servers[i].comb.end())
+            {
+               if(pt1->first == pt2->first && pt1->second.fd_socket != -1 )
+                    return true; // port already bind to socket
+                ++pt1;
+            }
+            ++pt2;
+            
+        }
+        ++it;
+    }
+    
+    return false;
+}
+
+
 bool ServerManager::initializeAll() {
+    std::set<int> epollFds;
     for (size_t i = 0; i < servers.size() ; i++){
-        if (!servers[i].initialize()) {
+        // if(check_multiple_port(this->servers,i))
+        //     continue;
+
+        if (!servers[i].initialize(this->servers, static_cast<int>(i))) {
             std::cerr << "Failed to initialize a server" << std::endl;
             return false;
         }
-        struct epoll_event event;
-        event.events = EPOLLIN  | EPOLLET;
-        event.data.fd = servers[i].getSocketFd();
-        if (epoll_ctl(epollFd, EPOLL_CTL_ADD, servers[i].getSocketFd(), &event) < 0) {
-            perror("epoll_ctl failed for client socket");
-            close(servers[i].getSocketFd());
-            return false;
+        std::map<std::string, Socket>& serverComb = servers[i].comb;
+        for (std::map<std::string, Socket>::iterator it = serverComb.begin(); 
+             it != serverComb.end(); ++it) {
+
+            int fd = it->second.fd_socket;
+                std::cout << "fd socket " << fd << endl;
+            if (epollFds.find(fd) == epollFds.end())
+            {    
+                struct epoll_event event;
+                event.events = EPOLLIN  | EPOLLET;
+                event.data.fd = fd;
+                if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &event) < 0) {
+                    perror("epoll_ctl failed for client socket");
+                    return false; 
+                }
+                epollFds.insert(fd);
+                std::cout << "New event added : " << fd << " for port " << it->first << " to epoll" << std::endl;
+            }
         }
-        std::cout << "New event added : " << servers[i].getSocketFd() << std::endl;
+
     }
     return true;
 }
 
-std::vector<int> ServerManager::getAllSocketFds() {
-    std::vector<int> fds;
-    for (size_t i = 0; i < servers.size() ; i++) {
-        fds.push_back(servers[i].getSocketFd());
-    }
-    return fds;
-}
-Server* ServerManager::findServerByFd(int fd) {
-    for (size_t i = 0; i < servers.size() ; i++) {
-        if (servers[i].getSocketFd() == fd) {
-            return &servers[i];
-        }
-    }
-    return NULL;
-}
+// std::vector<int> ServerManager::getAllSocketFds() {
+//     std::vector<int> fds;
+//     for (size_t i = 0; i < servers.size() ; i++) {
+//         fds.push_back(servers[i].getSocketFd());
+//     }
+//     return fds;
+// }
+// Server* ServerManager::findServerByFd(int fd) {
+//     for (size_t i = 0; i < servers.size() ; i++) {
+//         if (servers[i].getSocketFd() == fd) {
+//             return &servers[i];
+//         }
+//     }
+//     return NULL;
+// }
 void ServerManager::printAllServerInfo() {
 
     if(servers.empty()){
@@ -74,7 +114,7 @@ void ServerManager::printAllServerInfo() {
         if (parameters.empty()) {
             std::cout << "    None" << std::endl;
         } else{
-            std::cout << "    Port " << server.getPort()<< std::endl;
+            std::cout << "    Port " << server.getPort()[0] << std::endl;
             std::cout << "    IP_address "<< server.getIpAddress() << std::endl;
             print_map(parameters);
         }
@@ -116,11 +156,42 @@ bool ServerManager::Add_new_event(int fd_socket){
     return true;
 }
 
+
+Socket* ServerManager::findSocketByFd(int fd) {
+    for (size_t i = 0; i < servers.size(); i++) {
+        for (std::map<std::string, Socket>::iterator it = servers[i].comb.begin(); 
+             it != servers[i].comb.end(); ++it) {
+            
+            if (it->second.fd_socket == fd) {
+                return &(it->second);  
+            }
+        }
+    }
+    return NULL;
+}
+
+std::map<int, Socket*> ServerManager::getFdToSocketMap() {
+    std::map<int, Socket*> fdToSocketMap;
+    
+    for (size_t i = 0; i < servers.size(); i++) {
+        for (std::map<std::string, Socket>::iterator it = servers[i].comb.begin(); 
+             it != servers[i].comb.end(); ++it) {
+            int fd = it->second.fd_socket;
+            if (fd != -1 && fdToSocketMap.find(fd) == fdToSocketMap.end()) {
+                fdToSocketMap[fd] = &(it->second); 
+            }
+        }
+    }
+    
+    return fdToSocketMap;
+}
+
 void    ServerManager::handle_cnx()
 {
     char buffer[BUFFER_SIZE];
-    std::vector<int> fds = getAllSocketFds();
+    std::map<int, Socket*> SocketMap = getFdToSocketMap();
     std::vector<int>::iterator it;
+    bool closeConnection = false;
     int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
     if(numEvents < 0){
         std::cerr <<"epoll_wait failed" << std::endl; 
@@ -128,12 +199,12 @@ void    ServerManager::handle_cnx()
     for(int i = 0; i < numEvents; i++){
         
         int currentFd = events[i].data.fd; 
-        it = std::find(fds.begin(),fds.end(),currentFd);
-        if(it != fds.end()){ // it can be more than one socket in the server // 
+        //std::cout << "==========================================" << "current fd " << currentFd << "=======================================" << std::endl;
+        if(SocketMap.find(currentFd) != SocketMap.end()){ 
             
-            Server *server = findServerByFd(*it);
-            int client_fd = accept(server->getSocketFd(),(server->getSocket().host_info->ai_addr),&server->getSocket().host_info->ai_addrlen);
-            std::cout << client_fd << "\n";
+            // Socket *socket = SocketMap[currentFd];
+            int client_fd = accept(currentFd,NULL,NULL);
+            //std::cout << client_fd << "\n";
 
             if (client_fd < 0) {
                 if (errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -142,76 +213,70 @@ void    ServerManager::handle_cnx()
                 continue;
             }
             clients[client_fd];
-            clients[client_fd].server_fd = server->getSocketFd();
-            std::cout << "connection accepted from client " <<std::endl;
+            clients[client_fd].server_fd = currentFd;
+            std::cout << "connection accepted from client "  <<std::endl;
             if(!Add_new_event(client_fd))
                 continue;
            
         }
         else if(events[i].events & EPOLLIN){
-
-            bool closeConnection = false;
-                
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE - 1,0);
             // std::cout << buffer << "\n";
-        
-            if (bytesRead < 0) {
-                    perror("read failed");
-                    closeConnection = true;
-            }
-            else if (bytesRead == 0){
-                std::cout << "Client disconnected" << std::endl;
-                if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, nullptr) == -1) {
-                    perror("epoll_ctl: EPOLL_CTL_DEL");
-                // Handle error
+            if(bytesRead <= 0)
+            {
+                if (bytesRead == 0){
+                    std::cout << "Client disconnected  " << currentFd <<std::endl;
+                    
+                }
+                else {
+                    std::cout << "read failed  " <<  currentFd <<std::endl;
                 }
                 closeConnection = true;
-                break;
             }
             else{
 
                 buffer[bytesRead] = '\0';
                 // std::cout << buffer << std::endl;
                 clients[currentFd].setBuffer(buffer);
-                // this->servers[0].locations["/api"]; ??? !!!
-                // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
                 std::memset(buffer, 0, BUFFER_SIZE);
-                // string responce = handleGetRequest(clients[currentFd].data_rq, "root");
                 
-                // if (write(currentFd,  "buffer received \n", 18) < 0) {
-                //     perror("write failed");
-                //     closeConnection = true;
-                //     break;
-                // }
-                // if(clients[currentFd].flag == 3)
-                    //ghadir khdemteek  GET / gerreg
+               
             }
                 
-            // if (closeConnection) {
-            //     close(currentFd);
-            // }
+            
         }
         if (!clients[currentFd].checkRequestProgress())
             clients[currentFd].parseRequest();
         else if (events[i].events & EPOLLOUT)
         {
-            dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
-            //send responde
-            // //std::cout << "sending........\n";
-            std::string response;
-            location* loc = getClosestLocation(servers[0], "/");
-            if (loc) {
-                std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
-                std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
-                response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
-                // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
-            }
+            // dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
+            // //send responde
+            // // //std::cout << "sending........\n";
+            // std::string response;
+            // location* loc = getClosestLocation(servers[0], "/");
+            // if (loc) {
+            //     std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
+            //     std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
+            //     response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
+            //     // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
+            // }
 
-            cout << "response: "<< response << endl;
-            // send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello Amine",77, 0);
-            cout << "size : "<< response.size() << endl;
-            printf("%zu\n",strlen(response.c_str()));
-            send(currentFd, response.c_str(), strlen(response.c_str()), 0);
+            // cout << "response: "<< response << endl;
+            // cout << "size : "<< response.size() << endl;
+            // printf("%zu\n",strlen(response.c_str()));
+            // send(currentFd, response.c_str(), strlen(response.c_str()), 0);
+            send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello rihab",77, 0);
+            closeConnection = true;
+        }
+        if(closeConnection)
+        {
+            std::cout << "client removed \n";
+            if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, nullptr) == -1) {
+                perror("epoll_ctl: EPOLL_CTL_DEL");
+            }
+            
+            close(currentFd);
+            clients.erase(currentFd);
         }
     }
 }
