@@ -19,6 +19,7 @@ std::map<int,client>  ServerManager::get_clients(){
 size_t  ServerManager::getNumServer(){
     return numServer;
 }
+
 void ServerManager::addServer(Server& server) {
     
     servers.push_back(server);
@@ -272,10 +273,10 @@ void    ServerManager::handle_cnx()
             // cout << "size : "<< response.size() << endl;
             // printf("%zu\n",strlen(response.c_str()));
             // send(currentFd, response.c_str(), strlen(response.c_str()), 0);
-            send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello rihab",77, 0);
+            // send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello rihab",77, 0);
             closeConnection = true;
-            // std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 17\r\nConnection: close\r\n\r\nUpload succeeded.\n";
-            // send(currentFd, response.c_str(), response.size(), 0);
+            std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 17\r\nConnection: close\r\n\r\nUpload succeeded.\n";
+            send(currentFd, response.c_str(), response.size(), 0);
         }
         if(closeConnection)
         {
@@ -289,5 +290,6 @@ void    ServerManager::handle_cnx()
         }
     }
 }
+
 
 // GET /tmp/index.html HTTP
