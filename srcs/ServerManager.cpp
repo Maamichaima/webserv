@@ -237,7 +237,11 @@ void    ServerManager::handle_cnx()
 
                 buffer[bytesRead] = '\0';
                 // std::cout << buffer << std::endl;
-                clients[currentFd].setBuffer(buffer);
+	            clients[currentFd].buffer.append(buffer, bytesRead);
+
+                // clients[currentFd].setBuffer(buffer, bytesRead);
+                // this->servers[0].locations["/api"]; ??? !!!
+                // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
                 std::memset(buffer, 0, BUFFER_SIZE);
                 
                
@@ -246,7 +250,10 @@ void    ServerManager::handle_cnx()
             
         }
         if (!clients[currentFd].checkRequestProgress())
+        {
+            clients[currentFd].myServer = servers[0];
             clients[currentFd].parseRequest();
+        }
         else if (events[i].events & EPOLLOUT)
         {
             // dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
