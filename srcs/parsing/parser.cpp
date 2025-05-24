@@ -128,7 +128,7 @@ int parser::parse(client &client)
 		}
 		else 
 		{
-			std::cout << "hhh\n";
+			// std::cout << "hhh\n";
 			if(client.data_rq.size_body)
 			{
 				std::string body = get_line_size(client.buffer, client.data_rq.size_body);
