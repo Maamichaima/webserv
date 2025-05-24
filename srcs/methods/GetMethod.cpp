@@ -63,14 +63,14 @@ std::string getMimeType(const std::string& path) {
     return "text/plain";
 }
 //
-string handleGetRequest(data_request &req, string root)
+string handleGetRequest(data_request &req, string locationFile)
 {
-    // cout << "root : " << root << endl << endl;
+    // cout << "locationFile : " << locationFile << endl << endl;
     // 1 check method
     if (req.method == "GET")
     {
         //2 fullPath
-        string fullPath = root + req.path;
+        string fullPath = locationFile + req.path;
         if (!fullPath.empty() && fullPath[fullPath.size() - 1] == '/') // ila t7a9ay y3ni rah folder
             fullPath += "index.html";
         
