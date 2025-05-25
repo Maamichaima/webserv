@@ -29,7 +29,7 @@ class ServerManager{
         void                    handle_cnx();
         Socket*                 findSocketByFd(int fd);
         std::map<int, Socket*>  getFdToSocketMap();
-
+        Server*                  routeRequest(client cl ,std::string host);
 
 };
 
