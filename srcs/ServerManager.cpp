@@ -200,10 +200,12 @@ void    ServerManager::handle_cnx()
             // //std::cout << "sending........\n";
             std::string response;
             location* loc = getClosestLocation(servers[0], "/");
+            // loc->printInfos();
+            // exit(78);
             if (loc) {
-                std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
-                std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
-                response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
+                // std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
+                // std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
+                response = handleGetRequest(clients[currentFd].data_rq, loc, servers);
                 // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
             }
             send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);

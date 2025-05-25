@@ -198,7 +198,6 @@ std::vector<std::string>* location::getInfos(std::string key){
     {
         if(it->first == key)
             return &it->second;
-
         it++;
     }
     std::cout << "key is unavailable in the location" << std::endl;
