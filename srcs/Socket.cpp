@@ -38,13 +38,18 @@ bool Socket::create_Socket(){
         return false;
     }
     int opt = 1;
-    if (setsockopt(fd_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+    if (setsockopt(fd_socket, SOL_SOCKET, SO_REUSEADDR , &opt, sizeof(opt)) < 0) {
         perror("setsockopt failed");
         close(fd_socket);
         fd_socket = -1;
         return false;
     }
-
+    if (setsockopt(fd_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt SO_REUSEPORT failed");
+        close(fd_socket);
+        fd_socket = -1;
+        return false;
+    }
     std::cout << "socket created successfully\n" <<std::endl;
     return true;
 }
