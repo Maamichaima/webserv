@@ -1,5 +1,6 @@
 #include "../_includes/ServerManager.hpp"
 # include "methods/GetMethod.hpp"
+#include <cstddef>
 
 size_t ServerManager::numServer = 0;
 
@@ -186,18 +187,23 @@ std::map<int, Socket*> ServerManager::getFdToSocketMap() {
     return fdToSocketMap;
 }
 
+
+
+
+
+
 void    ServerManager::handle_cnx()
 {
     char buffer[BUFFER_SIZE];
     std::map<int, Socket*> SocketMap = getFdToSocketMap();
     std::vector<int>::iterator it;
-    bool closeConnection = false;
     int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
     if(numEvents < 0){
         std::cerr <<"epoll_wait failed" << std::endl; 
     }
     for(int i = 0; i < numEvents; i++){
         
+        bool closeConnection = false;
         int currentFd = events[i].data.fd; 
         //std::cout << "==========================================" << "current fd " << currentFd << "=======================================" << std::endl;
         if(SocketMap.find(currentFd) != SocketMap.end()){ 
@@ -284,10 +290,44 @@ void    ServerManager::handle_cnx()
                 perror("epoll_ctl: EPOLL_CTL_DEL");
             }
             
-            close(currentFd);
             clients.erase(currentFd);
+            close(currentFd);
         }
     }
 }
 
 // GET /tmp/index.html HTTP
+
+Server*     chooseServer(std::vector<Server> routeServer,std::string host)
+{
+    std::vector<Server>::iterator it ;
+    for( it = routeServer.begin(); it != routeServer.end(); ++it){
+
+        if(!it->params["server_name"].empty() &&  it->params["server_name"][0] == host)
+            return &(*it);
+    }
+    return (NULL);
+}
+
+Server    *ServerManager::routeRequest(client cl ,std::string host)
+{
+
+        int fd = cl.server_fd;
+        std::vector<Server> routeServer;
+        std::vector<Server>::iterator it;
+        for( it = servers.begin(); it != servers.end(); ++it)
+        {
+            for(std::map<std::string ,Socket>::iterator tt = it->comb.begin();
+                 tt !=  it->comb.end(); ++tt)
+            {
+                if(fd == tt->second.fd_socket)
+                    routeServer.push_back(*it);
+            }
+        }
+
+        if(routeServer.size() > 1)
+            return (chooseServer(routeServer,host));
+
+        return(&(*it));
+    
+}
