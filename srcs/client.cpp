@@ -2,10 +2,26 @@
 
 std::map<int, std::string> client::errorPages;
 
-// int setErrorPages(std::map<int, std::string> &errorPages)
-// {
-// 	std::ofstream 
-// }
+std::string readFileContent(const std::string& filePath) {
+	std::ifstream file(filePath.c_str());
+	if (!file.is_open())
+		throw std::runtime_error("this file not open" + filePath);
+
+	std::string content;
+	std::string line;
+	while (std::getline(file, line)) {
+		content += line + "\n";
+	}
+	return content;
+}
+
+void setErrorPages()
+{
+	client::errorPages[400] = readFileContent("errorPages/400.html");
+	client::errorPages[404] = readFileContent("errorPages/404.html");
+	// std::cout << client::errorPages[404];
+	// exit (1);
+}
 
 client::client() 
 {
@@ -15,6 +31,8 @@ client::client()
 	this->data_rq.flag_chunked = 0;
 	this->data_rq.is_chunked = 0;
 	this->data_rq.flag_error = 0;
+
+	setErrorPages();
 }
 
 client::client(std::string buff, int fd) : parc(parser())
