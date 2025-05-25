@@ -127,7 +127,7 @@ int parse_startligne(std::string str)
 
 int parse_header(std::string str)
 {
-	if(!isMatch("\\S+: .+\r\n", str))
+	if(!isMatch("\\S+: .+\r\n", str))// if @flwel makhdamach 
 		return 0;
 	return 1;
 }
