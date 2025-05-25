@@ -2,24 +2,31 @@
 #include "GetMethod.hpp"
 
 // khass rihab txouf fin dirha
-location* getClosestLocation(const Server& server, const std::string& requestPath) {
-    location* bestMatch = nullptr;
-    size_t bestLength = 0;
+using std::cout;
 
-    for (std::map<std::string, location>::const_iterator it = server.locations.begin(); it != server.locations.end(); ++it) {
-        const std::string& locPath = it->first;
+location *getClosestLocation(const Server &server,
+                             const std::string &requestPath) {
+  location *bestMatch = nullptr;
+  size_t bestLength = 0;
 
-        if (requestPath.find(locPath) == 0 && 
-            (requestPath.size() == locPath.size() || requestPath[locPath.size()] == '/' || locPath == "/")) {
-            
-            if (locPath.size() > bestLength) {
-                bestLength = locPath.size();
-                bestMatch = const_cast<location*>(&it->second);
-            }
-        }
+//   cout << "PATH: " << requestPath << std::endl;
+  for (std::map<std::string, location>::const_iterator it =
+           server.locations.begin();
+       it != server.locations.end(); ++it) {
+    const std::string &locPath = it->first;
+
+    if (requestPath.find(locPath) == 0 &&
+        (requestPath.size() == locPath.size() ||
+         requestPath[locPath.size()] == '/' || locPath == "/")) {
+
+      if (locPath.size() > bestLength) {
+        bestLength = locPath.size();
+        bestMatch = const_cast<location *>(&it->second);
+      }
     }
+  }
 
-    return bestMatch;
+  return bestMatch;
 }
 
 void print_data(data_request& req) 

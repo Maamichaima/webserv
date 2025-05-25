@@ -1,9 +1,12 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
+
 #include "../RegEx/RegEx.hpp"
 struct data_request;
 class client;
+class Server;
 class parser
 {
     public:
@@ -16,7 +19,7 @@ class parser
         ~parser();
         int parse(client &client);
         int check_http_body_rules(client client);
-        void setDateToStruct(data_request &data_rq, std::string &buffer, int flag);
+        void setDateToStruct(client &clien, std::string &buffer, int flag);
 };
 int parse_header(std::string str);
 int parse_startligne(std::string str);
