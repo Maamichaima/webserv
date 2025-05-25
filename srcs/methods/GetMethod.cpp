@@ -1,3 +1,4 @@
+#include "../../_includes/ServerManager.hpp"
 #include "GetMethod.hpp"
 
 // khass rihab txouf fin dirha
@@ -53,9 +54,9 @@ string readFile(const string &fullPath)
 }
 
 std::string getMimeType(const std::string& path) {
-    cout << "******************path: " << path.substr(path.length() - 5) << endl;
     if (path.length() >= 5 && path.substr(path.length() - 5) == ".html") return "text/html";
     if (path.length() >= 4 && path.substr(path.length() - 4) == ".css") return "text/css";
+    if (path.length() >= 4 && path.substr(path.length() - 4) == ".php") return "text/php";
     if (path.length() >= 3 && path.substr(path.length() - 3) == ".js") return "application/javascript";
     if (path.length() >= 4 && path.substr(path.length() - 4) == ".png") return "image/png";
     if (path.length() >= 4 && path.substr(path.length() - 4) == ".jpg") return "image/jpeg";
@@ -63,18 +64,68 @@ std::string getMimeType(const std::string& path) {
     return "text/plain";
 }
 //
-string handleGetRequest(data_request &req, string locationFile)
+string handleGetRequest(data_request &req, location *loc, const std::vector<Server> &servers)
+
 {
     // cout << "locationFile : " << locationFile << endl << endl;
     // 1 check method
     if (req.method == "GET")
     {
+        string root = loc->getInfos("root")->at(0);
         //2 fullPath
-        string fullPath = locationFile + req.path;
+        string fullPath = loc->getInfos("root")->at(0) + req.path;
         if (!fullPath.empty() && fullPath[fullPath.size() - 1] == '/') // ila t7a9ay y3ni rah folder
             fullPath += "index.html";
         
-        cout << "fullPath : " << fullPath << endl;
+        cout << "fullPath__ : " << fullPath << endl;
+
+        ///////////////////// CGI/////////////////////////
+        
+        std::string extension;
+                
+        size_t dotPos = fullPath.find_last_of('.');
+        size_t qPos = fullPath.find_last_of('?');
+
+        if (dotPos != string::npos && qPos != string::npos && dotPos < qPos)
+            extension = fullPath.substr(dotPos, qPos - dotPos);
+        else if (dotPos != std::string::npos)
+            extension = fullPath.substr(dotPos);
+        cout << "extension: " << extension << endl;
+        
+        loc = getClosestLocation(servers[0], "/api");
+        std::vector<std::string>* cgiExt = loc->getInfos("cgi_extension");
+        std::vector<std::string>* cgiPath = loc->getInfos("cgi_path");        
+        
+        bool isCgi = false;
+        
+        if (cgiExt) {
+            for (size_t i = 0; i < cgiExt->size(); ++i) {
+                cout << "result: " << (*cgiExt)[i] << endl;
+                if (extension == (*cgiExt)[i]) {
+                    isCgi = true;
+                    break;
+                }
+            }
+        }
+        //
+        cout << isCgi << endl;
+
+        if (isCgi && cgiPath && !cgiPath->empty()) {
+            cout << "in CGI\n" << endl;
+            std::string interpreter = (*cgiPath)[0];
+
+            cout << "inQuery\n" << endl;
+            std::string query;
+            size_t pos = req.path.find('?');
+            if (pos != std::string::npos) {
+                query = req.path.substr(pos + 1);
+                fullPath = root + req.path.substr(0, pos);
+            }
+        // Extraire query string
+        /*execute cgi soon*/
+    // and return cgi_responce
+    }
+        ///////////////////////////////////////////
 
         //3 exist file (path)
         if (!existFile(fullPath))
