@@ -2,7 +2,7 @@
 # include "methods/GetMethod.hpp"
 
 size_t ServerManager::numServer = 0;
-
+int flll = 1;
 
 
 ServerManager::ServerManager(){
@@ -19,6 +19,7 @@ std::map<int,client>  ServerManager::get_clients(){
 size_t  ServerManager::getNumServer(){
     return numServer;
 }
+
 void ServerManager::addServer(Server& server) {
     
     servers.push_back(server);
@@ -98,6 +99,7 @@ bool ServerManager::initializeAll() {
 //     }
 //     return NULL;
 // }
+
 void ServerManager::printAllServerInfo() {
 
     if(servers.empty()){
@@ -217,11 +219,10 @@ void    ServerManager::handle_cnx()
             std::cout << "connection accepted from client "  <<std::endl;
             if(!Add_new_event(client_fd))
                 continue;
-           
         }
         else if(events[i].events & EPOLLIN){
+
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE - 1,0);
-            // std::cout << buffer << "\n";
             if(bytesRead <= 0)
             {
                 if (bytesRead == 0){
@@ -233,18 +234,10 @@ void    ServerManager::handle_cnx()
                 }
                 closeConnection = true;
             }
-            else{
-
+            else {
                 buffer[bytesRead] = '\0';
-                // std::cout << buffer << std::endl;
 	            clients[currentFd].buffer.append(buffer, bytesRead);
-
-                // clients[currentFd].setBuffer(buffer, bytesRead);
-                // this->servers[0].locations["/api"]; ??? !!!
-                // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
-                std::memset(buffer, 0, BUFFER_SIZE);
-                
-               
+                std::memset(buffer, 0, BUFFER_SIZE);               
             }
         }
         if (!clients[currentFd].checkRequestProgress())
@@ -255,26 +248,17 @@ void    ServerManager::handle_cnx()
         else if (events[i].events & EPOLLOUT)
         {
             // dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
-            // //send responde
-            // // //std::cout << "sending........\n";
-            // std::string response;
-            // location* loc = getClosestLocation(servers[0], "/");
-            // if (loc) {
-            //     std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
-            //     std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
-            //     response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
-            //     // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
-            // }
-
-            // cout << "response: "<< response << endl;
-            // cout << "size : "<< response.size() << endl;
-            // printf("%zu\n",strlen(response.c_str()));
-            // send(currentFd, response.c_str(), strlen(response.c_str()), 0);
-            // send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello rihab",77, 0);
+            std::string response;
+            location* loc = getClosestLocation(servers[0], "/");
+            // loc->printInfos();
+            if (loc) {
+                // std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
+                response = handleGetRequest(clients[currentFd].data_rq, loc, servers);
+                // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
+            }
+            // std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 17\r\nConnection: close\r\n\r\nUpload succeeded.\n";
             closeConnection = true;
-            std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 909\r\nConnection: close\r\n\r\n" + client::errorPages[404];
-            send(currentFd, response.c_str(), response.size(), 0);
-            // exit (0);
+            send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
         }
         if(closeConnection)
         {
@@ -282,11 +266,8 @@ void    ServerManager::handle_cnx()
             if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, nullptr) == -1) {
                 perror("epoll_ctl: EPOLL_CTL_DEL");
             }
-            
             close(currentFd);
             clients.erase(currentFd);
         }
     }
 }
-
-// GET /tmp/index.html HTTP
