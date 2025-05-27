@@ -1,9 +1,10 @@
 #include "../_includes/ServerManager.hpp"
 # include "methods/GetMethod.hpp"
 #include <cstddef>
+#include <ostream>
 
 size_t ServerManager::numServer = 0;
-
+int flll = 1;
 
 
 ServerManager::ServerManager(){
@@ -20,6 +21,7 @@ std::map<int,client>  ServerManager::get_clients(){
 size_t  ServerManager::getNumServer(){
     return numServer;
 }
+
 void ServerManager::addServer(Server& server) {
     
     servers.push_back(server);
@@ -99,6 +101,7 @@ bool ServerManager::initializeAll() {
 //     }
 //     return NULL;
 // }
+
 void ServerManager::printAllServerInfo() {
 
     if(servers.empty()){
@@ -220,14 +223,15 @@ void    ServerManager::handle_cnx()
             }
             clients[client_fd];
             clients[client_fd].server_fd = currentFd;
+            routeRequest(clients[client_fd]);
+            
             std::cout << "connection accepted from client "  <<std::endl;
             if(!Add_new_event(client_fd))
                 continue;
-           
         }
         else if(events[i].events & EPOLLIN){
+
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE - 1,0);
-            // std::cout << buffer << "\n";
             if(bytesRead <= 0)
             {
                 if (bytesRead == 0){
@@ -239,50 +243,30 @@ void    ServerManager::handle_cnx()
                 }
                 closeConnection = true;
             }
-            else{
-
+            else {
                 buffer[bytesRead] = '\0';
-                // std::cout << buffer << std::endl;
 	            clients[currentFd].buffer.append(buffer, bytesRead);
-
-                // clients[currentFd].setBuffer(buffer, bytesRead);
-                // this->servers[0].locations["/api"]; ??? !!!
-                // std::cout << "Received from client " << currentFd << ": " << buffer << std::endl;
-                std::memset(buffer, 0, BUFFER_SIZE);
-                
-               
+                std::memset(buffer, 0, BUFFER_SIZE);               
             }
-                
-            
         }
         if (!clients[currentFd].checkRequestProgress())
         {
-            clients[currentFd].myServer = servers[0];
             clients[currentFd].parseRequest();
         }
         else if (events[i].events & EPOLLOUT)
-        {
-            // dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
-            // //send responde
-            // // //std::cout << "sending........\n";
-            // std::string response;
-            // location* loc = getClosestLocation(servers[0], "/");
-            // if (loc) {
-            //     std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
-            //     std::cout << "result: " << loc->getInfos("root")->at(0) << std::endl << std::endl;
-            //     response = handleGetRequest(clients[currentFd].data_rq, loc->getInfos("root")->at(0));
-            //     // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
-            // }
-
-            // cout << "response: "<< response << endl;
-            // cout << "size : "<< response.size() << endl;
-            // printf("%zu\n",strlen(response.c_str()));
-            // send(currentFd, response.c_str(), strlen(response.c_str()), 0);
-            send(currentFd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello rihab",77, 0);
-            closeConnection = true;
-            
+        { 
+        
+            std::string response;
+            location* loc = getClosestLocation(clients[currentFd].myServer, "/");
+            // loc->printInfos();
+            if (loc) {
+                // std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
+                response = handleGetRequest(clients[currentFd].data_rq, loc, servers);
+                // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
+            }
             // std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 17\r\nConnection: close\r\n\r\nUpload succeeded.\n";
-            // send(currentFd, response.c_str(), response.size(), 0);
+            closeConnection = true;
+            send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
         }
         if(closeConnection)
         {
@@ -290,45 +274,54 @@ void    ServerManager::handle_cnx()
             if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, nullptr) == -1) {
                 perror("epoll_ctl: EPOLL_CTL_DEL");
             }
-            
             clients.erase(currentFd);
             close(currentFd);
         }
     }
 }
 
-// GET /tmp/index.html HTTP
 
-Server*     chooseServer(std::vector<Server> routeServer,std::string host)
+
+Server*     chooseServer(std::vector<Server*> &routeServer,std::string host)
 {
-    std::vector<Server>::iterator it ;
-    for( it = routeServer.begin(); it != routeServer.end(); ++it){
-
-        if(!it->params["server_name"].empty() &&  it->params["server_name"][0] == host)
-            return &(*it);
+    if(routeServer.size() > 1)
+    {    
+        std::vector<Server*>::iterator it ;
+        for( it = routeServer.begin(); it != routeServer.end(); ++it){
+            Server* server = *it;
+            //std::cout << "host " << host << " server name "<< it->params["server_name"][0] << std::endl;
+         if(!server->params["server_name"].empty() &&  server->params["server_name"][0] == host)
+                return server;
+        }
     }
-    return (NULL);
+    return(routeServer[0]);
 }
 
-Server    *ServerManager::routeRequest(client cl ,std::string host)
+std::vector<Server*>    ServerManager::routeRequest(client cl)
 {
 
         int fd = cl.server_fd;
-        std::vector<Server> routeServer;
+        
         std::vector<Server>::iterator it;
-        for( it = servers.begin(); it != servers.end(); ++it)
-        {
-            for(std::map<std::string ,Socket>::iterator tt = it->comb.begin();
-                 tt !=  it->comb.end(); ++tt)
+       
+            for( it = servers.begin(); it != servers.end(); ++it)
             {
-                if(fd == tt->second.fd_socket)
-                    routeServer.push_back(*it);
+                for(std::map<std::string ,Socket>::iterator tt = it->comb.begin();
+                    tt !=  it->comb.end(); ++tt)
+                {
+                    if(fd == tt->second.fd_socket)
+                    {   
+                        routeServer.push_back(&(*it));
+                    }
+                }
             }
+            
+        std::cout << "routeServer contains " << routeServer.size() << " servers:" << std::endl;
+        for(size_t i = 0; i < routeServer.size(); ++i)
+        {
+            std::cout << "Server[" << i << "]: " << routeServer[i] << std::endl;
+            std::cout << "Server name:  " << routeServer[i]->params["server_name"][0] << std::endl;
         }
-
-        if(routeServer.size() > 1)
-            return (chooseServer(routeServer,host));
-
-        return(&(*it));
-    
+        return(routeServer);
 }
+

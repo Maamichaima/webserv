@@ -12,6 +12,8 @@
 // class parser;
 struct data_request
 {
+    ///
+    ///
     std::string method;
     std::string path;
     std::map<std::string, std::string> headers;
@@ -33,6 +35,9 @@ class client
         int server_fd;
         data_request data_rq;
         int flag;
+            std::string send_buffer;    // la réponse HTTP à envoyer
+        size_t send_offset = 0;     // combien d'octets ont été envoyés
+        bool headers_parsed = false;
         parser parc;
         Server myServer;
         static std::map<int, std::string> errorPages;
@@ -54,5 +59,6 @@ class client
 
 std::string get_line(std::string str);
 std::deque<std::string> split(const std::string& str, char delimiter);
-
 void post(const client &client, const Server& server);
+Server*     chooseServer(std::vector<Server*> &routeServer,std::string host);
+extern std::vector<Server*> routeServer;

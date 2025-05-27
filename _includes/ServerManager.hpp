@@ -7,6 +7,7 @@
 #include "parser.hpp"
 #include <set>
 
+
 class ServerManager{
 
     private:
@@ -29,8 +30,7 @@ class ServerManager{
         void                    handle_cnx();
         Socket*                 findSocketByFd(int fd);
         std::map<int, Socket*>  getFdToSocketMap();
-        Server*                  routeRequest(client cl ,std::string host);
-
+        std::vector<Server*>    routeRequest(client cl );
 };
 
 
