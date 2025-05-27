@@ -1,7 +1,7 @@
 #include "../_includes/client.hpp"
 
 std::map<int, std::string> client::errorPages;
-
+std::vector<Server*> routeServer;
 // int setErrorPages(std::map<int, std::string> &errorPages)
 // {
 // 	std::ofstream 
