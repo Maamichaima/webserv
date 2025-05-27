@@ -195,9 +195,13 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
         std::deque<std::string> headr = split(str, ':');//hmrdeeg ila kan key: ::::
         toLower(headr[0]);
         client.data_rq.headers[headr[0]] = headr[1].substr(1, headr[1].size() - 3);
+		if(headr[0] == "host")
+			client.myServer = *chooseServer(routeServer,client.data_rq.headers["host"]);
+
     }
     if(flag == 2)
     {
+		
 		if(client.data_rq.method == "POST")
             post(client, buffer);
     }

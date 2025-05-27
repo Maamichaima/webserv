@@ -17,9 +17,19 @@ struct location{
     bool validParameter(Tokenizer& tokenizer);
     bool check_locations_key(std::string key);
     std::string getPath() const {return path;}
+    void setPath(const std::string& p) { path = p; }
     std::vector<std::string>* getInfos(std::string key);
+ 
+    void printInfos(){
+    std::cout << "---- Infos dans cette location ----" << std::endl;
+    for (std::map<std::string, std::vector<std::string> >::const_iterator it = infos.begin(); it != infos.end(); ++it) {
+        std::cout << "Clé : " << it->first << std::endl;
+        for (size_t i = 0; i < it->second.size(); ++i) {
+            std::cout << "   - " << it->second[i] << std::endl;
+        }
+    }
+}
 };
-
 
 class Server{
 
@@ -51,6 +61,7 @@ class Server{
         int getSocketFd();
         int acceptConnection();
         void printLocations();
+        Server &operator=(const Server &obj);
         ~Server();
     };
 

@@ -242,7 +242,6 @@ std::vector<std::string>* location::getInfos(std::string key){
     {
         if(it->first == key)
             return &it->second;
-
         it++;
     }
     std::cout << "key is unavailable in the location" << std::endl;
@@ -250,3 +249,15 @@ std::vector<std::string>* location::getInfos(std::string key){
 }
 
 
+Server& Server::operator=(const Server &obj) {
+    if(this != &obj) {
+
+        ip_address = obj.ip_address;
+        port = obj.port;
+        comb = obj.comb;
+        params = obj.params;
+        locations = obj.locations;
+      
+    }
+    return *this;
+}
