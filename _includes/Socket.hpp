@@ -15,7 +15,7 @@
 #include <netdb.h>
 
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 4024
 #define MAX_EVENTS 64
 
 

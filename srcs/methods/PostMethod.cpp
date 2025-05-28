@@ -2,6 +2,7 @@
 #include "GetMethod.hpp"
 #include "../../_includes/client.hpp"
 
+
 std::string RandomString(int len)
 {
    std::string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -27,21 +28,30 @@ std::string getExtention(data_request data)
     return "";
 }
 
-void post(const client &client, std::string buffer)
+int post(client &client, std::string buffer)
 {
     // std::cout << "path request " << client.data_rq.path << std::endl;
     location *location = getClosestLocation(client.myServer, client.data_rq.path);
     std::map<std::string, std::vector<std::string>>::iterator it = location->infos.find("upload_store");
     if(location && it != location->infos.end())
     {
-        // std::cout << getExtention(client.data_rq) << "\n";
         std::string name_file = location->infos["upload_store"][0] + client.data_rq.bodyNameFile + "." + getExtention(client.data_rq);
-		// std::cout << "my body file " << name_file << "\n";
 		std::ofstream file(name_file, std::ios::app);
-        // data_rq.body.append(buffer);
+		if (!file.is_open())
+		{
+			client.data_rs.status_code = 500;
+			return 500;
+		}
 		file << buffer;
 		file.close();
+		return 1;
     }
-    else 
-        throw std::runtime_error("you need the upload store in your location ...");
+    else
+	{
+		client.data_rs.status_code = 404;
+		return 404;
+		// throw std::runtime_error("you need the upload store in your location ...");
+	} 
+		// std::cout << "status code " << client.data_rs.status_code << "\n"; 
+
 }
