@@ -1,3 +1,13 @@
-find of transefert encoding mooove it 
+Content-Length Errors (400 Bad Request):
 
-error pages
+Non-integer value (e.g., Content-Length: ABC)
+
+Body size ≠ header value 
+
+
+
+411 Length Required: No Content-Length for POST/PUT (done ✅)
+
+505 HTTP Version Not Supported: Invalid version (e.g., HTTP/2.0) (done ✅)
+
+501 Not Implemented: Valid method but unsupported (e.g., PROPFIND) (done ✅)
