@@ -1,6 +1,6 @@
 #include "../../_includes/ServerManager.hpp"
 #include "GetMethod.hpp"
-
+#include <sys/wait.h>
 // khass rihab txouf fin dirha
 using std::cout;
 
@@ -70,6 +70,58 @@ std::string getMimeType(const std::string& path) {
     if (path.length() >= 5 && path.substr(path.length() - 4) == ".mp4") return "video/mp4";
     return "text/plain";
 }
+
+string executeCgi(const string path, string query, string interpreter) {
+    int fd[2];
+    pid_t pid;
+    if(pipe(fd) == -1) {perror("pipe"); return NULL;}
+    pid = fork();
+    if (pid == -1){perror("pipe"); return NULL;}
+    if (pid == 0)
+    {
+        dup2(fd[1], STDOUT_FILENO);
+        close(fd[0]);
+        close(fd[1]);
+        char *args[] = {
+            (char *)interpreter.c_str(),
+            (char *)path.c_str(), //
+            NULL
+        };
+
+        string script_filename = "SCRIPT_FILENAME=" + path;
+        string query_string = "QUERY_STRING=" + query;
+
+        char *env[] = {
+            (char *)"REQUEST_METHOD=GET",
+            (char *)script_filename.c_str(),
+            (char *)query_string.c_str(),
+            (char *)"SERVER_PROTOCOL=HTTP/1.1",
+            (char *)"REMOTE_ADDR=127.0.0.1",
+            (char *)"HTTP_HOST=localhost",
+            NULL
+        };
+
+        
+        execve(interpreter.c_str(), args, env);
+
+        perror("execve");
+        exit(1);
+    }
+
+     close(fd[1]);
+
+    string output;
+    char buffer[1024];
+    ssize_t bytesRead;
+    while ((bytesRead = read(fd[0], buffer, sizeof(buffer))) > 0) {
+        output.append(buffer, bytesRead);
+    }
+
+    close(fd[0]);
+    waitpid(pid, NULL, 0);
+    return output;
+}
+
 //
 string handleGetRequest(data_request &req, location *loc, const std::vector<Server> &servers)
 
@@ -120,6 +172,7 @@ string handleGetRequest(data_request &req, location *loc, const std::vector<Serv
         if (isCgi && cgiPath && !cgiPath->empty()) {
             cout << "in CGI\n" << endl;
             std::string interpreter = (*cgiPath)[0];
+            cout << "interpreter: " << interpreter << endl;
 
             cout << "inQuery\n" << endl;
             std::string query;
@@ -128,12 +181,19 @@ string handleGetRequest(data_request &req, location *loc, const std::vector<Serv
                 query = req.path.substr(pos + 1);
                 fullPath = root + req.path.substr(0, pos);
             }
-        // Extraire query string
-        /*execute cgi soon*/
-    // and return cgi_responce
-    }
-        ///////////////////////////////////////////
+            cout << "************test: "<< fullPath << endl;
+            string cgiOutput = executeCgi(fullPath, query, interpreter);
+            std::ostringstream response;
 
+            response << "HTTP/1.1 200 OK\r\n";
+            response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
+            response << "Content-Length: " << cgiOutput.size() << "\r\n";
+            response << "Connection: close\r\n\r\n";
+            response << cgiOutput << endl;
+            return response.str();
+        }
+        ///////////////////////////////////////////
+        
         //3 exist file (path)
         if (!existFile(fullPath))
             return "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
@@ -143,14 +203,14 @@ string handleGetRequest(data_request &req, location *loc, const std::vector<Serv
         if (body == "error opening !!")
             return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         
-        std::ostringstream ait_responce;
+        std::ostringstream ait_response;
 
-        ait_responce << "HTTP/1.1 200 OK\r\n";
-        ait_responce << "Content-Type: " << getMimeType(fullPath) << "\r\n";
-        ait_responce << "Content-Length: " << body.size() << "\r\n";
-        ait_responce << "Connection: close\r\n\r\n";
-        ait_responce << body << endl;
-        return ait_responce.str();
+        ait_response << "HTTP/1.1 200 OK\r\n";
+        ait_response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
+        ait_response << "Content-Length: " << body.size() << "\r\n";
+        ait_response << "Connection: close\r\n\r\n";
+        ait_response << body << endl;
+        return ait_response.str();
     }
     return "amine";
 }
