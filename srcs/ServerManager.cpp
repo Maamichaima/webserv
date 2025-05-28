@@ -242,7 +242,7 @@ void    ServerManager::handle_cnx()
         }
         if (!clients[currentFd].checkRequestProgress())
         {
-            clients[currentFd].myServer = servers[0];
+            // clients[currentFd].myServer = servers[0];
             clients[currentFd].parseRequest();
         }
         else if (events[i].events & EPOLLOUT)
