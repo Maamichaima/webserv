@@ -193,11 +193,13 @@ void    ServerManager::handle_cnx()
     char buffer[BUFFER_SIZE];
     std::map<int, Socket*> SocketMap = getFdToSocketMap();
     std::vector<int>::iterator it;
-    bool closeConnection = false;
     int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
     if(numEvents < 0){
         std::cerr <<"epoll_wait failed" << std::endl; 
     }
+
+	// std::cout << "=======" << numEvents << "=======\n";
+
     for(int i = 0; i < numEvents; i++){
         
         int currentFd = events[i].data.fd; 
@@ -232,7 +234,7 @@ void    ServerManager::handle_cnx()
                 else {
                     std::cout << "read failed  " <<  currentFd <<std::endl;
                 }
-                closeConnection = true;
+                clients[currentFd].closeConnection = true;
             }
             else {
                 buffer[bytesRead] = '\0';
@@ -248,19 +250,22 @@ void    ServerManager::handle_cnx()
         else if (events[i].events & EPOLLOUT)
         {
             // dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
-            std::string response;
-            location* loc = getClosestLocation(servers[0], "/");
-            // loc->printInfos();
-            if (loc) {
-                // std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
-                response = handleGetRequest(clients[currentFd].data_rq, loc, servers);
-                // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
-            }
-            // std::string response = "HTTP/1.1 200 ok\r\nContent-Length: 17\r\nConnection: close\r\n\r\nUpload succeeded.\n";
-            closeConnection = true;
-            send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+            // std::string response;
+            // location* loc = getClosestLocation(servers[0], "/");
+            // // loc->printInfos();
+            // if (loc) {
+            //     // std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
+            //     response = handleGetRequest(clients[currentFd].data_rq, loc, servers);
+            //     // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
+            // }
+            // std::string response = clients[currentFd].buildResponse();//"HTTP/1.1 200 ok\r\nContent-Length: 17\r\nConnection: close\r\n\r\nUpload succeeded.\n";
+            // std::cout  <<  "=========" << response << "=========" ;
+			// clients[currentFd].closeConnection = true;
+            // send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+
+			clients[currentFd].handleResponse(currentFd);
         }
-        if(closeConnection)
+        if(clients[currentFd].closeConnection)
         {
             std::cout << "client removed \n";
             if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, nullptr) == -1) {

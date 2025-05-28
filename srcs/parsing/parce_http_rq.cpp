@@ -72,19 +72,23 @@ int valid_n_vr(std::string str)
 	return 1;
 }
 
-std::deque<std::string> split(const std::string& str, char delimiter)
+std::deque<std::string> split(const std::string& str, const std::string& delimiter)
 {
-	std::deque<std::string> result;
-	std::stringstream ss(str);
-	std::string item;
+    std::deque<std::string> result;
+    size_t start = 0;
+    size_t end;
 
-	while (getline(ss, item, delimiter))
-	{
-		if(item.length() == 0)
-			continue;
-		result.push_back(item);
-	}
-	return result;
+    while ((end = str.find(delimiter, start)) != std::string::npos)
+    {
+        if (end != start)
+            result.push_back(str.substr(start, end - start));
+        start = end + delimiter.length();
+    }
+
+    if (start < str.length())
+        result.push_back(str.substr(start));
+
+    return result;
 }
 
 int check_version(std::string str)
@@ -95,7 +99,7 @@ int check_version(std::string str)
 		size = 5;
 	if(!isMatch(ver.substr(0, size), str.substr(0, size)))
 		return 0;
-	std::deque<std::string> num = split(str.substr(size, str.length()), '.');
+	std::deque<std::string> num = split(str.substr(size, str.length()), ".");
 	if(num.size() == 2)
 	{
 		if(str[size] && !isMatch("\\d+\\.\\d+\r\n", str.substr(size, str.length())))
@@ -119,7 +123,6 @@ int parse_startligne(std::string str)
 {
 	if(!isMatch("[A-Z]+ /.* HTTP/\\d+\\.\\d+\r\n", str))
 	{
-		// std::cout << "hh\n";
 		return 0;
 	}
 	return 1;

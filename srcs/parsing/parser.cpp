@@ -13,22 +13,11 @@ parser::parser(const parser &obj)
 
 parser &parser::operator=(const parser &obj)
 {
-    // if(this != &obj)
-    // {
-        
-    // }
     return *this;
 }
 
 parser::~parser()
 {
-}
-
-void parser::parcHttpCall(client &client)//client &client 
-{
-	client.data_rq.flag_error = parse(client);
-    if(!client.data_rq.flag_error)
-        throw std::runtime_error("rjee3 rje3 \n");
 }
 
 std::string get_line_size(std::string str, int size)
@@ -47,17 +36,21 @@ int parser::parse(client &client)
 	{
 	    std::string start_line = get_line(client.buffer);
 		if(start_line.find("\r\n") == std::string::npos)
+		{
 			return 2;
+		}
 		else if(parse_startligne(start_line))
 		{
 			this->setDateToStruct(client, start_line, client.flag);
-			client.flag = 1;//hezi data dyaalek bach tmshiha
+			client.flag = 1;
 			client.buffer.erase(0, start_line.size());
+			if(client.data_rq.version != "HTTP/1.1\r\n")
+				return 505;
 		}
 		else
 		{
 			std::cout << "=====" << start_line << "===== start line problem \n";
-			return 0;
+			return 400;
 		}
 	}
 	if(client.flag == 1)
@@ -73,7 +66,7 @@ int parser::parse(client &client)
 			else
 			{
 				std::cout << header << " headers problem \n";
-				return 0;
+				return 400;
 			}
 			header = get_line(client.buffer);
 		}
@@ -82,7 +75,7 @@ int parser::parse(client &client)
 			std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("content-length");
 		    std::map<std::string, std::string>::iterator it1 = client.data_rq.headers.find("transfer-encoding");
             if(it != client.data_rq.headers.end() && it->second == "chunked")
-			client.data_rq.is_chunked = 1;
+				client.data_rq.is_chunked = 1;
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
             client.data_rq.bodyNameFile = RandomString(5);
@@ -103,7 +96,10 @@ int parser::parse(client &client)
 					client.buffer.erase(0, body.size());
 				}
 				else
-				throw std::runtime_error("num error");
+				{
+					return 400;
+					// throw std::runtime_error("num error");
+				}
 			}
 			else if(client.data_rq.size_chunked > 0)
 			{
@@ -123,7 +119,10 @@ int parser::parse(client &client)
 					client.flag = 3;
 				}
 				else
-				throw std::runtime_error("Body is larger than Content-Length");
+				{
+					return 400;
+					// throw std::runtime_error("Body is larger than Content-Length");
+				}
 			}
 		}
 		else 
@@ -139,33 +138,9 @@ int parser::parse(client &client)
 					client.flag = 3;
 			}
 		}
-		
 	}
-	return 1;
-}
-
-int parser::check_http_body_rules(client client)
-{
-	if(client.data_rq.method != "GET" || client.data_rq.method != "POST" || client.data_rq.method != "DELET")
-		return 0;
-	
-	std::map<std::string, std::string>::iterator it_cLenght = client.data_rq.headers.find("content-length");
-	std::map<std::string, std::string>::iterator it_cEncoding = client.data_rq.headers.find("transfer-encoding");
-	std::map<std::string, std::string>::iterator it_Host = client.data_rq.headers.find("host");
-	if(it_Host == client.data_rq.headers.end())
-		return 0;
-	if(client.data_rq.method == "GET")
-	{
-		// if()
-	}
-	else if(client.data_rq.method == "POST")
-	{
-		if(it_cEncoding == client.data_rq.headers.end() && it_cLenght == client.data_rq.headers.end())
-			return 0;//no boody??
-	}
-	else
-	{
-	}
+	if(client.data_rs.status_code == 404)
+		return 404;
 	return 1;
 }
 
@@ -185,16 +160,20 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
     if(flag == 0)
     {
         std::string str = get_line(buffer);
-        std::deque<std::string> startLine = split(str, ' ');
+        std::deque<std::string> startLine = split(str, " ");
         client.data_rq.method = startLine[0];
         client.data_rq.path = startLine[1];
+        client.data_rq.version = startLine[2];
     }
     if(flag == 1)
     {
         std::string str = get_line(buffer);
-        std::deque<std::string> headr = split(str, ':');//hmrdeeg ila kan key: ::::
-        toLower(headr[0]);
-        client.data_rq.headers[headr[0]] = headr[1].substr(1, headr[1].size() - 3);
+		size_t pos = str.find(":");
+		size_t size = str.find("\r\n");
+		std::string key = str.substr(0, pos);
+		std::string value = str.substr(pos + 2, size - pos - 2);
+		toLower(key);
+        client.data_rq.headers[key] = value;//headr[1].substr(0, headr[1].size() - 2);
     }
     if(flag == 2)
     {
