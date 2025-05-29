@@ -11,3 +11,18 @@ Body size ≠ header value
 505 HTTP Version Not Supported: Invalid version (e.g., HTTP/2.0) (done ✅)
 
 501 Not Implemented: Valid method but unsupported (e.g., PROPFIND) (done ✅)
+
+
++ add query in cgi envp
+
++ multiple cgi
+
++ large request and another request  fnafss lwa9t
+
++ cookies
+
++ error pages
+
++ delete method
+
++ 
