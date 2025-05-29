@@ -116,7 +116,7 @@ int isError(int numStatusCode)
 }
 int client::checkRequestProgress() 
 {
-	if(isError(this->data_rs.status_code)) //ila kan / 4 rah error 
+	if(isError(this->data_rs.status_code)) 
 		return 1;
 	std::map<std::string, std::string>::iterator it = this->data_rq.headers.find("transfer-encoding");
 	std::map<std::string, std::string>::iterator it1 = this->data_rq.headers.find("content-length");
@@ -130,26 +130,19 @@ int client::checkRequestProgress()
 
 void client::parseRequest()
 {
-	// parc.parcHttpCall(*this);
-	this->data_rs.status_code = parc.parse(*this);
-	// if(this->data_rs.status_code != 1 && this->data_rs.status_code != 2)//ila kant 400 ola 411 ....
-	// {// ila kan hadchi ghalet gadi response o sendiha henaaa 
-		// std::cout << this->data_rs.status_code << "\n";
-		// exit(0);
-	// 	// setDataResponse(this->data_rs.status_code);
-	// 	// std::cout << "this is the status code --> " << this->data_rs.status_code << "\n";
-    //     // throw std::runtime_error("rjee3 rje3 \n");
-	// 	return ;
-	// }
-	// else 
-	if (this->data_rs.status_code == 1)
+	try
 	{
-		check_http_body_rules();
+		this->data_rs.status_code = parc.parse(*this);
+		if (this->data_rs.status_code == 1)
+			check_http_body_rules();
+		if(checkRequestProgress())
+			this->printClient();
 	}
-    if(checkRequestProgress())
+	catch(const int status_code)
 	{
-		this->printClient();
+		this->data_rs.status_code = status_code;
 	}
+	
 }
 
 std::string headersToOneString(std::map<std::string, std::string> headers)
@@ -171,6 +164,7 @@ std::string client::buildResponse()
 	std::string response = this->data_rs.startLine + headersToOneString(this->data_rs.headers) + this->data_rs.body; 
 	return response;
 }
+
 void client::setDataResponse()
 {
 	this->data_rs.startLine = "HTTP/1.1 " + std::to_string(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
@@ -206,7 +200,6 @@ void client::handleResponse(int currentFd)
 	{
 		// 405 Method Not Allowed 
 	}
-
 	if(isError(this->data_rs.status_code))
 	{
 		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
@@ -216,23 +209,23 @@ void client::handleResponse(int currentFd)
 		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);	
 	}
 }
+
 void client::check_http_body_rules()
 {
 	if(this->data_rq.method != "GET" && this->data_rq.method != "POST" && this->data_rq.method != "DELET")
-		this->data_rs.status_code = 501;
-	
+		throw(501);
 	std::map<std::string, std::string>::iterator it_cLenght = this->data_rq.headers.find("content-length");
 	std::map<std::string, std::string>::iterator it_cEncoding = this->data_rq.headers.find("transfer-encoding");
 	std::map<std::string, std::string>::iterator is_Host = this->data_rq.headers.find("host");
 	if(is_Host == this->data_rq.headers.end())
-		this->data_rs.status_code = 400;
+		throw(400);
 	if(this->data_rq.method == "GET")
 	{
 	}
 	else if(this->data_rq.method == "POST")
 	{
 		if(it_cEncoding == this->data_rq.headers.end() && it_cLenght == this->data_rq.headers.end())
-			this->data_rs.status_code = 411;
+			throw(411);
 	}
 	else
 	{
