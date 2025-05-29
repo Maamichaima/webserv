@@ -28,7 +28,7 @@ std::string getExtention(data_request data)
     return "";
 }
 
-int post(client &client, std::string buffer)
+void post(client &client, std::string buffer)
 {
     // std::cout << "path request " << client.data_rq.path << std::endl;
     location *location = getClosestLocation(client.myServer, client.data_rq.path);
@@ -39,17 +39,17 @@ int post(client &client, std::string buffer)
 		std::ofstream file(name_file, std::ios::app);
 		if (!file.is_open())
 		{
-			client.data_rs.status_code = 500;
-			return 500;
+			// client.data_rs.status_code = 500;
+			throw(500);
 		}
 		file << buffer;
 		file.close();
-		return 1;
+		// return 1;
     }
     else
 	{
-		client.data_rs.status_code = 404;
-		return 404;
+		// client.data_rs.status_code = 404;
+		throw(404);
 		// throw std::runtime_error("you need the upload store in your location ...");
 	} 
 		// std::cout << "status code " << client.data_rs.status_code << "\n"; 

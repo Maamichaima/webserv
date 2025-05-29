@@ -30,6 +30,18 @@ std::string get_line_size(std::string str, int size)
 	return sub;
 }
 
+int isNumber(std::string str)
+{
+	int i = 0;
+	while(str[i])
+	{
+		if(!isalnum(str[i]));
+			return 0;
+		i++;
+	}
+	return 1;
+}
+
 int parser::parse(client &client)
 {
 	if(client.flag == 0)
@@ -44,13 +56,13 @@ int parser::parse(client &client)
 			this->setDateToStruct(client, start_line, client.flag);
 			client.flag = 1;
 			client.buffer.erase(0, start_line.size());
-			if(client.data_rq.version != "HTTP/1.1\r\n")
-				return 505;
+			if(client.data_rq.version != "HTTP/1.1")
+				throw (505);
 		}
 		else
 		{
 			std::cout << "=====" << start_line << "===== start line problem \n";
-			return 400;
+				throw (400);
 		}
 	}
 	if(client.flag == 1)
@@ -66,7 +78,7 @@ int parser::parse(client &client)
 			else
 			{
 				std::cout << header << " headers problem \n";
-				return 400;
+					throw (400);
 			}
 			header = get_line(client.buffer);
 		}
@@ -74,13 +86,15 @@ int parser::parse(client &client)
 		{
 			std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("content-length");
 		    std::map<std::string, std::string>::iterator it1 = client.data_rq.headers.find("transfer-encoding");
-            if(it != client.data_rq.headers.end() && it->second == "chunked")
+            if(it1 != client.data_rq.headers.end() && it->second == "chunked")// khasek diri it1
 				client.data_rq.is_chunked = 1;
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
             client.data_rq.bodyNameFile = RandomString(5);
-			if(it != client.data_rq.headers.end())
-			client.data_rq.size_body = atoi(client.data_rq.headers["content-length"].c_str());
+			if(it != client.data_rq.headers.end() && isNumber(it->second))
+				client.data_rq.size_body = atoi(client.data_rq.headers["content-length"].c_str());
+			else if(it != client.data_rq.headers.end() && !isNumber(it->second))
+				throw (400);
 		}
 	}
 	if(client.flag == 2)
@@ -97,7 +111,7 @@ int parser::parse(client &client)
 				}
 				else
 				{
-					return 400;
+					throw (400);
 				}
 			}
 			else if(client.data_rq.size_chunked > 0)
@@ -119,7 +133,7 @@ int parser::parse(client &client)
 				}
 				else
 				{
-					return 400;
+					throw (400);
 				}
 			}
 		}
@@ -137,7 +151,7 @@ int parser::parse(client &client)
 		}
 	}
 	if(client.data_rs.status_code == 404)
-		return 404;
+		throw (400);
 	return 1;
 }
 
@@ -167,7 +181,7 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
 		}
 		else
 			client.data_rq.path = startLine[1];
-        client.data_rq.version = startLine[2];
+        client.data_rq.version = startLine[2].substr(0, startLine[2].size() - 2);
     }
     if(flag == 1)
     {
@@ -177,7 +191,7 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
 		std::string key = str.substr(0, pos);
 		std::string value = str.substr(pos + 2, size - pos - 2);
 		toLower(key);
-        client.data_rq.headers[key] = value;//headr[1].substr(0, headr[1].size() - 2);
+        client.data_rq.headers[key] = value;
     }
     if(flag == 2)
     {
