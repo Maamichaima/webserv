@@ -1,5 +1,5 @@
 #include "../_includes/client.hpp"
-
+#include "methods/GetMethod.hpp"
 std::map<int, std::string> client::errorPages;
 std::map<int, std::string> client::description;
 
@@ -182,7 +182,12 @@ void client::handleResponse(int currentFd)
 	}
 	else if(this->data_rq.method == "GET")
 	{
-		
+		std::string response;
+		location* loc = getClosestLocation(this->myServer, "/");
+		if (loc) {
+		    response = handleGetRequest(this->data_rq, loc, this->myServer);
+		}
+		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 	}
 	else if(this->data_rq.method == "POST" && !isError(this->data_rs.status_code))
 	{
