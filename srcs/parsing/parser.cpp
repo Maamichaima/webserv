@@ -98,7 +98,6 @@ int parser::parse(client &client)
 				else
 				{
 					return 400;
-					// throw std::runtime_error("num error");
 				}
 			}
 			else if(client.data_rq.size_chunked > 0)
@@ -121,13 +120,11 @@ int parser::parse(client &client)
 				else
 				{
 					return 400;
-					// throw std::runtime_error("Body is larger than Content-Length");
 				}
 			}
 		}
 		else 
 		{
-			// std::cout << "hhh\n";
 			if(client.data_rq.size_body)
 			{
 				std::string body = get_line_size(client.buffer, client.data_rq.size_body);
@@ -162,7 +159,14 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
         std::string str = get_line(buffer);
         std::deque<std::string> startLine = split(str, " ");
         client.data_rq.method = startLine[0];
-        client.data_rq.path = startLine[1];
+		size_t pos = startLine[1].find("?");
+		if(pos != std::string::npos)
+		{
+			client.data_rq.path = startLine[1].substr(0, pos);
+			client.data_rq.queryContent = startLine[1].substr(pos + 1);
+		}
+		else
+			client.data_rq.path = startLine[1];
         client.data_rq.version = startLine[2];
     }
     if(flag == 1)
