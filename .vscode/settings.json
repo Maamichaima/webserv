@@ -1,5 +1,6 @@
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"files.associations": {
 		"string": "cpp",
 		"__bit_reference": "cpp",
@@ -109,4 +110,10 @@
         "typeinfo": "cpp"
     }
 >>>>>>> origin/rihab
+=======
+    "files.associations": {
+        "ostream": "cpp",
+        "iosfwd": "cpp"
+    }
+>>>>>>> origin/sleeper
 }
