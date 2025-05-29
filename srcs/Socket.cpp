@@ -7,9 +7,9 @@ Socket::Socket() :fd_socket(-1), host_addrlen(0) {
 }
 
 Socket::~Socket() {
-    if (fd_socket != -1) {
-        close(fd_socket);
-    }
+    // if (fd_socket != -1) {
+    //     close(fd_socket);
+    // }
 }
 int Socket::getSocketFd(){
     return(fd_socket);
@@ -40,12 +40,6 @@ bool Socket::create_Socket(){
     int opt = 1;
     if (setsockopt(fd_socket, SOL_SOCKET, SO_REUSEADDR , &opt, sizeof(opt)) < 0) {
         perror("setsockopt failed");
-        close(fd_socket);
-        fd_socket = -1;
-        return false;
-    }
-    if (setsockopt(fd_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
-        perror("setsockopt SO_REUSEPORT failed");
         close(fd_socket);
         fd_socket = -1;
         return false;
