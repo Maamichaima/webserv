@@ -38,6 +38,7 @@ client &client::operator=(const client &obj)
 
 client::~client()
 {
+	// close (fd_socket);
 }
 
 void	checkBodyEncoding(std::string str)

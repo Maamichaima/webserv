@@ -60,5 +60,5 @@ class client
 std::string get_line(std::string str);
 std::deque<std::string> split(const std::string& str, char delimiter);
 void post(const client &client, const Server& server);
-Server*     chooseServer(std::vector<Server*> &routeServer,std::string host);
-extern std::vector<Server*> routeServer;
+Server     *chooseServer(std::vector<Server*> &routeServer,std::string host);
+extern std::map<int ,std::vector<Server*> >  SocketToServers;

@@ -67,4 +67,6 @@ class Server{
 
     bool   parceConfigFile(int argc,char **argv,ServerManager &manager);
     bool    param_Syntaxe(std::string key, std::vector<std::string> values,Server &server);
+
+  
 #endif
