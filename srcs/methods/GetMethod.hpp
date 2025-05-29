@@ -19,4 +19,4 @@ void print_data(data_request& req);
 bool existFile(const string &fullPath);
 string readFile(const string &fullPath);
 std::string getMimeType(const std::string& path);
-string handleGetRequest(data_request &req, location *loc, const std::vector<Server> &servers);
+string handleGetRequest(data_request &req, location *loc, const Server &myServer);
