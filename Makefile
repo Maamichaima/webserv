@@ -10,7 +10,7 @@ OBJDIR = obj
 
 OFILES = $(addprefix $(OBJDIR)/, $(notdir $(CPPFILES:.cpp=.o)))
 
-EXECUTABLE = Server
+EXECUTABLE = webserv
 
 all: $(OBJDIR) $(EXECUTABLE)
 
