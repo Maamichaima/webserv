@@ -46,7 +46,7 @@ int parser::parse(client &client)
 {
 	if(client.flag == 0)
 	{
-	    std::string start_line = get_line(client.buffer);
+		std::string start_line = get_line(client.buffer);
 		if(start_line.find("\r\n") == std::string::npos)
 		{
 			return 2;
@@ -57,12 +57,12 @@ int parser::parse(client &client)
 			client.flag = 1;
 			client.buffer.erase(0, start_line.size());
 			if(client.data_rq.version != "HTTP/1.1")
-				throw (505);
+			throw (505);
 		}
 		else
 		{
 			std::cout << "=====" << start_line << "===== start line problem \n";
-				throw (400);
+			throw (400);
 		}
 	}
 	if(client.flag == 1)
@@ -78,7 +78,7 @@ int parser::parse(client &client)
 			else
 			{
 				std::cout << header << " headers problem \n";
-					throw (400);
+				throw (400);
 			}
 			header = get_line(client.buffer);
 		}
@@ -87,14 +87,14 @@ int parser::parse(client &client)
 			std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("content-length");
 		    std::map<std::string, std::string>::iterator it1 = client.data_rq.headers.find("transfer-encoding");
             if(it1 != client.data_rq.headers.end() && it->second == "chunked")// khasek diri it1
-				client.data_rq.is_chunked = 1;
+			client.data_rq.is_chunked = 1;
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
             client.data_rq.bodyNameFile = RandomString(5);
-			if(it != client.data_rq.headers.end() && isNumber(it->second))
+			if(it != client.data_rq.headers.end())// && isNumber(it->second))
 				client.data_rq.size_body = atoi(client.data_rq.headers["content-length"].c_str());
-			else if(it != client.data_rq.headers.end() && !isNumber(it->second))
-				throw (400);
+			// else if(it != client.data_rq.headers.end() && !isNumber(it->second))
+			// 	throw (400);
 		}
 	}
 	if(client.flag == 2)
@@ -151,7 +151,7 @@ int parser::parse(client &client)
 		}
 	}
 	if(client.data_rs.status_code == 404)
-		throw (400);
+		throw (404);
 	return 1;
 }
 
@@ -192,9 +192,12 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
 		std::string value = str.substr(pos + 2, size - pos - 2);
 		toLower(key);
         client.data_rq.headers[key] = value;
+		if(key == "host")
+			client.myServer = *chooseServer(SocketToServers[client.server_fd],client.data_rq.headers["host"]);
     }
     if(flag == 2)
     {
+		
 		if(client.data_rq.method == "POST")
             post(client, buffer);
     }
