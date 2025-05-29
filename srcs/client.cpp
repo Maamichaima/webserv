@@ -50,7 +50,7 @@ client::client()
 client::client(std::string buff, int fd) : parc(parser())
 {
 	this->buffer = buff;
-	this->fd_socket = fd;
+	this->server_fd = fd;
 	this->flag = 0;
 	this->data_rq.size_body = 0;
 	this->closeConnection = false;
@@ -62,13 +62,14 @@ client &client::operator=(const client &obj)
 	if (this != &obj)
 	{
 		this->buffer = obj.buffer;
-		this->fd_socket = obj.fd_socket;
+		this->server_fd = obj.server_fd;
 	}
 	return (*this);
 }
 
 client::~client()
 {
+	// close (server_fd);
 }
 
 void	checkBodyEncoding(std::string str)

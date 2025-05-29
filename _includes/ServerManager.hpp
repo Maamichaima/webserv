@@ -7,11 +7,13 @@
 #include "parser.hpp"
 #include <set>
 
+
 class ServerManager{
 
     private:
         std::vector<Server> servers;
         std::map<int,client> clients;
+        ;
         static size_t numServer ;
         int epollFd;
         struct epoll_event events[MAX_EVENTS];
@@ -29,8 +31,7 @@ class ServerManager{
         void                    handle_cnx();
         Socket*                 findSocketByFd(int fd);
         std::map<int, Socket*>  getFdToSocketMap();
-
-
+        void                    routeRequest();
 };
 
 

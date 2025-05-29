@@ -1,9 +1,11 @@
 #include "../_includes/ServerManager.hpp"
 # include "methods/GetMethod.hpp"
+#include <cstddef>
+#include <ostream>
 
 size_t ServerManager::numServer = 0;
 int flll = 1;
-
+std::map<int, std::vector<Server *>> SocketToServers;
 
 ServerManager::ServerManager(){
     epollFd = epoll_create1(0);
@@ -53,9 +55,7 @@ bool check_multiple_port(std::vector<Server> servers ,int i){
 bool ServerManager::initializeAll() {
     std::set<int> epollFds;
     for (size_t i = 0; i < servers.size() ; i++){
-        // if(check_multiple_port(this->servers,i))
-        //     continue;
-
+      
         if (!servers[i].initialize(this->servers, static_cast<int>(i))) {
             std::cerr << "Failed to initialize a server" << std::endl;
             return false;
@@ -65,11 +65,11 @@ bool ServerManager::initializeAll() {
              it != serverComb.end(); ++it) {
 
             int fd = it->second.fd_socket;
-                std::cout << "fd socket " << fd << endl;
+               // std::cout << "fd socket " << fd << endl;
             if (epollFds.find(fd) == epollFds.end())
             {    
                 struct epoll_event event;
-                event.events = EPOLLIN  | EPOLLET;
+                event.events = EPOLLIN ;
                 event.data.fd = fd;
                 if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &event) < 0) {
                     perror("epoll_ctl failed for client socket");
@@ -81,6 +81,7 @@ bool ServerManager::initializeAll() {
         }
 
     }
+    routeRequest();
     return true;
 }
 
@@ -188,6 +189,11 @@ std::map<int, Socket*> ServerManager::getFdToSocketMap() {
     return fdToSocketMap;
 }
 
+
+
+
+
+
 void    ServerManager::handle_cnx()
 {
     char buffer[BUFFER_SIZE];
@@ -201,14 +207,13 @@ void    ServerManager::handle_cnx()
 	// std::cout << "=======" << numEvents << "=======\n";
 
     for(int i = 0; i < numEvents; i++){
-        
+
+        bool closeConnection = false;
         int currentFd = events[i].data.fd; 
-        //std::cout << "==========================================" << "current fd " << currentFd << "=======================================" << std::endl;
+       
         if(SocketMap.find(currentFd) != SocketMap.end()){ 
-            
-            // Socket *socket = SocketMap[currentFd];
             int client_fd = accept(currentFd,NULL,NULL);
-            //std::cout << client_fd << "\n";
+            std::cout << "client fd " << client_fd << "\n";
 
             if (client_fd < 0) {
                 if (errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -216,15 +221,17 @@ void    ServerManager::handle_cnx()
                 }
                 continue;
             }
-            clients[client_fd];
+
             clients[client_fd].server_fd = currentFd;
+            
             std::cout << "connection accepted from client "  <<std::endl;
             if(!Add_new_event(client_fd))
                 continue;
         }
         else if(events[i].events & EPOLLIN){
 
-            ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE - 1,0);
+            // cout << "recieved buffer from client" << endl;
+            ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
             if(bytesRead <= 0)
             {
                 if (bytesRead == 0){
@@ -237,14 +244,15 @@ void    ServerManager::handle_cnx()
                 clients[currentFd].closeConnection = true;
             }
             else {
-                buffer[bytesRead] = '\0';
+                // buffer[bytesRead] = '\0';
 	            clients[currentFd].buffer.append(buffer, bytesRead);
                 std::memset(buffer, 0, BUFFER_SIZE);               
+                
             }
-        }
+            
+        } 
         if (!clients[currentFd].checkRequestProgress())
         {
-            clients[currentFd].myServer = servers[0];
             clients[currentFd].parseRequest();
         }
         else if (events[i].events & EPOLLOUT)
@@ -264,15 +272,62 @@ void    ServerManager::handle_cnx()
             // send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 
 			clients[currentFd].handleResponse(currentFd);
+			clients[currentFd].closeConnection = true;
         }
         if(clients[currentFd].closeConnection)
         {
-            std::cout << "client removed \n";
-            if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, nullptr) == -1) {
+            if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, NULL) == -1) {
                 perror("epoll_ctl: EPOLL_CTL_DEL");
             }
-            close(currentFd);
             clients.erase(currentFd);
+            close(currentFd);
+            std::cout << "client removed \n";
         }
     }
 }
+
+
+
+Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
+{
+    if(routeServer.empty())
+    {
+        std::cerr << "Error: No servers available for routing" << std::endl;
+        return NULL;
+    }
+    if(routeServer.size() == 1)
+        return routeServer[0];
+    std::vector<Server*>::iterator it ;
+    for( it = routeServer.begin(); it != routeServer.end(); ++it){
+        Server *server = *it;
+        if(!server->params["server_name"].empty() &&  server->params["server_name"][0] == host)
+        {       //std::cout << "host " << host << " server name "<< server->params["server_name"][0] << std::endl;
+                return server;
+        }
+    }
+    return(routeServer[0]); // check empty vector 
+}
+
+void   ServerManager::routeRequest()
+{
+    
+    for(std::vector<Server>::iterator serverIt = servers.begin(); 
+        serverIt != servers.end(); ++serverIt)
+    {
+        for(std::map<std::string, Socket>::iterator combIt = serverIt->comb.begin();
+            combIt != serverIt->comb.end(); ++combIt)
+        {
+            int fd = combIt->second.fd_socket;
+            SocketToServers[fd].push_back(&(*serverIt));
+        }
+    }
+    // std::cout << "routeServer contains " << SocketToServers[4].size() << " servers:" << std::endl;
+    // for(size_t i = 0; i < SocketToServers[4].size(); ++i)
+    // {
+    //     std::cout << "Server[" << i << "]: " << SocketToServers[4][i] << std::endl;
+    //     // If Server class has specific members you want to print, access them like:
+    //     // std::cout << "Server[" << i << "] - Name: " << routeServer[i]->name << std::endl;
+    // }
+ 
+}
+

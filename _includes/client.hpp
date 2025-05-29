@@ -38,7 +38,7 @@ class client
     private:
     public:
         std::string buffer;
-        int fd_socket;
+        // int fd_socket;
         int server_fd;
         data_request data_rq;
         int flag;
@@ -72,3 +72,5 @@ std::string get_line(std::string str);
 std::deque<std::string> split(const std::string& str, const std::string& delimiter);
 
 void post(const client &client, const Server& server);
+Server     *chooseServer(std::vector<Server*> &routeServer,std::string host);
+extern std::map<int ,std::vector<Server*> >  SocketToServers;
