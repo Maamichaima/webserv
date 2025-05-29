@@ -93,6 +93,7 @@ void client::printClient()
 	std::cout << "Method --> " << this->data_rq.method << std::endl;
 	std::cout << "Path --> " << this->data_rq.path << std::endl;
 	std::cout << "version --> " << this->data_rq.version << std::endl;
+	std::cout << "query Content --> " << this->data_rq.queryContent << std::endl;
 	std::map<std::string, std::string>::iterator it;
 	for (it = this->data_rq.headers.begin(); it != this->data_rq.headers.end(); it++)
 	{
@@ -131,11 +132,10 @@ void client::parseRequest()
 {
 	// parc.parcHttpCall(*this);
 	this->data_rs.status_code = parc.parse(*this);
-
 	// if(this->data_rs.status_code != 1 && this->data_rs.status_code != 2)//ila kant 400 ola 411 ....
 	// {// ila kan hadchi ghalet gadi response o sendiha henaaa 
-	// 	std::cout << this->data_rs.status_code << "\n";
-	// 	exit(0);
+		// std::cout << this->data_rs.status_code << "\n";
+		// exit(0);
 	// 	// setDataResponse(this->data_rs.status_code);
 	// 	// std::cout << "this is the status code --> " << this->data_rs.status_code << "\n";
     //     // throw std::runtime_error("rjee3 rje3 \n");
@@ -145,10 +145,6 @@ void client::parseRequest()
 	if (this->data_rs.status_code == 1)
 	{
 		check_http_body_rules();
-		// {
-		// 	// this->data_rs.status_code = 400;
-		// 	// setDataResponse(this->data_rs.status_code);
-		// }
 	}
     if(checkRequestProgress())
 	{
@@ -232,7 +228,6 @@ void client::check_http_body_rules()
 		this->data_rs.status_code = 400;
 	if(this->data_rq.method == "GET")
 	{
-		// if()
 	}
 	else if(this->data_rq.method == "POST")
 	{
