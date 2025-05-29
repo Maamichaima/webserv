@@ -35,7 +35,7 @@ int isNumber(std::string str)
 	int i = 0;
 	while(str[i])
 	{
-		if(!isalnum(str[i]));
+		if(!isalnum(str[i]))
 			return 0;
 		i++;
 	}
