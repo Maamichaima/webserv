@@ -1,10 +1,8 @@
 #include "../_includes/Server.hpp"
 #include <cstddef>
 
-int Server::index = 0;
 
 Server::Server() {
-    index++;
     ip_address = "127.0.0.1";
 
     for (std::vector<std::string>::iterator it = port.begin(); it != port.end(); ++it) {
@@ -34,7 +32,6 @@ bool    Server::createLocation(Tokenizer& tokenizer) {
     if(!loc.validParameter( tokenizer))
         return false;
     tokenizer.advance(); // Skip '}'
-    // Create and store the location
     loc.path = path;
     locations[path] = loc;
     
@@ -42,25 +39,25 @@ bool    Server::createLocation(Tokenizer& tokenizer) {
 }
 
 bool Server::createParam(Tokenizer& tokenizer) {
+
     std::string key = tokenizer.peek();
     std::map<std::string, std::vector<std::string> >::iterator it;
-    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" ) {
+    std::vector<std::string> newValues;
+    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key == "host") {
         tokenizer.advance();
-        std::vector<std::string> newValues = peekValues(tokenizer);
+        newValues = peekValues(tokenizer);
         it = params.find(key);
-        if(it != params.end()) //if the parameter already existe 
-        {
-            it->second.insert(it->second.end(), newValues.begin(), newValues.end());
-        }   
-        else{
+        if(it != params.end())
+            it->second.insert(it->second.end(), newValues.begin(),newValues.end());  
+        else
+            params.insert(std::make_pair(key, newValues));
 
-            params.insert(std::make_pair(key, newValues));//insert 
-        }
+        
         if (!param_Syntaxe(key,params[key],*this))
-            return false;
-
+            return false; // throw
         tokenizer.advance();
-    } else {
+    } 
+    else {
         std::cout << key << " not a required parameter" << std::endl;
         tokenizer.advance();
         
@@ -69,7 +66,7 @@ bool Server::createParam(Tokenizer& tokenizer) {
         }
         
         tokenizer.advance(); 
-        return false;
+        return false; // throw
     }
     
     std::cout << std::endl;
@@ -136,7 +133,7 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
         if(existingSocket != NULL)
         {
             comb[currentPort] = *existingSocket;
-            std::cout << "Server " << this->index 
+            std::cout << "Server " 
                       << " sharing existing socket for port " << currentPort 
                       << " (fd: " << existingSocket->fd_socket << ")" << std::endl;
         }
@@ -160,7 +157,7 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
                 return false;
             }
             
-            std::cout << "Server " << this->index 
+            std::cout << "Server "
                         << " created new socket for port " << currentPort 
                         << " (fd: " << socket->fd_socket << ")" << std::endl; 
            
@@ -183,7 +180,7 @@ location & Server::getLocations(std::string key)  {
 
 // Socket & Server::getSocket(){
 //     return socket;
-// }
+// } 
 
   
 void Server::printLocations() {

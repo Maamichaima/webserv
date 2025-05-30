@@ -35,7 +35,8 @@ std::string Tokenizer::peek() {
     return *current;
 }
 
-bool Tokenizer::hasMore()  { return current != end;
+bool Tokenizer::hasMore()  { 
+    return current != end;
 }
         
 
@@ -176,10 +177,16 @@ bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
     }
     
     tokenizer.initialize();
-   
-    if(!tokenizer.parse(manager))
-        return false;
- 
+    // try
+    // {
+        if(!tokenizer.parse(manager))
+            return false;
+
+    // }
+    // catch(...)
+    // {
+        
+    // }
     
     return (true);
     
