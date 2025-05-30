@@ -40,6 +40,8 @@ void post(client &client, std::string buffer)
 		if (!file.is_open())
 		{
 			// client.data_rs.status_code = 500;
+            std::cout << name_file << " not open \n";
+            exit (0);
 			throw(500);
 		}
 		file << buffer;

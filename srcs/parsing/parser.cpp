@@ -1,6 +1,7 @@
 #include "../../_includes/client.hpp"
 #include "../../_includes/parser.hpp"
 #include "../methods/PostMethod.hpp"
+#include "../methods/GetMethod.hpp"
 // #include "parser.hpp"
 parser::parser()
 {
@@ -86,8 +87,8 @@ int parser::parse(client &client)
 		{
 			std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("content-length");
 		    std::map<std::string, std::string>::iterator it1 = client.data_rq.headers.find("transfer-encoding");
-            if(it1 != client.data_rq.headers.end() && it->second == "chunked")// khasek diri it1
-			client.data_rq.is_chunked = 1;
+            if(it1 != client.data_rq.headers.end() && it->second == "chunked")
+				client.data_rq.is_chunked = 1;
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
             client.data_rq.bodyNameFile = RandomString(5);
@@ -95,6 +96,13 @@ int parser::parse(client &client)
 				client.data_rq.size_body = atoi(client.data_rq.headers["content-length"].c_str());
 			// else if(it != client.data_rq.headers.end() && !isNumber(it->second))
 			// 	throw (400);
+			location *location = getClosestLocation(client.myServer, client.data_rq.path);
+			if(location)
+			{
+				std::map<std::string, std::vector<std::string> >::iterator it = location->infos.find("allowed_methods");
+				if(it != location->infos.end() && std::find(it->second.begin(), it->second.end(), client.data_rq.method) == it->second.end())
+					throw 405;
+			}
 		}
 	}
 	if(client.flag == 2)
