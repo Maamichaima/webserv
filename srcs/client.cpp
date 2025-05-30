@@ -32,6 +32,8 @@ void setErrorPages()
 	client::description[501] = "Not Implemented";
 	client::errorPages[505] = readFileContent("errorPages/505.html");
 	client::description[505] = "Version Not Supported";
+	client::errorPages[405] = readFileContent("errorPages/405.html");
+	client::description[405] = "Version Not Supported";
 }
 
 client::client() 
@@ -111,7 +113,7 @@ void client::setBuffer(std::string str, ssize_t bytesRead)
 int isError(int numStatusCode)
 {
 	if(numStatusCode == 400 || numStatusCode == 404 || numStatusCode == 411 ||
-		 numStatusCode == 500 || numStatusCode == 501 || numStatusCode == 505)
+		 numStatusCode == 500 || numStatusCode == 501 || numStatusCode == 505 || numStatusCode == 405)
 		return 1;
 	return 0;
 }
