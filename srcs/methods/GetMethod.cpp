@@ -122,6 +122,46 @@ string executeCgi(const string path, string query, string interpreter) {
     return output;
 }
 
+
+std::string normalizePath(const std::string& path) {
+    std::string result;
+    bool prevSlash = false;
+
+    for (size_t i = 0; i < path.length(); ++i) {
+        char c = path[i];
+        if (c == '/') {
+            if (!prevSlash) {
+                result += c;
+                prevSlash = true;
+            }
+        } else {
+            result += c;
+            prevSlash = false;
+        }
+    }
+    return result;
+}
+
+string checkIndexes(location* loc) {
+    std::vector<std::string>* indexes = loc->getInfos("index");
+    if (!indexes) {
+        std::cout << "No index list found." << std::endl;
+        return "";
+    }
+
+    for (size_t i = 0; i < indexes->size(); ++i) {
+        std::ifstream file(indexes->at(i).c_str());
+        if (file.is_open()) {
+            std::cout << "Found existing index file: " << indexes->at(i) << std::endl;
+            file.close();
+            return indexes->at(i).c_str();
+        }
+    }
+
+    std::cout << "No index files found." << std::endl;
+    return "";
+}
+
 //
 string handleGetRequest(data_request &req, location *loc, const Server &myServer)
 
@@ -130,68 +170,84 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     // 1 check method
     if (req.method == "GET")
     {
-        string root = loc->getInfos("root")->at(0);
-        //2 fullPath
-        string fullPath = loc->getInfos("root")->at(0) + req.path;
-        if (!fullPath.empty() && fullPath[fullPath.size() - 1] == '/') // ila t7a9ay y3ni rah folder
-            fullPath += "index.html";
+        string locPath = normalizePath(loc->path);
+        string reqPath = normalizePath(req.path);
+        string rootVar = loc->getInfos("root")->at(0);
+        string fullPath = reqPath;
+        string fullPathWithR = reqPath;
+
+        cout << "rootVar : " << rootVar << endl;
+        cout << "locPath: " << locPath << endl;
+        cout << "reqPath: "<< fullPath << endl;
         
-        cout << "fullPath__ : " << fullPath << endl;
+        cout << "test33: "<< normalizePath(locPath + string("/") + string(rootVar)) << endl;
+        cout << "test34: " << fullPathWithR + "/" << endl;
+        if (locPath == reqPath || locPath + string("/") == fullPath \
+            || normalizePath(locPath + string("/") + string(rootVar)) == normalizePath(fullPathWithR + "/"))
+        {
+            cout << "****in scoop*****\n";
+            cout << "rootVar : " << rootVar << endl;
+            cout << "**********\n";
+            fullPath = rootVar + "/" + string("index.html");
+        }
+        else
+            fullPath = rootVar + fullPath.erase(0, locPath.length());
+        cout << "fullPath__after condition : " << fullPath << endl;
 
         ///////////////////// CGI/////////////////////////
         
-        std::string extension;
+        // std::string extension;
                 
-        size_t dotPos = fullPath.find_last_of('.');
-        size_t qPos = fullPath.find_last_of('?');
+        // size_t dotPos = fullPath.find_last_of('.');
+        // size_t qPos = fullPath.find_last_of('?');
 
-        if (dotPos != string::npos && qPos != string::npos && dotPos < qPos)
-            extension = fullPath.substr(dotPos, qPos - dotPos);
-        else if (dotPos != std::string::npos)
-            extension = fullPath.substr(dotPos);
-        cout << "extension: " << extension << endl;
+        // if (dotPos != string::npos && qPos != string::npos && dotPos < qPos)
+        //     extension = fullPath.substr(dotPos, qPos - dotPos);
+        // else if (dotPos != std::string::npos)
+        //     extension = fullPath.substr(dotPos);
+        // cout << "extension: " << extension << endl;
         
-        loc = getClosestLocation(myServer, "/api");
-        std::vector<std::string>* cgiExt = loc->getInfos("cgi_extension");
-        std::vector<std::string>* cgiPath = loc->getInfos("cgi_path");        
+        // loc = getClosestLocation(myServer, "/api");
+        // std::vector<std::string>* cgiExt = loc->getInfos("cgi_extension");
+        // std::vector<std::string>* cgiPath = loc->getInfos("cgi_path");        
         
-        bool isCgi = false;
+        // bool isCgi = false;
         
-        if (cgiExt) {
-            for (size_t i = 0; i < cgiExt->size(); ++i) {
-                cout << "result: " << (*cgiExt)[i] << endl;
-                if (extension == (*cgiExt)[i]) {
-                    isCgi = true;
-                    break;
-                }
-            }
-        }
-        //
-        cout << isCgi << endl;
+        // if (cgiExt) {
+        //     for (size_t i = 0; i < cgiExt->size(); ++i) {
+        //         cout << "result: " << (*cgiExt)[i] << endl;
+        //         if (extension == (*cgiExt)[i]) {
+        //             isCgi = true;
+        //             break;
+        //         }
+        //     }
+        // }
+        // //
+        // cout << isCgi << endl;
 
-        if (isCgi && cgiPath && !cgiPath->empty()) {
-            cout << "in CGI\n" << endl;
-            std::string interpreter = (*cgiPath)[0];
-            cout << "interpreter: " << interpreter << endl;
+        // if (isCgi && cgiPath && !cgiPath->empty()) {
+        //     cout << "in CGI\n" << endl;
+        //     std::string interpreter = (*cgiPath)[0];
+        //     cout << "interpreter: " << interpreter << endl;
 
-            cout << "inQuery\n" << endl;
-            std::string query;
-            size_t pos = req.path.find('?');
-            if (pos != std::string::npos) {
-                query = req.path.substr(pos + 1);
-                fullPath = root + req.path.substr(0, pos);
-            }
-            cout << "************test: "<< fullPath << endl;
-            string cgiOutput = executeCgi(fullPath, query, interpreter);
-            std::ostringstream response;
+        //     cout << "inQuery\n" << endl;
+        //     std::string query;
+        //     size_t pos = req.path.find('?');
+        //     if (pos != std::string::npos) {
+        //         query = req.path.substr(pos + 1);
+        //         fullPath = root + req.path.substr(0, pos);
+        //     }
+        //     cout << "************test: "<< fullPath << endl;
+        //     string cgiOutput = executeCgi(fullPath, query, interpreter);
+        //     std::ostringstream response;
 
-            response << "HTTP/1.1 200 OK\r\n";
-            response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
-            response << "Content-Length: " << cgiOutput.size() << "\r\n";
-            response << "Connection: close\r\n\r\n";
-            response << cgiOutput << endl;
-            return response.str();
-        }
+        //     response << "HTTP/1.1 200 OK\r\n";
+        //     response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
+        //     response << "Content-Length: " << cgiOutput.size() << "\r\n";
+        //     response << "Connection: close\r\n\r\n";
+        //     response << cgiOutput << endl;
+        //     return response.str();
+        // }
         ///////////////////////////////////////////
         
         //3 exist file (path)
