@@ -142,7 +142,7 @@ std::string normalizePath(const std::string& path) {
     return result;
 }
 
-string checkIndexes(location* loc) {
+string checkIndexes(location* loc, const string path) {
     std::vector<std::string>* indexes = loc->getInfos("index");
     if (!indexes) {
         std::cout << "No index list found." << std::endl;
@@ -150,11 +150,11 @@ string checkIndexes(location* loc) {
     }
 
     for (size_t i = 0; i < indexes->size(); ++i) {
-        std::ifstream file(indexes->at(i).c_str());
+        std::ifstream file(path + indexes->at(i).c_str());
         if (file.is_open()) {
             std::cout << "Found existing index file: " << indexes->at(i) << std::endl;
             file.close();
-            return indexes->at(i).c_str();
+            return path + indexes->at(i).c_str();
         }
     }
 
@@ -188,7 +188,10 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
             cout << "****in scoop*****\n";
             cout << "rootVar : " << rootVar << endl;
             cout << "**********\n";
-            fullPath = rootVar + "/" + string("index.html");
+            string indexRe = checkIndexes(loc, rootVar + "/");
+            cout << "indexRe: " << indexRe<< endl;
+            // fullPath = rootVar + "/" + string("index.html");
+            fullPath = indexRe;
         }
         else
             fullPath = rootVar + fullPath.erase(0, locPath.length());
