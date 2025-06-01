@@ -37,13 +37,29 @@ void print_data(data_request& req)
         std::cout << it->first << ": " << it->second << std::endl;
 }
 
+bool isDirectory(const std::string &fullPath) {
+    struct stat info;
+    if (stat(fullPath.c_str(), &info) != 0)
+        return false; // Error
+    return S_ISDIR(info.st_mode);
+}
+
 /// @brief existFiles function check fullPath is file and path is correct
 /// @param S_ISREG is a macro for check file is regular or not (wax file ou la directory ou xi 3jab akhur) n9adro ndirouha ta b access !
 /// @param stat functin kay jib linformations 3la file (kay9lb 3lih ou sf)
 /// @return 0 for success -1 for error
-bool existFile(const string &fullPath)
+bool existFile(string &fullPath, location *loc)
 {
     struct stat st;
+    int check_st = stat(fullPath.c_str(), &st) == 0 && S_ISREG(st.st_mode);
+    if (check_st == 0)
+    {
+        if (isDirectory(fullPath))
+        {
+            fullPath = checkIndexes(loc, fullPath);
+            // cout << "fullIn: " << fullPath << endl;
+        }
+    }
     return(stat(fullPath.c_str(), &st) == 0 && S_ISREG(st.st_mode));
 }
         
@@ -258,7 +274,7 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         ///////////////////////////////////////////
         
         //3 exist file (path)
-        if (!existFile(fullPath))
+        if (!existFile(fullPath, loc))
             return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         
         // 4 open file and read content
