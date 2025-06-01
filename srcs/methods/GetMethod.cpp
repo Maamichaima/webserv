@@ -164,9 +164,7 @@ string checkIndexes(location* loc, const string path) {
 
 //
 string handleGetRequest(data_request &req, location *loc, const Server &myServer)
-
 {
-    // cout << "locationFile : " << locationFile << endl << endl;
     // 1 check method
     if (req.method == "GET")
     {
@@ -176,25 +174,31 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         string fullPath = reqPath;
         string fullPathWithR = reqPath;
 
-        cout << "rootVar : " << rootVar << endl;
-        cout << "locPath: " << locPath << endl;
-        cout << "reqPath: "<< fullPath << endl;
+        // cout << "rootVar : " << rootVar << endl;
+        // cout << "locPath: " << locPath << endl;
+        // cout << "reqPath: "<< fullPath << endl;
         
-        cout << "test33: "<< normalizePath(locPath + string("/") + string(rootVar)) << endl;
-        cout << "test34: " << fullPathWithR + "/" << endl;
+        // cout << "test33: "<< normalizePath(locPath + string("/") + string(rootVar)) << endl;
+        // cout << "test34: " << fullPathWithR + "/" << endl;
         if (locPath == reqPath || locPath + string("/") == fullPath \
             || normalizePath(locPath + string("/") + string(rootVar)) == normalizePath(fullPathWithR + "/"))
         {
-            cout << "****in scoop*****\n";
-            cout << "rootVar : " << rootVar << endl;
-            cout << "**********\n";
             string indexRe = checkIndexes(loc, rootVar + "/");
+            cout << "********************\n";
             cout << "indexRe: " << indexRe<< endl;
-            // fullPath = rootVar + "/" + string("index.html");
             fullPath = indexRe;
         }
         else
-            fullPath = rootVar + fullPath.erase(0, locPath.length());
+        {
+            std::string relativePath = fullPath.substr(locPath.length() + 1);
+            
+            size_t found = relativePath.find(rootVar);
+            if (found == std::string::npos)
+                fullPath = rootVar + relativePath;
+            else
+                fullPath = relativePath;
+            // std::cout << "path substr " << relativePath << std::endl;
+        }
         cout << "fullPath__after condition : " << fullPath << endl;
 
         ///////////////////// CGI/////////////////////////
@@ -255,7 +259,7 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         
         //3 exist file (path)
         if (!existFile(fullPath))
-            return "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         
         // 4 open file and read content
         std::string body = readFile(fullPath);
