@@ -16,7 +16,8 @@ using namespace std;
 
 location* getClosestLocation(const Server& server, const std::string& requestPath);
 void print_data(data_request& req);
-bool existFile(const string &fullPath);
+bool existFile(const string &fullPath, location *loc);
 string readFile(const string &fullPath);
 std::string getMimeType(const std::string& path);
 string handleGetRequest(data_request &req, location *loc, const Server &myServer);
+string checkIndexes(location* loc, const string path);
