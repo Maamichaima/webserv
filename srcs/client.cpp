@@ -183,7 +183,8 @@ void client::handleResponse(int currentFd)
 	else if(this->data_rq.method == "GET")
 	{
 		std::string response;
-		location* loc = getClosestLocation(this->myServer, "/amine");
+		cout << "before getLocation" << data_rq.path << endl;
+		location* loc = getClosestLocation(this->myServer, data_rq.path);
 		if (loc) {
 		    response = handleGetRequest(this->data_rq, loc, this->myServer);
 		}
