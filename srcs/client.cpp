@@ -1,7 +1,6 @@
 #include "../_includes/client.hpp"
 #include "methods/GetMethod.hpp"
-std::map<int, std::string> client::errorPages;
-std::map<int, std::string> client::description;
+#include "methods/DeleteMethod.hpp"
 
 std::string readFileContent(const std::string& filePath) {
 	std::ifstream file(filePath.c_str());
@@ -16,26 +15,6 @@ std::string readFileContent(const std::string& filePath) {
 	return content;
 }
 
-void setErrorPages()
-{
-	client::errorPages[400] = readFileContent("errorPages/400.html");
-	client::description[400] = "Bad Request";
-	client::errorPages[404] = readFileContent("errorPages/404.html");
-	client::description[404] = "Not Found";
-	client::errorPages[201] = readFileContent("errorPages/201.html");
-	client::description[201] = "Created";
-	client::errorPages[500] = readFileContent("errorPages/500.html");
-	client::description[500] = "Internal Server Error";
-	client::errorPages[411] = readFileContent("errorPages/411.html");
-	client::description[411] = "Length Required";
-	client::errorPages[501] = readFileContent("errorPages/501.html");
-	client::description[501] = "Not Implemented";
-	client::errorPages[505] = readFileContent("errorPages/505.html");
-	client::description[505] = "Version Not Supported";
-	client::errorPages[405] = readFileContent("errorPages/405.html");
-	client::description[405] = "Version Not Supported";
-}
-
 client::client() 
 {
 	this->flag = 0;
@@ -47,6 +26,7 @@ client::client()
 	this->closeConnection = false;
 
 	setErrorPages();
+	setDescription();
 }
 
 client::client(std::string buff, int fd) : parc(parser())
@@ -136,8 +116,8 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		if (this->data_rs.status_code == 1)
-			check_http_body_rules();
+		// if (this->data_rs.status_code == 1)
+		// 	check_http_body_rules();
 		if(checkRequestProgress())
 			this->printClient();
 	}
@@ -177,6 +157,18 @@ void client::setDataResponse()
 
 void client::handleResponse(int currentFd)
 {
+	if(isError(this->data_rs.status_code))
+	{
+		// std::map<std::string,std::vector<std::string> > it = this->myServer.params.find("error_page");
+		// if(it != this->myServer.params.end())
+
+		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
+		this->data_rs.headers["Content-Length"] = std::to_string(client::errorPages[this->data_rs.status_code].size());
+		setDataResponse();
+		std::string response = buildResponse();
+		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+		return ;
+	}
 	int is_cgi = 0;
 	if(is_cgi)//is cgi
 	{
@@ -191,7 +183,7 @@ void client::handleResponse(int currentFd)
 		}
 		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 	}
-	else if(this->data_rq.method == "POST" && !isError(this->data_rs.status_code))
+	else if(this->data_rq.method == "POST")// && !isError(this->data_rs.status_code))
 	{
 		this->data_rs.status_code = 201;
 		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
@@ -202,25 +194,20 @@ void client::handleResponse(int currentFd)
 	}
 	else if(this->data_rq.method == "DELETE")
 	{
-
+		std::string response;
+		std::cout << this->data_rq.path << "\n";
+		deleteMethode("/Users/maamichaima/Desktop/webserv/hh");
+		// response = 
 	}
 	else
 	{
 		// 405 Method Not Allowed 
 	}
-	if(isError(this->data_rs.status_code))
-	{
-		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
-		this->data_rs.headers["Content-Length"] = std::to_string(client::errorPages[this->data_rs.status_code].size());
-		setDataResponse();
-		std::string response = buildResponse();
-		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);	
-	}
 }
 
 void client::check_http_body_rules()
 {
-	if(this->data_rq.method != "GET" && this->data_rq.method != "POST" && this->data_rq.method != "DELET")
+	if(this->data_rq.method != "GET" && this->data_rq.method != "POST" && this->data_rq.method != "DELETE")
 		throw(501);
 	std::map<std::string, std::string>::iterator it_cLenght = this->data_rq.headers.find("content-length");
 	std::map<std::string, std::string>::iterator it_cEncoding = this->data_rq.headers.find("transfer-encoding");
