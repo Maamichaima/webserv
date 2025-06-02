@@ -56,7 +56,7 @@ bool existFile(string &fullPath, location *loc)
     {
         if (isDirectory(fullPath))
         {
-            fullPath = checkIndexes(loc, fullPath);
+            fullPath = checkIndexes(loc, fullPath + "/");
             // cout << "fullIn: " << fullPath << endl;
         }
     }
@@ -206,7 +206,7 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         }
         else
         {
-            std::string relativePath = fullPath.substr(locPath.length() + 1);
+            std::string relativePath = fullPath.substr(locPath.length());
             
             size_t found = relativePath.find(rootVar);
             if (found == std::string::npos)
@@ -275,8 +275,12 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         
         //3 exist file (path)
         if (!existFile(fullPath, loc))
+        {
+            cout << "after dir: "<< fullPath << endl;
             return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-        
+        }
+        cout << "after dir: "<< fullPath << endl;
+
         // 4 open file and read content
         std::string body = readFile(fullPath);
         if (body == "error opening !!")
