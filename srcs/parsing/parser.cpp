@@ -85,15 +85,16 @@ int parser::parse(client &client)
 		}
 		if(header == "\r\n")
 		{
+			client.check_http_body_rules();
 			std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("content-length");
 		    std::map<std::string, std::string>::iterator it1 = client.data_rq.headers.find("transfer-encoding");
             if(it1 != client.data_rq.headers.end() && it->second == "chunked")
-				client.data_rq.is_chunked = 1;
+			client.data_rq.is_chunked = 1;
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
             client.data_rq.bodyNameFile = RandomString(5);
 			if(it != client.data_rq.headers.end())// && isNumber(it->second))
-				client.data_rq.size_body = atoi(client.data_rq.headers["content-length"].c_str());
+			client.data_rq.size_body = atoi(client.data_rq.headers["content-length"].c_str());
 			// else if(it != client.data_rq.headers.end() && !isNumber(it->second))
 			// 	throw (400);
 			location *location = getClosestLocation(client.myServer, client.data_rq.path);
@@ -153,13 +154,11 @@ int parser::parse(client &client)
 				this->setDateToStruct(client, body, client.flag);
 				client.data_rq.size_body -= body.size();
 				client.buffer.erase(0, body.size());
-				if(client.data_rq.size_body == 0)
-					client.flag = 3;
 			}
+			if(client.data_rq.size_body == 0)
+				client.flag = 3;
 		}
 	}
-	if(client.data_rs.status_code == 404)
-		throw (404);
 	return 1;
 }
 
@@ -210,3 +209,6 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
             post(client, buffer);
     }
 }
+
+
+//std::string getErrorPath(int error);

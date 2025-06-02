@@ -246,10 +246,8 @@ void    ServerManager::handle_cnx()
             else {
                 // buffer[bytesRead] = '\0';
 	            clients[currentFd].buffer.append(buffer, bytesRead);
-                std::memset(buffer, 0, BUFFER_SIZE);               
-                
+                std::memset(buffer, 0, BUFFER_SIZE);   
             }
-            
         } 
         if (!clients[currentFd].checkRequestProgress())
         {
@@ -270,7 +268,7 @@ void    ServerManager::handle_cnx()
             // std::cout  <<  "=========" << response << "=========" ;
 			// clients[currentFd].closeConnection = true;
             // send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-
+			// exit(0);
 			clients[currentFd].handleResponse(currentFd);
 			clients[currentFd].closeConnection = true;
         }
