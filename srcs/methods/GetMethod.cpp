@@ -201,6 +201,9 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     {
         string locPath = normalizePath(loc->path);
         string reqPath = normalizePath(req.path);
+        if (loc->getInfos("root") == NULL)
+            cout << " rehaaab" << endl;
+
         string rootVar = loc->getInfos("root")->at(0);
         string fullPath = reqPath;
         string fullPathWithR = reqPath;
