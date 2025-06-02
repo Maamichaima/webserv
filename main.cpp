@@ -10,15 +10,15 @@ int main(int argc,char **argv){
     if(!parceConfigFile(argc,argv,manager))
         return(1);
     
-    // manager.printAllServerInfo();
-    // manager.initializeAll();
+    manager.printAllServerInfo();
+    manager.initializeAll();
     
    
 
-    // while(1)
-    // {
+    while(1)
+    {
         
-    //     manager.handle_cnx();
+        manager.handle_cnx();
           
-    // }
+    }
 }

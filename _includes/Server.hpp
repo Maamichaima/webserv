@@ -36,10 +36,12 @@ class Server{
 
     public:
         std::string ip_address;
+        std::string MaxBodySize;
         std::vector<std::string> port;
         std::map<std::string,Socket> comb;
-        std::map<std::string,std::vector<std::string> > params;
+        std::vector<std::string> serverNames;
         std::map<std::string,location> locations ;
+        std::map<std::string,std::string>  errorPages;
         Server();
         bool    createServer(Tokenizer& tokenizer);
         bool    createParam(Tokenizer& tokenizer);
