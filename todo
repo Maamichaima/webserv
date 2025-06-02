@@ -26,11 +26,12 @@ Body size ≠ header value
 + delete method
 
 
-config file cheks:
+config file checks:
     - how much server names should i have
     - if the ip address is wrong
     - if the key is invalid 
 
 
     servers with same server name 
-    
+    check for param values at least one 
+    error pages in map ;

@@ -9,9 +9,10 @@
 #include <map>
 #include <unistd.h>
 #include <cstdio>
-
+#include <stack>
 
 class Server;
+struct location;
 class ServerManager;
 class Tokenizer
 {
@@ -19,6 +20,7 @@ class Tokenizer
     std::vector<std::string> tokens; 
     std::vector<std::string>::iterator current;
     std::vector<std::string>::iterator end;
+    std::stack<char> braceStack;
     Tokenizer(){}
     bool    tokenizeString(std::string line);
     void initialize();
@@ -26,6 +28,7 @@ class Tokenizer
     std::string peek();
     bool hasMore();
     bool parse(ServerManager &manager);
+    bool skipToNextServerBlock();
     ~Tokenizer();
     
 };

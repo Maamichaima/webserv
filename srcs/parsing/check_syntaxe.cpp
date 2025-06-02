@@ -72,9 +72,14 @@ bool check_listen( std::vector<std::string> values,Server &server)
         std::string value = *it;
         if (!valide_port(value))
             return false;
+        if (std::find(server.port.begin(), server.port.end(), value) != server.port.end()) {
+            std::cerr << "Error: Duplicate port " << value << std::endl;
+            return false;
+        }
         server.set_Port(value);
         ++it;
     }
+    
     return true;
 }
 
@@ -94,7 +99,7 @@ bool check_host(std::vector<std::string> values,Server &server)
     return true;
 }
 
-bool check_server_names(std::vector<std::string> values)
+bool check_server_names(std::vector<std::string> values, Server &server)
 {
     if (values.empty())
         return false;
@@ -104,49 +109,40 @@ bool check_server_names(std::vector<std::string> values)
         std::string name = values[i];
         if (name.empty())
             return false;
-    }
-    
-    return true;
-}
-
-bool    check_error_page(std::vector<std::string> values){
-    
-    if (values.size() < 2)
-        return false;
-    size_t i = 0;
-    while (i < values.size())
-    {
-        size_t start = i;
-        while (i < values.size() && !values[i].empty() && values[i][0] != '/')
-        {
-            const std::string& code = values[i];
-            
-            for (int i  ; i < code.size() ;i++)  
-            {
-                char c = code[i];
-                if (!isdigit(c))
-                    return false;
-            }
-            
-            int error_code = std::atoi(code.c_str());
-            if (error_code < 100 || error_code > 599)
-                return false;
-            
-            i++;
+        if (std::find(server.serverNames.begin(), server.serverNames.end(), name) != server.serverNames.end()) {
+            std::cerr << "Error: Duplicate server name " << name << std::endl;
+            return false;
         }
-        
-        if (i == start)
-            return false;
-            
-        if (i >= values.size() || values[i].empty() || values[i][0] != '/')
-            return false;
-        i++;
+        server.serverNames.push_back(name);
     }
-    
     return true;
 }
 
-bool check_client_max_body_size(std::vector<std::string> values){
+bool    check_error_page(std::vector<std::string> values,Server &server){
+    
+    if (values.size() != 2)
+        return false;
+
+    size_t i = 0;
+    const std::string& code = values[0];
+    
+    for (int i  ; i < code.size() ;i++)  
+    {
+        char c = code[i];
+        if (!isdigit(c))
+        return false;
+    }
+    
+    int error_code = std::atoi(code.c_str());
+    if (error_code < 100 || error_code > 599)
+        return false;
+    
+    server.errorPages[values[0]] = values[1];
+    
+    return true; 
+}
+
+bool check_client_max_body_size(std::vector<std::string> values,Server &server){
     if (values.size() != 1)
         return false;
 
@@ -169,6 +165,7 @@ bool check_client_max_body_size(std::vector<std::string> values){
         if (i + 1 != value.size())
             return false;
     }
+    server.MaxBodySize = value;
     return true;
 }
 
@@ -176,16 +173,21 @@ bool check_client_max_body_size(std::vector<std::string> values){
 bool    param_Syntaxe(std::string key, std::vector<std::string> values,Server &server){ // it = params.begin()
     
 
-    if(key =="listen")
+    if(key =="listen" && server.port.empty())
         return (check_listen(values,server));
-    else if(key == "host")
-        return(check_host(values,server));
-    else if(key == "server_name" || key == "server_names" )//Setup the server_names or not.
-        return(check_server_names(values));
+    else if(key == "host"&& server.ip_address.empty())
+        return(check_host(values,server) );
+    else if(key == "server_name" && server.serverNames.empty())   
+        return(check_server_names(values,server));
     else if( key == "error_page")
-        return(check_error_page(values));
-    else if(key =="client_max_body_size" )
-        return(check_client_max_body_size(values));
+        return(check_error_page(values,server));
+    else if(key =="client_max_body_size"&& server.MaxBodySize.empty() )
+        return(check_client_max_body_size(values,server));
+    else if( !server.port.empty() || !server.ip_address.empty() || !server.serverNames.empty() || !server.MaxBodySize.empty())
+    {
+        std::cout << "duplicated directive" << std::endl;
+        return false ;
+    }
     else
         return false;
 }
