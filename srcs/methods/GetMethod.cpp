@@ -1,6 +1,8 @@
 #include "../../_includes/ServerManager.hpp"
 #include "GetMethod.hpp"
 #include <sys/wait.h>
+#include <dirent.h>
+
 // khass rihab txouf fin dirha
 using std::cout;
 
@@ -36,6 +38,22 @@ void print_data(data_request& req)
     for (std::map<std::string, std::string>::const_iterator it = req.headers.begin(); it != req.headers.end(); ++it)
         std::cout << it->first << ": " << it->second << std::endl;
 }
+
+void listDirectory(const std::string& path) {
+    DIR* dir = opendir(path.c_str());
+
+    if (dir == NULL) {
+        cerr << "Error: Cannot open directory "<< endl;
+        return;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        std::cout << entry->d_name << std::endl;
+    }
+    closedir(dir);
+}
+
 
 bool isDirectory(const std::string &fullPath) {
     struct stat info;
@@ -174,7 +192,7 @@ string checkIndexes(location* loc, const string path) {
         }
     }
 
-    std::cout << "No index files found." << std::endl;
+    std::cout << "**************No index files found.*************" << std::endl;
     return "";
 }
 
@@ -190,9 +208,9 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         string fullPath = reqPath;
         string fullPathWithR = reqPath;
 
-        // cout << "rootVar : " << rootVar << endl;
-        // cout << "locPath: " << locPath << endl;
-        // cout << "reqPath: "<< fullPath << endl;
+        cout << "rootVar : " << rootVar << endl;
+        cout << "locPath: " << locPath << endl;
+        cout << "reqPath: "<< fullPath << endl;
         
         // cout << "test33: "<< normalizePath(locPath + string("/") + string(rootVar)) << endl;
         // cout << "test34: " << fullPathWithR + "/" << endl;
@@ -200,7 +218,8 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
             || normalizePath(locPath + string("/") + string(rootVar)) == normalizePath(fullPathWithR + "/"))
         {
             string indexRe = checkIndexes(loc, rootVar + "/");
-            cout << "********************\n";
+            if (indexRe == "" && loc->getInfos("autoindex")->at(0) == "on")
+                listDirectory("www/");
             cout << "indexRe: " << indexRe<< endl;
             fullPath = indexRe;
         }
@@ -260,7 +279,7 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         //         query = req.path.substr(pos + 1);
         //         fullPath = root + req.path.substr(0, pos);
         //     }
-        //     cout << "************test: "<< fullPath << endl;
+        //     cout << "test: "<< fullPath << endl;
         //     string cgiOutput = executeCgi(fullPath, query, interpreter);
         //     std::ostringstream response;
 
