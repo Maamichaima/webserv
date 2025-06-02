@@ -55,50 +55,6 @@ void print_map(std::map<std::string, std::vector<std::string> > params) {
     }
 }
 
-bool location::validParameter(Tokenizer& tokenizer) {
-    std::string key;
-    std::map<std::string, std::vector<std::string> >::iterator it;
-    while (tokenizer.hasMore() && tokenizer.peek() != "}") {
-        key = tokenizer.peek();
-        if(!check_locations_key(key))
-        {
-            std::cerr << "location key invaid" << std::endl;
-            return false;
-        }
-        tokenizer.advance();
-        std::vector<std::string> newValues = peekValues(tokenizer);
-        it = infos.find(key);
-        if(it != infos.end())
-        {
-            it->second.insert(it->second.end(), newValues.begin(), newValues.end());
-        }
-        else{
-
-            infos.insert(std::make_pair(key, newValues));//insert 
-        }
-        
-        tokenizer.advance(); 
-    }
-    
-    //if end throw error
-
-    return true;
-}
-
-
-
-std::vector<std::string> peekValues(Tokenizer& tokenizer) {//pick
-    std::vector<std::string> vec;
-    
-    while (tokenizer.hasMore() && tokenizer.peek() != ";")  { //check the end of vector 
-        vec.push_back(tokenizer.peek());
-        tokenizer.advance();
-    }
-    if(!tokenizer.hasMore())
-        throw std::runtime_error("Unexpected end of input");
-    
-    return vec;
-}
 
 
 std::vector<std::string> splitServerConfig(const std::string& input) {
@@ -129,25 +85,65 @@ std::vector<std::string> splitServerConfig(const std::string& input) {
     return parts;
 }
 
+bool Tokenizer::skipToNextServerBlock() {
+    while (hasMore()) {
+        std::string current = peek();
+        
+        if (current == "{") {
+            braceStack.push('{');
+        } 
+        else if (current == "}") {
+            if (!braceStack.empty()) {
+                braceStack.pop();
+            }
+        }
+        else if (current == "server" && braceStack.empty()) {
+            return true;
+        }
+        
+        advance();
+    }
+    return false;
+}
 
 bool    Tokenizer::parse(ServerManager &manager) {
     while (hasMore()) {
         if (peek() == "server" ) { // make sure it's the first element in the server or it's preceded by }
             advance();
             if (peek() == "{") {
+                braceStack.push('{'); 
                 advance();
                 Server server;
                 if (!server.createServer(*this))
-                    return false;
-                manager.addServer(server);
+                {
+                    std::cerr << "Error: Server #"  << " creation failed" << std::endl;
+                    if(skipToNextServerBlock())
+                        continue;
+                }
+                else
+                {
+                    if (peek() == "}") {
+                        if (!braceStack.empty()) {
+                            braceStack.pop(); 
+                        }
+                        if(!braceStack.empty())
+                            return false;
+                        manager.addServer(server);
+                        std::cout << "new server added" << std::endl;
+                        advance();
+                    }
+                    else
+                        return false;
+                }
+
             }
-        } else {
-            std::cout << "Error: server keyword not found" << std::endl;
+            else 
+                return false;
         }
-        
-        if (hasMore()) {
-            advance();
+        else if (!peek().empty()) { 
+            return false;
         }
+
     }
     return true;
 }

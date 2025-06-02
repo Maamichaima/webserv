@@ -12,12 +12,13 @@ class ServerManager;
 
 struct location{
 
-    std::string path;
+    std::string                                      path;
     std::map<std::string, std::vector<std::string> > infos;
-    bool validParameter(Tokenizer& tokenizer);
-    bool check_locations_key(std::string key);
+
+    bool        validParameter(Tokenizer& tokenizer);
+    bool        check_locations_key(std::string key);
+    void        setPath(const std::string& p) { path = p; }
     std::string getPath() const {return path;}
-    void setPath(const std::string& p) { path = p; }
     std::vector<std::string>* getInfos(std::string key);
  
     void printInfos(){
@@ -34,39 +35,37 @@ struct location{
 class Server{
 
     public:
-
-        static int index ;
         std::string ip_address;
+        std::string MaxBodySize;
         std::vector<std::string> port;
         std::map<std::string,Socket> comb;
-        std::map<std::string,std::vector<std::string> > params;
+        std::vector<std::string> serverNames;
         std::map<std::string,location> locations ;
-        //Socket socket;
+        std::map<std::string,std::string>  errorPages;
         Server();
         bool    createServer(Tokenizer& tokenizer);
         bool    createParam(Tokenizer& tokenizer);
         bool    createLocation(Tokenizer& tokenizer);
         std::vector<std::string> getPort();
-        void set_Port(std::string );
-        void set_IpAddress(std::string);
-        std::string getIpAddress();
-        size_t getMaxBodySize();
+        void                     set_Port(std::string );
+        void                     set_IpAddress(std::string);
+        std::string              getIpAddress();
+        size_t                   getMaxBodySize();
         std::vector<std::string> getServerNames();
-        std::string get_error_page();
-        //const location* getLocation(const std::string& uri);
-        location & getLocations(std::string key ) ;
+        std::string              get_error_page();
+        location &               getLocations(std::string key ) ;
         std::map<std::string, std::vector<std::string> >& getParameters() ;
-        bool    initialize(std::vector<Server>& allServers, int currentIndex);
-        Socket & getSocket();
-        int getSocketFd();
-        int acceptConnection();
-        void printLocations();
-        Server &operator=(const Server &obj);
+        bool                    initialize(std::vector<Server>& allServers, int currentIndex);
+        Socket &                getSocket();
+        int                     getSocketFd();
+        int                     acceptConnection();
+        void                    printLocations();
+        Server                  &operator=(const Server &obj);
         ~Server();
     };
 
-    bool   parceConfigFile(int argc,char **argv,ServerManager &manager);
+
+    bool    parceConfigFile(int argc,char **argv,ServerManager &manager);
     bool    param_Syntaxe(std::string key, std::vector<std::string> values,Server &server);
 
-  
 #endif
