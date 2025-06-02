@@ -4,17 +4,14 @@
 // khass rihab txouf fin dirha
 using std::cout;
 
-location *getClosestLocation(const Server &server,
-                             const std::string &requestPath) {
+location *getClosestLocation(const Server &server, const std::string &requestPath) {
   location *bestMatch = nullptr;
   size_t bestLength = 0;
 
 //   cout << "PATH: " << requestPath << std::endl;
-  for (std::map<std::string, location>::const_iterator it =
-           server.locations.begin();
-       it != server.locations.end(); ++it) {
+  for (std::map<std::string, location>::const_iterator it = server.locations.begin(); it != server.locations.end(); ++it)
+  {
     const std::string &locPath = it->first;
-
     if (requestPath.find(locPath) == 0 &&
         (requestPath.size() == locPath.size() ||
          requestPath[locPath.size()] == '/' || locPath == "/")) {

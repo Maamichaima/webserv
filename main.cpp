@@ -1,6 +1,7 @@
 #include "_includes/ServerManager.hpp"
 #include "_includes/Socket.hpp"
 #include "_includes/Server.hpp"
+#include "srcs/methods/DeleteMethod.hpp"
 
 
 
@@ -22,3 +23,8 @@ int main(int argc,char **argv){
           
     }
 }
+
+// int main() {
+//     deleteMethode("/Users/maamichaima/Desktop/webserv/2");
+//     return 0;
+// }
