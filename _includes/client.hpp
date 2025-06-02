@@ -66,6 +66,8 @@ class client
 		std::string buildResponse();
 		void setDataResponse();
 		void handleResponse(int currentFd);
+		void setDescription();
+		void setErrorPages();
 };
 
 std::string get_line(std::string str);

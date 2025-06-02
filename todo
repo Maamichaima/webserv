@@ -13,16 +13,17 @@ Body size ≠ header value
 501 Not Implemented: Valid method but unsupported (e.g., PROPFIND) (done ✅)
 
 
-+ add query in cgi envp
+error pages dapres config file
+
+delete 
+
+max body size
+
 
 + multiple cgi
 
 + large request and another request  fnafss lwa9t
 
 + cookies
-
-+ error pages
-
-+ delete method
 
 + 
