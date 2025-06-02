@@ -111,15 +111,59 @@ void ServerManager::printAllServerInfo() {
     for (size_t i = 0; i < servers.size(); i++) {
 
         Server& server = servers[i];
-        std::cout << "Server #" << (i + 1) << ":" << std::endl;
-        std::map<std::string, std::vector<std::string> > parameters = server.getParameters();
-        std::cout <<  "  Parameters:" << std::endl;
-        if (parameters.empty()) {
-            std::cout << "    None" << std::endl;
-        } else{
-            std::cout << "    Port " << server.getPort()[0] << std::endl;
-            std::cout << "    IP_address "<< server.getIpAddress() << std::endl;
-            print_map(parameters);
+        std::cout << "\n  SERVER #" << (i + 1) << std::endl;
+        std::cout << "----------------------------------------" << std::endl;
+
+        
+        // IP Address
+        if (!server.ip_address.empty()) {
+            std::cout << "   IP Address: " << server.ip_address << std::endl;
+        } else {
+            std::cout << "   IP Address: Not configured" << std::endl;
+        }
+        if (!server.port.empty()) {
+            std::cout << "   Ports: ";
+            for (size_t j = 0; j < server.port.size(); j++) {
+                std::cout << server.port[j];
+                if (j < server.port.size() - 1) std::cout << ", ";
+            }
+            std::cout << std::endl;
+        } else {
+            std::cout << "   Ports: None configured" << std::endl;
+        }
+
+        if (!server.serverNames.empty()) {
+            std::cout << "   Server Names: ";
+            for (size_t j = 0; j < server.serverNames.size(); j++) {
+                std::cout << server.serverNames[j];
+                if (j < server.serverNames.size() - 1) std::cout << ", ";
+            }
+            std::cout << std::endl;
+        } else {
+            std::cout << "   Server Names: None configured" << std::endl;
+        }
+
+        if (!server.MaxBodySize.empty()) {
+            std::cout << "   Max Body Size: " << server.MaxBodySize << std::endl;
+        } else {
+            std::cout << "   Max Body Size: Default" << std::endl;
+        }
+
+        if (!server.comb.empty()) {
+            std::cout << "\n SOCKET COMBINATIONS:" << std::endl;
+            for (std::map<std::string, Socket>::const_iterator it = server.comb.begin(); 
+                 it != server.comb.end(); ++it) {
+                std::cout << "   " << it->first << " -> Socket configured" << std::endl;
+            }
+        }
+        if (!server.errorPages.empty()) {
+            std::cout << "\n ERROR PAGES:" << std::endl;
+            for (std::map<std::string, std::string>::const_iterator it = server.errorPages.begin(); 
+                 it != server.errorPages.end(); ++it) {
+                std::cout << "   Error " << it->first << " -> " << it->second << std::endl;
+            }
+        } else {
+            std::cout << "\n ERROR PAGES: None configured" << std::endl;
         }
         server.printLocations();  
         std::cout << std::endl;
@@ -257,19 +301,6 @@ void    ServerManager::handle_cnx()
         }
         else if (events[i].events & EPOLLOUT)
         {
-            // dprintf(2, "salammmmmmmmmmmmmmmmmmmmmmmmmmm\n");
-            // std::string response;
-            // location* loc = getClosestLocation(servers[0], "/");
-            // // loc->printInfos();
-            // if (loc) {
-            //     // std::cout << "Best location path: " << loc->getPath() << std::endl << endl;
-            //     response = handleGetRequest(clients[currentFd].data_rq, loc, servers);
-            //     // std::string response = handleGetRequest(clients[currentFd].data_rq, "www");
-            // }
-            // std::string response = clients[currentFd].buildResponse();//"HTTP/1.1 200 ok\r\nContent-Length: 17\r\nConnection: close\r\n\r\nUpload succeeded.\n";
-            // std::cout  <<  "=========" << response << "=========" ;
-			// clients[currentFd].closeConnection = true;
-            // send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 
 			clients[currentFd].handleResponse(currentFd);
 			clients[currentFd].closeConnection = true;
@@ -300,9 +331,10 @@ Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
     std::vector<Server*>::iterator it ;
     for( it = routeServer.begin(); it != routeServer.end(); ++it){
         Server *server = *it;
-        if(!server->params["server_name"].empty() &&  server->params["server_name"][0] == host)
-        {       //std::cout << "host " << host << " server name "<< server->params["server_name"][0] << std::endl;
+        for(size_t i = 0; i < server->serverNames.size(); i++) {
+            if(server->serverNames[i] == host) {
                 return server;
+            }
         }
     }
     return(routeServer[0]); // check empty vector 

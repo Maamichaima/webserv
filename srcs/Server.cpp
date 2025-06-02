@@ -2,9 +2,10 @@
 #include <cstddef>
 
 
-Server::Server() {
-    ip_address = "127.0.0.1";
 
+Server::Server() {
+    ip_address = "";
+    std::string MaxBodySize ="";
     for (std::vector<std::string>::iterator it = port.begin(); it != port.end(); ++it) {
         comb[*it] = Socket();
     }
@@ -21,17 +22,50 @@ void    Server::set_Port(std::string port){
    this->port.push_back(port);
 }
 
+bool check_all_keys(std::string key){
+
+    if(key == "root" || key == "index" || key == "allowed_methods" || key == "autoindex" || 
+        key == "redirect" || key == "cgi_extension" || key == "upload_store" || key =="cgi_path" ||
+        key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key =="host" )
+        return true;
+    else
+        return false;
+
+}
+
+std::vector<std::string> peekValues(Tokenizer& tokenizer,bool &foundSemicolon) {//pick
+    std::vector<std::string> vec;
+    
+    while (tokenizer.hasMore() && tokenizer.peek() != ";" && !check_all_keys(tokenizer.peek()) )  { 
+        vec.push_back(tokenizer.peek());
+        tokenizer.advance();
+    }
+ 
+    if (tokenizer.hasMore() && tokenizer.peek() == ";") {
+        foundSemicolon = true;
+        tokenizer.advance(); 
+    }
+    return vec;
+}
+
 bool    Server::createLocation(Tokenizer& tokenizer) {
 
+    location loc;
     std::map<std::string, std::vector<std::string> > locationParams;
+
     tokenizer.advance(); 
     std::string path = tokenizer.peek();
     tokenizer.advance(); 
+    if(tokenizer.peek() != "{")
+        return false;
+    tokenizer.braceStack.push('{');
     tokenizer.advance(); 
-    location loc;
     if(!loc.validParameter( tokenizer))
         return false;
-    tokenizer.advance(); // Skip '}'
+    if(tokenizer.peek() != "}")
+        return false;
+    tokenizer.advance();
+    tokenizer.braceStack.pop();
     loc.path = path;
     locations[path] = loc;
     
@@ -39,34 +73,20 @@ bool    Server::createLocation(Tokenizer& tokenizer) {
 }
 
 bool Server::createParam(Tokenizer& tokenizer) {
-
     std::string key = tokenizer.peek();
-    std::map<std::string, std::vector<std::string> >::iterator it;
-    std::vector<std::string> newValues;
-    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key == "host") {
-        tokenizer.advance();
-        newValues = peekValues(tokenizer);
-        it = params.find(key);
-        if(it != params.end())
-            it->second.insert(it->second.end(), newValues.begin(),newValues.end());  
-        else
-            params.insert(std::make_pair(key, newValues));
+    // std::vector<std::string>::iterator it= tokenizer.find(key);
+    bool foundSemicolon = false;
+    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key =="host" ) {
 
-        
-        if (!param_Syntaxe(key,params[key],*this))
-            return false; // throw
         tokenizer.advance();
+        std::vector<std::string> newValues = peekValues(tokenizer,foundSemicolon);
+        
+        if (!param_Syntaxe(key,newValues,*this) || !foundSemicolon )
+            return false;
     } 
     else {
         std::cout << key << " not a required parameter" << std::endl;
-        tokenizer.advance();
-        
-        while (tokenizer.peek() != ";") {
-            tokenizer.advance();
-        }
-        
-        tokenizer.advance(); 
-        return false; // throw
+        return false;
     }
     
     std::cout << std::endl;
@@ -78,7 +98,8 @@ bool Server::createParam(Tokenizer& tokenizer) {
 
 
 bool Server::createServer(Tokenizer& tokenizer) {
-    while (tokenizer.hasMore() && tokenizer.peek() != "}") {
+    while (tokenizer.hasMore() && tokenizer.peek() != "}")
+     {
         if (tokenizer.peek() == "location") {
             if(!createLocation(tokenizer))
                 return false;
@@ -91,7 +112,7 @@ bool Server::createServer(Tokenizer& tokenizer) {
     if (!tokenizer.hasMore()) {
         return false;
     }
-    
+    tokenizer.braceStack.pop();
     return true;
 }
 
@@ -157,7 +178,7 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
                 return false;
             }
             
-            std::cout << "Server "
+            std::cout << "Server "  
                         << " created new socket for port " << currentPort 
                         << " (fd: " << socket->fd_socket << ")" << std::endl; 
            
@@ -170,9 +191,9 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
 //     return socket.fd_socket;
 // }
 
-std::map<std::string, std::vector<std::string> >& Server::getParameters()  {
-    return params;
-}
+// std::map<std::string, std::vector<std::string> >& Server::getParameters()  {
+//     return params;
+// }
 
 location & Server::getLocations(std::string key)  {
     return locations[key];
@@ -180,7 +201,7 @@ location & Server::getLocations(std::string key)  {
 
 // Socket & Server::getSocket(){
 //     return socket;
-// } 
+// }
 
   
 void Server::printLocations() {
@@ -231,6 +252,35 @@ bool location::check_locations_key(std::string key){
 
 }
 
+bool location::validParameter(Tokenizer& tokenizer) {
+    std::string key;
+    bool foundSemicolon = false;
+    //std::map<std::string, std::vector<std::string> >::iterator it;
+    while (tokenizer.hasMore() && tokenizer.peek() != "}") {
+        key = tokenizer.peek();
+        if(!check_locations_key(key))
+        {
+            std::cerr << "location key invalid" << std::endl;
+            return false;
+        }
+        tokenizer.advance();
+        std::vector<std::string> newValues = peekValues(tokenizer,foundSemicolon);
+        if(newValues.empty() || !foundSemicolon )
+            return false;
+        
+        infos.insert(std::make_pair(key, newValues));//insert 
+    }
+    
+    if(!tokenizer.hasMore() )
+        return false;
+
+    return true;
+}
+
+
+
+
+
 std::vector<std::string>* location::getInfos(std::string key){
 
     std::map<std::string, std::vector<std::string> >::iterator it = infos.begin();
@@ -252,7 +302,6 @@ Server& Server::operator=(const Server &obj) {
         ip_address = obj.ip_address;
         port = obj.port;
         comb = obj.comb;
-        params = obj.params;
         locations = obj.locations;
       
     }
