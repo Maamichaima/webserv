@@ -2,3 +2,4 @@ obj
 *.o
 tm.cpp
 webserv
+config
