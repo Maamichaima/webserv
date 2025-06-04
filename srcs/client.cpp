@@ -186,7 +186,7 @@ void client::handleResponse(int currentFd)
 		cout << "before getLocation" << data_rq.path << endl;
 		location* loc = getClosestLocation(this->myServer, data_rq.path);
 		if (loc) {
-		    response = handleGetRequest(this->data_rq, loc, this->myServer);
+		    response = handleGetRequest(this->data_rq, loc, this->myServer, currentFd);
 		}
 		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 	}
