@@ -6,17 +6,14 @@
 // khass rihab txouf fin dirha
 using std::cout;
 
-location *getClosestLocation(const Server &server,
-                             const std::string &requestPath) {
+location *getClosestLocation(const Server &server, const std::string &requestPath) {
   location *bestMatch = nullptr;
   size_t bestLength = 0;
 
 //   cout << "PATH: " << requestPath << std::endl;
-  for (std::map<std::string, location>::const_iterator it =
-           server.locations.begin();
-       it != server.locations.end(); ++it) {
+  for (std::map<std::string, location>::const_iterator it = server.locations.begin(); it != server.locations.end(); ++it)
+  {
     const std::string &locPath = it->first;
-
     if (requestPath.find(locPath) == 0 &&
         (requestPath.size() == locPath.size() ||
          requestPath[locPath.size()] == '/' || locPath == "/")) {
@@ -39,26 +36,44 @@ void print_data(data_request& req)
         std::cout << it->first << ": " << it->second << std::endl;
 }
 
-void listDirectory(const std::string& path) {
+#include <iostream>
+#include <string>
+#include <dirent.h>
+
+std::string listDirectory(const std::string& path) {
     DIR* dir = opendir(path.c_str());
+    std::string html = "<html><body>\n";
+    html += "<h1>Index of " + path + "</h1>\n";
+    html += "<ul>\n";
 
     if (dir == NULL) {
-        cerr << "Error: Cannot open directory "<< endl;
-        return;
+        html += "<p><strong>Error:</strong> Cannot open directory.</p>\n";
+        html += "</body></html>\n";
+        return html;
     }
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
-        std::cout << entry->d_name << std::endl;
+        std::string name = entry->d_name;
+
+        // Ignore . and ..
+        if (name == "." || name == "..")
+            continue;
+
+        html += "<li><a href=\"" + path + name + "\">" + name + "</a></li>\n";
     }
+
     closedir(dir);
+    html += "</ul>\n</body></html>\n";
+    return html;
 }
 
 
-bool isDirectory(const std::string &fullPath) {
+
+int isDirectory(const std::string &fullPath) {
     struct stat info;
     if (stat(fullPath.c_str(), &info) != 0)
-        return false; // Error
+        return 6; // Error
     return S_ISDIR(info.st_mode);
 }
 
@@ -72,9 +87,12 @@ bool existFile(string &fullPath, location *loc)
     int check_st = stat(fullPath.c_str(), &st) == 0 && S_ISREG(st.st_mode);
     if (check_st == 0)
     {
+        cout << "hello: " << fullPath << endl;
+        cout << "hello2: " << isDirectory(fullPath) << endl;
         if (isDirectory(fullPath))
         {
             fullPath = checkIndexes(loc, fullPath + "/");
+            if (fullPath == "") cout << "amiiiiiiiiiiiiiiiiiiiiiiiine\n";
             // cout << "fullIn: " << fullPath << endl;
         }
     }
@@ -197,13 +215,16 @@ string checkIndexes(location* loc, const string path) {
 }
 
 //
-string handleGetRequest(data_request &req, location *loc, const Server &myServer)
+string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd)
 {
     // 1 check method
     if (req.method == "GET")
     {
         string locPath = normalizePath(loc->path);
         string reqPath = normalizePath(req.path);
+        if (loc->getInfos("root") == NULL)
+            cout << " rehaaab" << endl;
+
         string rootVar = loc->getInfos("root")->at(0);
         string fullPath = reqPath;
         string fullPathWithR = reqPath;
@@ -219,7 +240,19 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         {
             string indexRe = checkIndexes(loc, rootVar + "/");
             if (indexRe == "" && loc->getInfos("autoindex")->at(0) == "on")
-                listDirectory("www/");
+            {
+                cout << "********************" << endl;
+                std::string body = listDirectory("www/");
+
+                std::string response =
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/html\r\n"
+                    "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                    "Connection: close\r\n"
+                    "\r\n" +
+                    body;
+                send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+            }
             cout << "indexRe: " << indexRe<< endl;
             fullPath = indexRe;
         }
