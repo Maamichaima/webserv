@@ -93,7 +93,8 @@ void client::setBuffer(std::string str, ssize_t bytesRead)
 int isError(int numStatusCode)
 {
 	if(numStatusCode == 400 || numStatusCode == 404 || numStatusCode == 411 ||
-		 numStatusCode == 500 || numStatusCode == 501 || numStatusCode == 505 || numStatusCode == 405)
+		 numStatusCode == 500 || numStatusCode == 501 || numStatusCode == 505 || 
+		 numStatusCode == 405 || numStatusCode == 409)
 		return 1;
 	return 0;
 }
@@ -195,10 +196,12 @@ void client::handleResponse(int currentFd)
 	}
 	else if(this->data_rq.method == "DELETE")
 	{
-		std::string response;
-		std::cout << this->data_rq.path << "\n";
-		deleteMethode("/Users/maamichaima/Desktop/webserv/hh");
-		// response = 
+		this->data_rs.status_code = 204;
+		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
+		this->data_rs.headers["Content-Length"] = std::to_string(client::errorPages[this->data_rs.status_code].size());
+		setDataResponse();
+		std::string response = buildResponse();
+		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 	}
 	else
 	{

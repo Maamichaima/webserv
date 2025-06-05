@@ -34,6 +34,7 @@ void post(client &client, std::string buffer)
 {
     location *location = getClosestLocation(client.myServer, client.data_rq.path);
     std::map<std::string, std::vector<std::string>>::iterator it = location->infos.find("upload_store");
+	std::cout << "==========\n";
     if(location && it != location->infos.end())
     {
         std::string name_file = location->infos["upload_store"][0] + client.data_rq.bodyNameFile + "." + getExtention(client.data_rq);
