@@ -2,17 +2,17 @@
 #include "methods/GetMethod.hpp"
 #include "methods/DeleteMethod.hpp"
 
-std::string readFileContent(const std::string& filePath) {
+int readFileContent(const std::string& filePath, std::string &content) {
 	std::ifstream file(filePath.c_str());
 	if (!file.is_open())
-		throw std::runtime_error("this file not open" + filePath);
+		return 0;
+		// throw std::runtime_error("this file not open" + filePath);
 
-	std::string content;
 	std::string line;
 	while (std::getline(file, line)) {
 		content += line + "\n";
 	}
-	return content;
+	return 1;
 }
 
 client::client() 
@@ -94,7 +94,7 @@ int isError(int numStatusCode)
 {
 	if(numStatusCode == 400 || numStatusCode == 404 || numStatusCode == 411 ||
 		 numStatusCode == 500 || numStatusCode == 501 || numStatusCode == 505 || 
-		 numStatusCode == 405 || numStatusCode == 409)
+		 numStatusCode == 405 || numStatusCode == 409 || numStatusCode == 403)
 		return 1;
 	return 0;
 }
@@ -117,8 +117,6 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		// if (this->data_rs.status_code == 1)
-		// 	check_http_body_rules();
 		if(checkRequestProgress())
 			this->printClient();
 	}
@@ -149,33 +147,51 @@ std::string client::buildResponse()
 	return response;
 }
 
+template <typename T>
+std::string to_string(T value) {
+	std::ostringstream oss;
+	oss << value;
+	return oss.str();
+}
+
 void client::setDataResponse()
 {
-	this->data_rs.startLine = "HTTP/1.1 " + std::to_string(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
+	this->data_rs.startLine = "HTTP/1.1 " + to_string(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
+	this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
+	this->data_rs.headers["Content-Length"] = to_string(client::errorPages[this->data_rs.status_code].size());
 	this->data_rs.body = client::errorPages[this->data_rs.status_code];
 }
 
+void client::setStatusCode()
+{
+	if(!isError(this->data_rs.status_code))
+	{
+		if(this->data_rq.method == "POST")	
+			this->data_rs.status_code = 201;
+		if(this->data_rq.method == "DELETE")	
+			this->data_rs.status_code = 204;
+	}
+}
 
 void client::handleResponse(int currentFd)
 {
-	if(isError(this->data_rs.status_code))
+	setStatusCode();
+	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string(this->data_rs.status_code));
+	if(it != this->myServer.errorPages.end())
 	{
-		// std::map<std::string,std::vector<std::string> > it = this->myServer.params.find("error_page");
-		// if(it != this->myServer.params.end())
-
-		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
-		this->data_rs.headers["Content-Length"] = std::to_string(client::errorPages[this->data_rs.status_code].size());
-		setDataResponse();
-		std::string response = buildResponse();
-		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-		return ;
+		std::string content;
+		if(readFileContent(it->second, content))
+		{
+			this->data_rs.startLine = "HTTP/1.1 " + to_string(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
+			this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";// "charset=UTF-8" « é » affiché comme � ou un caractère bizarre.
+			this->data_rs.headers["Content-Length"] = to_string(content.size());
+			this->data_rs.body = content;
+			std::string response = buildResponse();
+			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+			return ;
+		}
 	}
-	int is_cgi = 0;
-	if(is_cgi)//is cgi
-	{
-
-	}
-	else if(this->data_rq.method == "GET")
+	if(this->data_rq.method == "GET")
 	{
 		std::string response;
 		cout << "before getLocation" << data_rq.path << endl;
@@ -185,48 +201,39 @@ void client::handleResponse(int currentFd)
 		}
 		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 	}
-	else if(this->data_rq.method == "POST")// && !isError(this->data_rs.status_code))
-	{
-		this->data_rs.status_code = 201;
-		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
-		this->data_rs.headers["Content-Length"] = std::to_string(client::errorPages[this->data_rs.status_code].size());
-		setDataResponse();
-		std::string response = buildResponse();
-		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-	}
-	else if(this->data_rq.method == "DELETE")
-	{
-		this->data_rs.status_code = 204;
-		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
-		this->data_rs.headers["Content-Length"] = std::to_string(client::errorPages[this->data_rs.status_code].size());
-		setDataResponse();
-		std::string response = buildResponse();
-		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-	}
 	else
 	{
-		// 405 Method Not Allowed 
+		setDataResponse();
+		std::string response = buildResponse();
+		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 	}
 }
 
 void client::check_http_body_rules()
 {
+	// set exention here
 	if(this->data_rq.method != "GET" && this->data_rq.method != "POST" && this->data_rq.method != "DELETE")
-		throw(501);
+		throw(501);// Not Implemented
 	std::map<std::string, std::string>::iterator it_cLenght = this->data_rq.headers.find("content-length");
+	std::map<std::string, std::string>::iterator it_cType = this->data_rq.headers.find("content-type");
 	std::map<std::string, std::string>::iterator it_cEncoding = this->data_rq.headers.find("transfer-encoding");
 	std::map<std::string, std::string>::iterator is_Host = this->data_rq.headers.find("host");
+	std::map<std::string, std::string>::iterator isChunked = this->data_rq.headers.find("transfer-encoding");
+	if(isChunked != this->data_rq.headers.end() && isChunked->second == "chunked")
+		this->data_rq.is_chunked = 1;
+	if(it_cLenght != this->data_rq.headers.end())
+	{
+		if(!isMatch("\\d+", it_cLenght->second))
+			throw(400);
+		this->data_rq.size_body = atoi(this->data_rq.headers["content-length"].c_str());
+	}
 	if(is_Host == this->data_rq.headers.end())
 		throw(400);
-	if(this->data_rq.method == "GET")
-	{
-	}
-	else if(this->data_rq.method == "POST")
+	if(this->data_rq.method == "POST")
 	{
 		if(it_cEncoding == this->data_rq.headers.end() && it_cLenght == this->data_rq.headers.end())
 			throw(411);
-	}
-	else
-	{
+		if(it_cType == this->data_rq.headers.end() && this->data_rq.size_body > 0)
+			throw(400);
 	}
 }
