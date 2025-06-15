@@ -43,8 +43,8 @@ class client
         data_request data_rq;
         int flag;
         std::string send_buffer;    // la réponse HTTP à envoyer
-        size_t send_offset = 0;     // combien d'octets ont été envoyés
-        bool headers_parsed = false;
+        // size_t send_offset = 0;     // combien d'octets ont été envoyés
+        // bool headers_parsed = false;
         parser parc;
         Server myServer;
 		bool closeConnection;
@@ -68,6 +68,7 @@ class client
 		void handleResponse(int currentFd);
 		void setDescription();
 		void setErrorPages();
+		void setStatusCode();
 };
 
 std::string get_line(std::string str);

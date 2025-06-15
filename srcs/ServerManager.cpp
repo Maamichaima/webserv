@@ -5,7 +5,7 @@
 
 size_t ServerManager::numServer = 0;
 int flll = 1;
-std::map<int, std::vector<Server *>> SocketToServers;
+std::map<int, std::vector<Server *> > SocketToServers;
 
 ServerManager::ServerManager(){
     epollFd = epoll_create1(0);
@@ -295,9 +295,7 @@ void    ServerManager::handle_cnx()
             }
         } 
         if (!clients[currentFd].checkRequestProgress())
-        {
             clients[currentFd].parseRequest();
-        }
         else if (events[i].events & EPOLLOUT)
         {
 			clients[currentFd].handleResponse(currentFd);
