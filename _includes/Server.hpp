@@ -16,7 +16,7 @@ struct location{
     std::map<std::string, std::vector<std::string> > infos;
 
     bool        validParameter(Tokenizer& tokenizer);
-    bool        check_locations_key(std::string key);
+    bool        check_locations_key(std::string key,  std::vector<std::string> values);
     void        setPath(const std::string& p) { path = p; }
     std::string getPath() const {return path;}
     std::vector<std::string>* getInfos(std::string key);
@@ -36,7 +36,7 @@ class Server{
 
     public:
         std::string ip_address;
-        std::string MaxBodySize;
+        size_t MaxBodySize;
         std::vector<std::string> port;
         std::map<std::string,Socket> comb;
         std::vector<std::string> serverNames;
@@ -67,5 +67,5 @@ class Server{
 
     bool    parceConfigFile(int argc,char **argv,ServerManager &manager);
     bool    param_Syntaxe(std::string key, std::vector<std::string> values,Server &server);
-
+    bool    Directives_syntaxe(std::string key, std::vector<std::string> values);
 #endif

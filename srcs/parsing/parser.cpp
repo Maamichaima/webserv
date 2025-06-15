@@ -201,8 +201,7 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
         client.data_rq.headers[key] = value;
 		if(key == "host")
 		{
-			client.myServer = *chooseServer(SocketToServers[client.server_fd],client.data_rq.headers["host"]);
-			// cout << "client server" << client.myServer.port[0] << endl;
+			client.myServer=*chooseServer(SocketToServers[client.server_fd],client.data_rq.headers["host"]);
 		}
 
     }
