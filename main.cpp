@@ -11,9 +11,8 @@ int main(int argc,char **argv){
     if(!parceConfigFile(argc,argv,manager))
         return(1);
     
-    manager.printAllServerInfo();
+    //manager.printAllServerInfo();
     manager.initializeAll();
-    
    
 
     while(1)
@@ -24,7 +23,4 @@ int main(int argc,char **argv){
     }
 }
 
-// int main() {
-//     deleteMethode("/Users/maamichaima/Desktop/webserv/2");
-//     return 0;
-// }
+

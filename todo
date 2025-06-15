@@ -1,38 +1,8 @@
-Content-Length Errors (400 Bad Request):
 
-Non-integer value (e.g., Content-Length: ABC)
-
-Body size ≠ header value 
-
-
-
-411 Length Required: No Content-Length for POST/PUT (done ✅)
-
-505 HTTP Version Not Supported: Invalid version (e.g., HTTP/2.0) (done ✅)
-
-501 Not Implemented: Valid method but unsupported (e.g., PROPFIND) (done ✅)
-
-
-error pages dapres config file
-
-delete 
-
-max body size
-
-
-+ multiple cgi
-
-+ large request and another request  fnafss lwa9t
-
-+ cookies
-
-
-config file checks:
-    - how much server names should i have
-    - if the ip address is wrong
-    - if the key is invalid 
 
 
     servers with same server name 
-    check for param values at least one 
-    error pages in map ;
+    duplicate location directives 
+    parse some location directives (cgi)
+    cookies /session
+    check for non-set directives 

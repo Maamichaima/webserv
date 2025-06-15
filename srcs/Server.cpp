@@ -5,7 +5,7 @@
 
 Server::Server() {
     ip_address = "";
-    std::string MaxBodySize ="";
+    MaxBodySize = 0;
     for (std::vector<std::string>::iterator it = port.begin(); it != port.end(); ++it) {
         comb[*it] = Socket();
     }
@@ -30,7 +30,6 @@ bool check_all_keys(std::string key){
         return true;
     else
         return false;
-
 }
 
 std::vector<std::string> peekValues(Tokenizer& tokenizer,bool &foundSemicolon) {//pick
@@ -40,7 +39,6 @@ std::vector<std::string> peekValues(Tokenizer& tokenizer,bool &foundSemicolon) {
         vec.push_back(tokenizer.peek());
         tokenizer.advance();
     }
- 
     if (tokenizer.hasMore() && tokenizer.peek() == ";") {
         foundSemicolon = true;
         tokenizer.advance(); 
@@ -52,7 +50,6 @@ bool    Server::createLocation(Tokenizer& tokenizer) {
 
     location loc;
     std::map<std::string, std::vector<std::string> > locationParams;
-
     tokenizer.advance(); 
     std::string path = tokenizer.peek();
     tokenizer.advance(); 
@@ -68,28 +65,18 @@ bool    Server::createLocation(Tokenizer& tokenizer) {
     tokenizer.braceStack.pop();
     loc.path = path;
     locations[path] = loc;
-    
     return true;
 }
 
 bool Server::createParam(Tokenizer& tokenizer) {
-    std::string key = tokenizer.peek();
-    // std::vector<std::string>::iterator it= tokenizer.find(key);
-    bool foundSemicolon = false;
-    if (key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key =="host" ) {
 
-        tokenizer.advance();
-        std::vector<std::string> newValues = peekValues(tokenizer,foundSemicolon);
-        
-        if (!param_Syntaxe(key,newValues,*this) || !foundSemicolon )
-            return false;
-    } 
-    else {
-        std::cout << key << " not a required parameter" << std::endl;
+    std::string key = tokenizer.peek();
+    bool foundSemicolon = false;
+    tokenizer.advance();
+    std::vector<std::string> newValues = peekValues(tokenizer,foundSemicolon);
+    if (!param_Syntaxe(key,newValues,*this) || !foundSemicolon )
         return false;
-    }
     
-    std::cout << std::endl;
     return true;
 }
 
@@ -120,7 +107,6 @@ bool Server::createServer(Tokenizer& tokenizer) {
 std::vector<std::string> Server::getPort() {
     if(!port.empty())
         return(port);
-        //return a vector of ports if port empty set the fisrt elm of vector to default port
     port.push_back("8080");  
     return(port);
 }
@@ -167,7 +153,6 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
                 std::cerr << "Failed to create socket for port " << currentPort << std::endl;
                 return false;
             }
-            std::cout << socket->fd_socket << std::endl;
             if (!socket->bind_Socket()) {
                 std::cerr << "Failed to bind socket for port " << currentPort << std::endl;
                 return false;
@@ -187,13 +172,7 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
     return true;
 }
 
-// int Server::getSocketFd()  {
-//     return socket.fd_socket;
-// }
 
-// std::map<std::string, std::vector<std::string> >& Server::getParameters()  {
-//     return params;
-// }
 
 location & Server::getLocations(std::string key)  {
     return locations[key];
@@ -242,11 +221,11 @@ void Server::printLocations() {
 
 
 
-bool location::check_locations_key(std::string key){
+bool location::check_locations_key(std::string key, std::vector<std::string> values){
 
     if(key == "root" || key == "index" || key == "allowed_methods" || key == "autoindex" || 
         key == "redirect" || key == "cgi_extension" || key == "upload_store" || key =="cgi_path")
-        return true;
+        return  Directives_syntaxe( key,  values);
     else
         return false;
 
@@ -255,22 +234,18 @@ bool location::check_locations_key(std::string key){
 bool location::validParameter(Tokenizer& tokenizer) {
     std::string key;
     bool foundSemicolon = false;
-    //std::map<std::string, std::vector<std::string> >::iterator it;
     while (tokenizer.hasMore() && tokenizer.peek() != "}") {
         key = tokenizer.peek();
-        if(!check_locations_key(key))
-        {
-            std::cerr << "location key invalid" << std::endl;
+        if (infos.find(key) != infos.end()) 
             return false;
-        }
         tokenizer.advance();
         std::vector<std::string> newValues = peekValues(tokenizer,foundSemicolon);
         if(newValues.empty() || !foundSemicolon )
             return false;
-        
+        if(!check_locations_key(key,newValues))
+            return false;
         infos.insert(std::make_pair(key, newValues));//insert 
     }
-    
     if(!tokenizer.hasMore() )
         return false;
 
@@ -296,14 +271,17 @@ std::vector<std::string>* location::getInfos(std::string key){
 }
 
 
-Server& Server::operator=(const Server &obj) {
-    if(this != &obj) {
+Server& Server::operator=(const Server &other) {
 
-        ip_address = obj.ip_address;
-        port = obj.port;
-        comb = obj.comb;
-        locations = obj.locations;
-      
+    if (this != &other) {  
+        ip_address = other.ip_address;
+        MaxBodySize = other.MaxBodySize;
+        port = other.port;
+        comb = other.comb;
+        serverNames = other.serverNames;
+        locations = other.locations;
+        errorPages = other.errorPages;
     }
     return *this;
+
 }
