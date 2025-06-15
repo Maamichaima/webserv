@@ -58,7 +58,8 @@ bool ServerManager::initializeAll() {
       
         if (!servers[i].initialize(this->servers, static_cast<int>(i))) {
             std::cerr << "Failed to initialize a server" << std::endl;
-            return false;
+           // return false;
+            continue;
         }
         std::map<std::string, Socket>& serverComb = servers[i].comb;
         for (std::map<std::string, Socket>::iterator it = serverComb.begin(); 
@@ -76,7 +77,7 @@ bool ServerManager::initializeAll() {
                     return false; 
                 }
                 epollFds.insert(fd);
-                std::cout << "New event added : " << fd << " for port " << it->first << " to epoll" << std::endl;
+               // std::cout << "New event added : " << fd << " for port " << it->first << " to epoll" << std::endl;
             }
         }
 
@@ -143,7 +144,7 @@ void ServerManager::printAllServerInfo() {
             std::cout << "   Server Names: None configured" << std::endl;
         }
 
-        if (!server.MaxBodySize.empty()) {
+        if (server.MaxBodySize != 0) {
             std::cout << "   Max Body Size: " << server.MaxBodySize << std::endl;
         } else {
             std::cout << "   Max Body Size: Default" << std::endl;
@@ -199,7 +200,7 @@ bool ServerManager::Add_new_event(int fd_socket){
         close(fd_socket);
         return false;
     }
-    std::cout << "New event added : " << fd_socket << std::endl;
+    //std::cout << "New event added : " << fd_socket << std::endl;
     return true;
 }
 
@@ -299,7 +300,6 @@ void    ServerManager::handle_cnx()
         }
         else if (events[i].events & EPOLLOUT)
         {
-			// exit(0);
 			clients[currentFd].handleResponse(currentFd);
 			clients[currentFd].closeConnection = true;
         }
@@ -325,7 +325,9 @@ Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
         return NULL;
     }
     if(routeServer.size() == 1)
+    {
         return routeServer[0];
+    }
     std::vector<Server*>::iterator it ;
     for( it = routeServer.begin(); it != routeServer.end(); ++it){
         Server *server = *it;
@@ -335,6 +337,7 @@ Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
             }
         }
     }
+   
     return(routeServer[0]); // check empty vector 
 }
 

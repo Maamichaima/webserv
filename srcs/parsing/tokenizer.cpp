@@ -76,35 +76,32 @@ std::vector<std::string> splitServerConfig(const std::string& input) {
             current += c;
         }
     }
-    
-
     if (!current.empty()) {
         parts.push_back(current);
     }
-    
     return parts;
 }
 
-bool Tokenizer::skipToNextServerBlock() {
-    while (hasMore()) {
-        std::string current = peek();
+// bool Tokenizer::skipToNextServerBlock() {
+//     while (hasMore()) {
+//         std::string current = peek();
         
-        if (current == "{") {
-            braceStack.push('{');
-        } 
-        else if (current == "}") {
-            if (!braceStack.empty()) {
-                braceStack.pop();
-            }
-        }
-        else if (current == "server" && braceStack.empty()) {
-            return true;
-        }
+//         if (current == "{") {
+//             braceStack.push('{');
+//         } 
+//         else if (current == "}") {
+//             if (!braceStack.empty()) {
+//                 braceStack.pop();
+//             }
+//         }
+//         else if (current == "server" && braceStack.empty()) {
+//             return true;
+//         }
         
-        advance();
-    }
-    return false;
-}
+//         advance();
+//     }
+//     return false;
+// }
 
 bool    Tokenizer::parse(ServerManager &manager) {
     while (hasMore()) {
@@ -116,9 +113,8 @@ bool    Tokenizer::parse(ServerManager &manager) {
                 Server server;
                 if (!server.createServer(*this))
                 {
-                    std::cerr << "Error: Server #"  << " creation failed" << std::endl;
-                    if(skipToNextServerBlock())
-                        continue;
+                    std::cerr << "Error: server creation failed due to a syntaxe error " << std::endl;
+                    return false;
                 }
                 else
                 {
@@ -173,7 +169,7 @@ bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
     
     tokenizer.initialize();
    
-    if(!tokenizer.parse(manager))
+    if(!tokenizer.parse(manager))//catch errors
         return false;
  
     

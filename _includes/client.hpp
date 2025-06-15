@@ -38,7 +38,7 @@ class client
     private:
     public:
         std::string buffer;
-        // int fd_socket;
+        // int ;
         int server_fd;
         data_request data_rq;
         int flag;

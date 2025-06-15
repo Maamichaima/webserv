@@ -138,7 +138,6 @@ bool    check_error_page(std::vector<std::string> values,Server &server){
         return false;
     
     server.errorPages[values[0]] = values[1];
-    
     return true; 
 }
 
@@ -156,38 +155,92 @@ bool check_client_max_body_size(std::vector<std::string> values,Server &server){
 
     if (i == 0)
         return false;
+    std::string numeric_part = value.substr(0, i);
+    size_t base_value;   
+    try {
+        base_value = std::stoull(numeric_part);
+    } catch (const std::exception&) {
+        return false;
+    }
+
+    size_t multiplier = 1;
     if (i < value.size())
     {
         char unit = std::tolower(value[i]);
         if (unit != 'k' && unit != 'm' && unit != 'g')
             return false;
-    
+        if (unit == 'k')
+            multiplier = 1024;
+        else if (unit == 'm')
+            multiplier = 1024 * 1024;
+        else if (unit == 'g')
+            multiplier = 1024 * 1024 * 1024;
         if (i + 1 != value.size())
             return false;
     }
-    server.MaxBodySize = value;
+    server.MaxBodySize = base_value * multiplier;
     return true;
 }
 
 
-bool    param_Syntaxe(std::string key, std::vector<std::string> values,Server &server){ // it = params.begin()
-    
+bool    param_Syntaxe(std::string key, std::vector<std::string> values, Server &server){
 
     if(key =="listen" && server.port.empty())
         return (check_listen(values,server));
-    else if(key == "host"&& server.ip_address.empty())
+    else if(key == "host" && server.ip_address.empty())
         return(check_host(values,server) );
     else if(key == "server_name" && server.serverNames.empty())   
         return(check_server_names(values,server));
     else if( key == "error_page")
         return(check_error_page(values,server));
-    else if(key =="client_max_body_size"&& server.MaxBodySize.empty() )
+    else if(key =="client_max_body_size" && server.MaxBodySize == 0 )
         return(check_client_max_body_size(values,server));
-    else if( !server.port.empty() || !server.ip_address.empty() || !server.serverNames.empty() || !server.MaxBodySize.empty())
-    {
-        std::cout << "duplicated directive" << std::endl;
-        return false ;
-    }
-    else
+    else 
         return false;
+}
+
+
+bool check_allowed_methods(std::vector<std::string> values)
+{
+    std::vector<std::string>::iterator it = values.begin();
+    while(it != values.end())
+    {
+        std::string value = *it;
+        if(value != "POST" && value != "GET" )
+            return false;
+        ++it;
+
+    }
+    return true;
+}
+
+bool check_autoindex(std::vector<std::string> values)
+{
+    if(values.size() != 1)
+        return false;
+    if(values[0] != "on" && values[0] != "off")
+        return false;
+    return true;
+}
+
+bool Directives_syntaxe(std::string key, std::vector<std::string> values)
+{
+    
+    if(key =="root" &&  values.size() != 1)
+        return (false);
+    else if(key == "allowed_methods" )   
+        return(check_allowed_methods(values));
+    else if( key == "autoindex")
+        return(check_autoindex(values));
+    else if(key == "redirect" && !(values.size() == 2 || values.size() == 1))
+        return(false);
+    else if(key == "upload_store" &&  values.size() != 1) 
+        return(false);
+    // else if(key =="cgi_extension" )
+    //     return();
+    // else if(key == "cgi_path")
+    //     return();
+    else
+        return true;
+
 }
