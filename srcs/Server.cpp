@@ -303,7 +303,7 @@ Server& Server::operator=(const Server &obj) {
         port = obj.port;
         comb = obj.comb;
         locations = obj.locations;
-      
+		errorPages = obj.errorPages;
     }
     return *this;
 }

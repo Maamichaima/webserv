@@ -22,14 +22,13 @@ int pathType(const std::string& path)
 
 void deleteFile(const std::string& path)
 {
-	if(unlink(path.c_str()) == -1)
+	if(std::remove(path.c_str()) == -1)
 		throw (403); //forbiden no permision to delete
 	throw (204);//no content 
 }
 
 int deleteDir(const std::string& path)
 {
-	
 	DIR *dir = opendir(path.c_str());
 	if(dir == NULL)
 	{
@@ -49,7 +48,7 @@ int deleteDir(const std::string& path)
 		std::string fullPath = path + "/" + name;
 		deleteDir(fullPath);
 	}
-	closedir(dir);
+	closedir(dir);// hhh/ccc/./
 	if (rmdir(path.c_str()) == 0)
 	{
 		std::cout << "Directory deleted: " << path << "\n";
@@ -64,10 +63,11 @@ int deleteDir(const std::string& path)
 
 void deleteMethode(std::string path)
 {
-	if(path == "/")
+	if(path == "/")//add path of our project w
+		throw(403);
     if (pathType(path) == 1)//is a dir
 	{
-		if(path[path.length() - 1] != '/')
+		if(!path.empty() && path[path.length() - 1] != '/')// ila kan empty 
 			throw(409);
 		throw (deleteDir(path));
 	}
