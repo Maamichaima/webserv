@@ -13,12 +13,9 @@ Body size ≠ header value
 501 Not Implemented: Valid method but unsupported (e.g., PROPFIND) (done ✅)
 
 
-error pages dapres config file
-
-delete 
+error pages dapres config file 
 
 max body size
-
 
 + multiple cgi
 

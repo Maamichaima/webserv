@@ -59,7 +59,7 @@ int parser::parse(client &client)
 			client.flag = 1;
 			client.buffer.erase(0, start_line.size());
 			if(client.data_rq.version != "HTTP/1.1")
-			throw (505);
+				throw (505);
 		}
 		else
 		{
@@ -87,17 +87,9 @@ int parser::parse(client &client)
 		if(header == "\r\n")
 		{
 			client.check_http_body_rules();
-			std::map<std::string, std::string>::iterator it = client.data_rq.headers.find("content-length");
-		    std::map<std::string, std::string>::iterator it1 = client.data_rq.headers.find("transfer-encoding");
-            if(it1 != client.data_rq.headers.end() && it1->second == "chunked")
-				client.data_rq.is_chunked = 1;
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
             client.data_rq.bodyNameFile = RandomString(5);
-			if(it != client.data_rq.headers.end())// && isNumber(it->second))
-				client.data_rq.size_body = atoi(client.data_rq.headers["content-length"].c_str());
-			// else if(it != client.data_rq.headers.end() && !isNumber(it->second))
-			// 	throw (400);
 			location *location = getClosestLocation(client.myServer, client.data_rq.path);
 			if(location)
 			{
@@ -118,13 +110,11 @@ int parser::parse(client &client)
 				std::string body = get_line(client.buffer);
 				if(isMatch("[0123456789abcdef]+\r\n", body))
 				{
-					client.data_rq.flag_chunked = client.data_rq.size_chunked = std::stoi(body, 0, 16);
+					client.data_rq.flag_chunked = client.data_rq.size_chunked = std::strtol(body.c_str(), NULL, 16);
 					client.buffer.erase(0, body.size());
 				}
 				else
-				{
 					throw (400);
-				}
 			}
 			else if(client.data_rq.size_chunked > 0)
 			{
@@ -141,12 +131,10 @@ int parser::parse(client &client)
 					client.data_rq.size_chunked = -1;
 					client.buffer.erase(0, body.size());
 					if (client.data_rq.flag_chunked == 0)
-					client.flag = 3;
+						client.flag = 3;
 				}
 				else
-				{
 					throw (400);
-				}
 			}
 		}
 		else 
@@ -184,6 +172,8 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
         std::deque<std::string> startLine = split(str, " ");
         client.data_rq.method = startLine[0];
 		size_t pos = startLine[1].find("?");
+		if(startLine[1].size() >= 8000)
+			throw (414);// URI Too Long
 		if(pos != std::string::npos)
 		{
 			client.data_rq.path = startLine[1].substr(0, pos);
@@ -200,7 +190,7 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
 		size_t size = str.find("\r\n");
 		std::string key = str.substr(0, pos);
 		std::string value = str.substr(pos + 2, size - pos - 2);
-		toLower(key);
+		toLower(key);// ila kanet fiha whatspaces
         client.data_rq.headers[key] = value;
 		if(key == "host")
 		{
