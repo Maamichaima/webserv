@@ -2,7 +2,7 @@
 #include "../../_includes/Server.hpp"
 
 
-bool   validate_port(const std::string& port){
+bool   valide_port(const std::string& port){
 
     for(int i  ; i < port.size() ;i++){
         char c = port[i];
@@ -70,111 +70,78 @@ bool check_listen( std::vector<std::string> values,Server &server)
     while(it != values.end())
     {
         std::string value = *it;
-        size_t colon_pos = value.find(':');
+        if (!valide_port(value))
+            return false;
+        if (std::find(server.port.begin(), server.port.end(), value) != server.port.end()) {
+            std::cerr << "Error: Duplicate port " << value << std::endl;
+            return false;
+        }
+        server.set_Port(value);
+        ++it;
+    }
+    
+    return true;
+}
 
-        if(colon_pos != std::string::npos)
-        {
-            std::string host = value.substr(0, colon_pos);
-            std::string port = value.substr(colon_pos + 1);
-            if (!host.empty()) // listen :PORT
-            {   
-                if (!valide_ip_address(host))
+bool check_host(std::vector<std::string> values,Server &server)
+{
+    if(values.empty())
+        return false;
+    std::vector<std::string>::iterator it = values.begin();
+    while(it != values.end())
+    {
+        std::string value = *it;
+        if (!valide_ip_address(value))
                     return false;
-                server.set_IpAddress(host);
-            }
-            else
-                return false;
-            if(!port.empty())
-            {
-                if (!validate_port(port))
-                    return false;
-                server.set_Port(port);
-            }
-            else
-                return false;
-        }
-        else
-        {
-            bool is_port = true; 
-            for (int i  ; i < value.size() ;i++)
-            {
-                char c = value[i];
-                if (!isdigit(c))
-                {
-                    is_port = false;
-                    break;
-                }
-            }
-            if (is_port)
-            {
-                if (!validate_port(value))
-                    return false;
-                server.set_Port(value);
-            }
-            else
-            {    if (!valide_ip_address(value))
-                    return false;
-                server.set_IpAddress(value);
-            }
-        }
+         server.set_IpAddress(value);
         ++it;
     }
     return true;
 }
 
-bool check_server_names(std::vector<std::string> values)
+bool check_server_names(std::vector<std::string> values, Server &server)
 {
     if (values.empty())
         return false;
         
-    for (int i  ; i < values.size() ;i++)
+    for (int i = 0 ; i < values.size() ;i++)
     {
         std::string name = values[i];
         if (name.empty())
             return false;
-    }
-    
-    return true;
-}
-
-bool    check_error_page(std::vector<std::string> values){
-    
-    if (values.size() < 2)
-        return false;
-    size_t i = 0;
-    while (i < values.size())
-    {
-        size_t start = i;
-        while (i < values.size() && !values[i].empty() && values[i][0] != '/')
-        {
-            const std::string& code = values[i];
-            
-            for (int i  ; i < code.size() ;i++)  
-            {
-                char c = code[i];
-                if (!isdigit(c))
-                    return false;
-            }
-            
-            int error_code = std::atoi(code.c_str());
-            if (error_code < 100 || error_code > 599)
-                return false;
-            
-            i++;
+        if (std::find(server.serverNames.begin(), server.serverNames.end(), name) != server.serverNames.end()) {
+            std::cerr << "Error: Duplicate server name " << name << std::endl;
+            return false;
         }
-        
-        if (i == start)
-            return false;
-            
-        if (i >= values.size() || values[i].empty() || values[i][0] != '/')
-            return false;
-        i++;
+        server.serverNames.push_back(name);
     }
-    
     return true;
 }
 
-bool check_client_max_body_size(std::vector<std::string> values){
+bool    check_error_page(std::vector<std::string> values,Server &server){
+    
+    if (values.size() != 2)
+        return false;
+
+    size_t i = 0;
+    const std::string& code = values[0];
+    
+    for (int i  ; i < code.size() ;i++)  
+    {
+        char c = code[i];
+        if (!isdigit(c))
+        return false;
+    }
+    
+    int error_code = std::atoi(code.c_str());
+    if (error_code < 100 || error_code > 599)
+        return false;
+    
+    server.errorPages[values[0]] = values[1];
+    return true; 
+}
+
+bool check_client_max_body_size(std::vector<std::string> values,Server &server){
     if (values.size() != 1)
         return false;
 
@@ -188,35 +155,92 @@ bool check_client_max_body_size(std::vector<std::string> values){
 
     if (i == 0)
         return false;
+    std::string numeric_part = value.substr(0, i);
+    size_t base_value;   
+    try {
+        base_value = std::stoull(numeric_part);
+    } catch (const std::exception&) {
+        return false;
+    }
+
+    size_t multiplier = 1;
     if (i < value.size())
     {
         char unit = std::tolower(value[i]);
         if (unit != 'k' && unit != 'm' && unit != 'g')
             return false;
-    
+        if (unit == 'k')
+            multiplier = 1024;
+        else if (unit == 'm')
+            multiplier = 1024 * 1024;
+        else if (unit == 'g')
+            multiplier = 1024 * 1024 * 1024;
         if (i + 1 != value.size())
             return false;
     }
+    server.MaxBodySize = base_value * multiplier;
     return true;
 }
 
 
-bool    param_Syntaxe(std::string key, std::vector<std::string> values,Server &server){ // it = params.begin()
-    
+bool    param_Syntaxe(std::string key, std::vector<std::string> values, Server &server){
 
-    if(key =="listen"){
+    if(key =="listen" && server.port.empty())
         return (check_listen(values,server));
-    }
-    else if(key == "server_name" || key == "server_names" ){ //Setup the server_names or not.
-        return(check_server_names(values));
-    }
+    else if(key == "host" && server.ip_address.empty())
+        return(check_host(values,server) );
+    else if(key == "server_name" && server.serverNames.empty())   
+        return(check_server_names(values,server));
     else if( key == "error_page")
+        return(check_error_page(values,server));
+    else if(key =="client_max_body_size" && server.MaxBodySize == 0 )
+        return(check_client_max_body_size(values,server));
+    else 
+        return false;
+}
+
+
+bool check_allowed_methods(std::vector<std::string> values)
+{
+    std::vector<std::string>::iterator it = values.begin();
+    while(it != values.end())
     {
-        return(check_error_page(values));
+        std::string value = *it;
+        if(value != "POST" && value != "GET" )
+            return false;
+        ++it;
 
     }
-    else if(key =="client_max_body_size" )
-        return(check_client_max_body_size(values));
-    else
+    return true;
+}
+
+bool check_autoindex(std::vector<std::string> values)
+{
+    if(values.size() != 1)
         return false;
+    if(values[0] != "on" && values[0] != "off")
+        return false;
+    return true;
+}
+
+bool Directives_syntaxe(std::string key, std::vector<std::string> values)
+{
+    
+    if(key =="root" &&  values.size() != 1)
+        return (false);
+    else if(key == "allowed_methods" )   
+        return(check_allowed_methods(values));
+    else if( key == "autoindex")
+        return(check_autoindex(values));
+    else if(key == "redirect" && !(values.size() == 2 || values.size() == 1))
+        return(false);
+    else if(key == "upload_store" &&  values.size() != 1) 
+        return(false);
+    // else if(key =="cgi_extension" )
+    //     return();
+    // else if(key == "cgi_path")
+    //     return();
+    else
+        return true;
+
 }
