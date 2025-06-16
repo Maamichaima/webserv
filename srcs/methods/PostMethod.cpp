@@ -3,55 +3,154 @@
 #include "../../_includes/client.hpp"
 
 
+std::map<std::string, std::string> createMimeTypeMap() {
+    std::map<std::string, std::string> inverseMimeMap;
+
+    // Text
+    inverseMimeMap["text/html"] = ".html";
+    inverseMimeMap["text/css"] = ".css";
+    inverseMimeMap["text/xml"] = ".xml";
+    inverseMimeMap["text/plain"] = ".txt";
+    inverseMimeMap["text/mathml"] = ".mml";
+    inverseMimeMap["text/vnd.sun.j2me.app-descriptor"] = ".jad";
+    inverseMimeMap["text/vnd.wap.wml"] = ".wml";
+    inverseMimeMap["text/x-component"] = ".htc";
+
+    // Images
+    inverseMimeMap["image/gif"] = ".gif";
+    inverseMimeMap["image/jpeg"] = ".jpg";  // Prefer .jpg over .jpeg
+    inverseMimeMap["image/png"] = ".png";
+    inverseMimeMap["image/svg+xml"] = ".svg";
+    inverseMimeMap["image/tiff"] = ".tiff";
+    inverseMimeMap["image/vnd.wap.wbmp"] = ".wbmp";
+    inverseMimeMap["image/webp"] = ".webp";
+    inverseMimeMap["image/x-icon"] = ".ico";
+    inverseMimeMap["image/x-jng"] = ".jng";
+    inverseMimeMap["image/x-ms-bmp"] = ".bmp";
+    inverseMimeMap["image/avif"] = ".avif";
+
+    // Fonts
+    inverseMimeMap["font/woff"] = ".woff";
+    inverseMimeMap["font/woff2"] = ".woff2";
+
+    // Application
+    inverseMimeMap["application/javascript"] = ".js";
+    inverseMimeMap["application/json"] = ".json";
+    inverseMimeMap["application/java-archive"] = ".jar";
+    inverseMimeMap["application/mac-binhex40"] = ".hqx";
+    inverseMimeMap["application/msword"] = ".doc";
+    inverseMimeMap["application/pdf"] = ".pdf";
+    inverseMimeMap["application/postscript"] = ".ps";
+    inverseMimeMap["application/rtf"] = ".rtf";
+    inverseMimeMap["application/vnd.apple.mpegurl"] = ".m3u8";
+    inverseMimeMap["application/vnd.google-earth.kml+xml"] = ".kml";
+    inverseMimeMap["application/vnd.google-earth.kmz"] = ".kmz";
+    inverseMimeMap["application/vnd.ms-excel"] = ".xls";
+    inverseMimeMap["application/vnd.ms-fontobject"] = ".eot";
+    inverseMimeMap["application/vnd.ms-powerpoint"] = ".ppt";
+    inverseMimeMap["application/vnd.oasis.opendocument.graphics"] = ".odg";
+    inverseMimeMap["application/vnd.oasis.opendocument.presentation"] = ".odp";
+    inverseMimeMap["application/vnd.oasis.opendocument.spreadsheet"] = ".ods";
+    inverseMimeMap["application/vnd.oasis.opendocument.text"] = ".odt";
+    inverseMimeMap["application/vnd.openxmlformats-officedocument.presentationml.presentation"] = ".pptx";
+    inverseMimeMap["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"] = ".xlsx";
+    inverseMimeMap["application/vnd.openxmlformats-officedocument.wordprocessingml.document"] = ".docx";
+    inverseMimeMap["application/vnd.wap.wmlc"] = ".wmlc";
+    inverseMimeMap["application/wasm"] = ".wasm";
+    inverseMimeMap["application/x-7z-compressed"] = ".7z";
+    inverseMimeMap["application/x-cocoa"] = ".cco";
+    inverseMimeMap["application/x-java-archive-diff"] = ".jardiff";
+    inverseMimeMap["application/x-java-jnlp-file"] = ".jnlp";
+    inverseMimeMap["application/x-makeself"] = ".run";
+    inverseMimeMap["application/x-perl"] = ".pl";
+    inverseMimeMap["application/x-pilot"] = ".prc";
+    inverseMimeMap["application/x-rar-compressed"] = ".rar";
+    inverseMimeMap["application/x-redhat-package-manager"] = ".rpm";
+    inverseMimeMap["application/x-sea"] = ".sea";
+    inverseMimeMap["application/x-shockwave-flash"] = ".swf";
+    inverseMimeMap["application/x-tcl"] = ".tcl";
+    inverseMimeMap["application/x-x509-ca-cert"] = ".der";
+    inverseMimeMap["application/x-xpinstall"] = ".xpi";
+    inverseMimeMap["application/xhtml+xml"] = ".xhtml";
+    inverseMimeMap["application/xspf+xml"] = ".xspf";
+    inverseMimeMap["application/zip"] = ".zip";
+    inverseMimeMap["application/octet-stream"] = ".bin";  // Default for unknown binaries
+
+    // Audio
+    inverseMimeMap["audio/midi"] = ".mid";
+    inverseMimeMap["audio/mpeg"] = ".mp3";
+    inverseMimeMap["audio/ogg"] = ".ogg";
+    inverseMimeMap["audio/x-m4a"] = ".m4a";
+    inverseMimeMap["audio/x-realaudio"] = ".ra";
+
+    // Video
+    inverseMimeMap["video/3gpp"] = ".3gp";
+    inverseMimeMap["video/mp2t"] = ".ts";
+    inverseMimeMap["video/mp4"] = ".mp4";
+    inverseMimeMap["video/mpeg"] = ".mpeg";
+    inverseMimeMap["video/quicktime"] = ".mov";
+    inverseMimeMap["video/webm"] = ".webm";
+    inverseMimeMap["video/x-flv"] = ".flv";
+    inverseMimeMap["video/x-m4v"] = ".m4v";
+    inverseMimeMap["video/x-mng"] = ".mng";
+    inverseMimeMap["video/x-ms-asf"] = ".asf";
+    inverseMimeMap["video/x-ms-wmv"] = ".wmv";
+    inverseMimeMap["video/x-msvideo"] = ".avi";  // Your requested case
+
+    return inverseMimeMap;
+}
+
 std::string RandomString(int len)
 {
-   std::string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-   std::string newstr;
-   int pos;
-   while(newstr.size() != len) {
-    pos = ((rand() % (str.size() - 1)));
-    newstr += str.substr(pos,1);
-   }
-   return newstr;
+	srand(static_cast<unsigned int>(time(0)));
+	std::string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	std::string newstr;
+	int pos;
+	while(newstr.size() != len)
+	{
+		pos = ((rand() % (str.size() - 1)));
+		newstr += str.substr(pos,1);
+	}
+	return newstr;
 }
 
 std::string getExtention(data_request data)
 {
     std::string tex;
-    std::map<std::string, std::string>::iterator it = data.headers.find("content-type");
-    if(it != data.headers.end())
+	std::map<std::string, std::string> mimeMap = createMimeTypeMap();
+    std::map<std::string, std::string>::iterator it = mimeMap.find(data.headers["content-type"]);
+    if(it != mimeMap.end())
     {
-        tex = data.headers["content-type"];
-        size_t pos = tex.find("/");
-        return tex.substr(pos + 1);
+        return (mimeMap[data.headers["content-type"]]);
     }
-    return "";
+    return "text/html";
 }
 
 void post(client &client, std::string buffer)
 {
-    // std::cout << "path request " << client.data_rq.path << std::endl;
-    location *location = getClosestLocation(client.myServer, client.data_rq.path);
+    location *location = getClosestLocation(client.myServer, client.data_rq.path);// khrjiha hit ghay9lk mehdi
     std::map<std::string, std::vector<std::string>>::iterator it = location->infos.find("upload_store");
     if(location && it != location->infos.end())
     {
-        std::string name_file = location->infos["upload_store"][0] + client.data_rq.bodyNameFile + "." + getExtention(client.data_rq);
+        std::string name_file = location->infos["upload_store"][0] + client.data_rq.bodyNameFile  + getExtention(client.data_rq);
 		std::ofstream file(name_file, std::ios::app);
+		// std::cout << name_file << "==========\n";
 		if (!file.is_open())
 		{
-			// client.data_rs.status_code = 500;
+            std::cout << name_file << " not open \n";
 			throw(500);
+		}
+		struct stat stat_buff;// chunked 
+		if(stat(name_file.c_str(), &stat_buff) == 0)// check max body size 
+		{
+			std::cout << "size of our file " << stat_buff.st_size << "octets \n";
+			
 		}
 		file << buffer;
 		file.close();
-		// return 1;
     }
     else
 	{
-		// client.data_rs.status_code = 404;
 		throw(404);
-		// throw std::runtime_error("you need the upload store in your location ...");
 	} 
-		// std::cout << "status code " << client.data_rs.status_code << "\n"; 
-
 }

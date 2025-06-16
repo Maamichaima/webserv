@@ -7,7 +7,7 @@
 using std::cout;
 
 location *getClosestLocation(const Server &server, const std::string &requestPath) {
-  location *bestMatch = nullptr;
+  location *bestMatch = NULL;
   size_t bestLength = 0;
 
 //   cout << "PATH: " << requestPath << std::endl;
