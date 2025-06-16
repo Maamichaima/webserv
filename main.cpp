@@ -1,6 +1,7 @@
 #include "_includes/ServerManager.hpp"
 #include "_includes/Socket.hpp"
 #include "_includes/Server.hpp"
+#include "srcs/methods/DeleteMethod.hpp"
 
 
 
@@ -10,9 +11,8 @@ int main(int argc,char **argv){
     if(!parceConfigFile(argc,argv,manager))
         return(1);
     
-    manager.printAllServerInfo();
+    //manager.printAllServerInfo();
     manager.initializeAll();
-    
    
 
     while(1)
@@ -22,3 +22,5 @@ int main(int argc,char **argv){
           
     }
 }
+
+

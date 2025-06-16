@@ -38,13 +38,13 @@ class client
     private:
     public:
         std::string buffer;
-        // int fd_socket;
+        // int ;
         int server_fd;
         data_request data_rq;
         int flag;
         std::string send_buffer;    // la réponse HTTP à envoyer
-        size_t send_offset = 0;     // combien d'octets ont été envoyés
-        bool headers_parsed = false;
+        // size_t send_offset = 0;     // combien d'octets ont été envoyés
+        // bool headers_parsed = false;
         parser parc;
         Server myServer;
 		bool closeConnection;
@@ -66,6 +66,9 @@ class client
 		std::string buildResponse();
 		void setDataResponse();
 		void handleResponse(int currentFd);
+		void setDescription();
+		void setErrorPages();
+		void setStatusCode();
 };
 
 std::string get_line(std::string str);

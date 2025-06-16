@@ -3,6 +3,7 @@
 #include <iostream>
 #include <deque>
 #include <stack>
+#include <cstdlib>
 
 
 enum TokenType
@@ -44,8 +45,11 @@ class RegEx
 
 struct BacktrackElement
 {
+	BacktrackElement(bool b, int c, const RegEx& r): isBacktrack(b), charTaken(c), regex(r) {}
 	bool isBacktrack;
 	int charTaken;
 	RegEx regex;
 };
+
+// struct 
 bool isMatch(std::string ex, std::string testStr);

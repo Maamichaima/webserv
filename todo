@@ -1,4 +1,3 @@
-Content-Length Errors (400 Bad Request):
 
 Non-integer value (e.g., Content-Length: ABC)
 
@@ -13,7 +12,9 @@ Body size ≠ header value
 501 Not Implemented: Valid method but unsupported (e.g., PROPFIND) (done ✅)
 
 
-+ add query in cgi envp
+error pages dapres config file 
+
+max body size
 
 + multiple cgi
 
@@ -21,8 +22,15 @@ Body size ≠ header value
 
 + cookies
 
-+ error pages
 
-+ delete method
+config file checks:
+    - how much server names should i have
+    - if the ip address is wrong
+    - if the key is invalid 
 
-+ 
+
+    servers with same server name 
+    duplicate location directives 
+    parse some location directives (cgi)
+    cookies /session
+    check for non-set directives 

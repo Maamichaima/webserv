@@ -232,7 +232,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 						continue ;
                     return false;
 				}
-				backtrackStack.push({false, 1, *it});
+				backtrackStack.push(BacktrackElement(false, 1, *it));
                 i++;
                 it++;
             }
@@ -245,7 +245,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 					j++;
 					i++;
 				}
-				backtrackStack.push({true, j, *it});
+				backtrackStack.push(BacktrackElement(true, j, *it));
 				it++;
             }
             else if (it->quantifier == ZERO_OR_ONE)
@@ -253,12 +253,12 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 				std::cout <<"hh\n";
 				if (c == it->content && i < str.size())
 				{
-					backtrackStack.push({true, 1, *it});
+					backtrackStack.push(BacktrackElement(true, 1, *it));
                     i++;
 				}
 				else
 				{
-					backtrackStack.push({true, 0, *it});
+					backtrackStack.push(BacktrackElement(true, 0, *it));
 				}
                 it++;
             }
@@ -273,7 +273,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 						continue;
 					return false;
 				}
-				backtrackStack.push({false, 1, *it});
+				backtrackStack.push(BacktrackElement(false, 1, *it));
 				i++;
 				it++;
 			}
@@ -285,18 +285,18 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 					j++;
 					i++;
 				}
-				backtrackStack.push({true, j, *it});
+				backtrackStack.push(BacktrackElement(true, j, *it));
 				it++;
 			}
 			else if (it->quantifier == ZERO_OR_ONE)
 			{
 				if (std::isdigit(c) && i < str.size())
 				{
-					backtrackStack.push({true, 1, *it});
+					backtrackStack.push(BacktrackElement(true, 1, *it));
 					i++;
 				}
 				else
-					backtrackStack.push({true, 0, *it});
+					backtrackStack.push(BacktrackElement(true, 0, *it));
 				it++;
 			}
 		}
@@ -310,7 +310,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 						continue;
 					return false;
 				}
-				backtrackStack.push({false, 1, *it});
+				backtrackStack.push(BacktrackElement(false, 1, *it));
 				i++;
 				it++;
 			}
@@ -322,18 +322,18 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 					j++;
 					i++;
 				}
-				backtrackStack.push({true, j, *it});
+				backtrackStack.push(BacktrackElement(true, j, *it));
 				it++;
 			}
 			else if (it->quantifier == ZERO_OR_ONE)
 			{
 				if (!std::isdigit(c) && i < str.size())
 				{
-					backtrackStack.push({true, 1, *it});
+					backtrackStack.push(BacktrackElement(true, 1, *it));
 					i++;
 				}
 				else
-					backtrackStack.push({true, 0, *it});
+					backtrackStack.push(BacktrackElement(true, 0, *it));
 				it++;
 			}
 		}
@@ -347,7 +347,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 						continue;
 					return false;
 				}
-				backtrackStack.push({false, 1, *it});
+				backtrackStack.push(BacktrackElement(false, 1, *it));
 				i++;
 				it++;
 			}
@@ -359,18 +359,18 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 					j++;
 					i++;
 				}
-				backtrackStack.push({true, j, *it});
+				backtrackStack.push(BacktrackElement(true, j, *it));
 				it++;
 			}
 			else if(it->quantifier == ZERO_OR_ONE)
 			{
 				if (!inRange(it->cc, str[i]) && i < str.size())
 				{
-					backtrackStack.push({true, 1, *it});
+					backtrackStack.push(BacktrackElement(true, 1, *it));
 					i++;
 				}
 				else
-					backtrackStack.push({true, 0, *it});
+					backtrackStack.push(BacktrackElement(true, 0, *it));
 				it++;
 			}
 		}
@@ -384,7 +384,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 					continue;
 					return false;
 				}
-				backtrackStack.push({false, 1, *it});
+				backtrackStack.push(BacktrackElement(false, 1, *it));
 				i++;
 				it++;
 			}
@@ -396,18 +396,18 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 					j++;
 					i++;
 				}
-				backtrackStack.push({true, j, *it});
+				backtrackStack.push(BacktrackElement(true, j, *it));
 				it++;
 			}
 			else if (it->quantifier == ZERO_OR_ONE)
 			{
 				if (!str[i])
 				{
-					backtrackStack.push({true, 1, *it});
+					backtrackStack.push(BacktrackElement(true, 1, *it));
 					i++;
 				}
 				else
-					backtrackStack.push({true, 0, *it});
+					backtrackStack.push(BacktrackElement(true, 0, *it));
 				it++;
 			}
 		}
@@ -421,7 +421,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 						continue;
 					return false;
 				}
-				backtrackStack.push({false, 1, *it});
+				backtrackStack.push(BacktrackElement(false, 1, *it));
 				i++;
 				it++;
 			}
@@ -433,19 +433,19 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 					j++;
 					i++;
 				}
-				backtrackStack.push({true, j, *it});
+				backtrackStack.push(BacktrackElement(true, j, *it));
 				it++;
 			}
 			else if (it->quantifier == ZERO_OR_ONE)
 			{
 				if (std::isspace(c) && i < str.size())
 				{
-					backtrackStack.push({true, 1, *it});
+					backtrackStack.push(BacktrackElement(true, 1, *it));
 					i++;
 				}
 				else
 				{
-					backtrackStack.push({true, 0, *it});
+					backtrackStack.push(BacktrackElement(true, 0, *it));
 				}
 				it++;
 			}
@@ -460,7 +460,7 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 						continue;
 					return false;
 				}
-				backtrackStack.push({false, 1, *it});
+				backtrackStack.push(BacktrackElement(false, 1, *it));
 				i++;
 				it++;
 			}
@@ -472,19 +472,19 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 					j++;
 					i++;
 				}
-				backtrackStack.push({true, j, *it});
+				backtrackStack.push(BacktrackElement(true, j, *it));
 				it++;
 			}
 			else if (it->quantifier == ZERO_OR_ONE)
 			{
 				if (!std::isspace(c) && i < str.size())
 				{
-					backtrackStack.push({true, 1, *it});
+					backtrackStack.push(BacktrackElement(true, 1, *it));
 					i++;
 				}
 				else
 				{
-					backtrackStack.push({true, 0, *it});
+					backtrackStack.push(BacktrackElement(true, 0, *it));
 				}
 				it++;
 			}
