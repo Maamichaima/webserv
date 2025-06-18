@@ -6,20 +6,47 @@
 // khass rihab txouf fin dirha
 using std::cout;
 
+std::string normalizePath(const std::string &path) {
+  std::string result;
+  bool slashSeen = false;
+
+  for (size_t i = 0; i < path.size(); ++i) {
+    if (path[i] == '/') {
+      if (!slashSeen) {
+        result += '/';
+        slashSeen = true;
+      }
+    } else {
+      result += path[i];
+      slashSeen = false;
+    }
+  }
+
+  // Supprimer slash final sauf si c'est la racine "/"
+  if (result.size() > 1 && result[result.size() - 1] == '/')
+    result.erase(result.size() - 1);
+
+  return result;
+}
+
+
 location *getClosestLocation(const Server &server, const std::string &requestPath) {
   location *bestMatch = NULL;
   size_t bestLength = 0;
 
-//   cout << "PATH: " << requestPath << std::endl;
-  for (std::map<std::string, location>::const_iterator it = server.locations.begin(); it != server.locations.end(); ++it)
-  {
-    const std::string &locPath = it->first;
-    if (requestPath.find(locPath) == 0 &&
-        (requestPath.size() == locPath.size() ||
-         requestPath[locPath.size()] == '/' || locPath == "/")) {
+  std::string normRequest = normalizePath(requestPath);
 
-      if (locPath.size() > bestLength) {
-        bestLength = locPath.size();
+  for (std::map<std::string, location>::const_iterator it = server.locations.begin();
+       it != server.locations.end(); ++it)
+  {
+    std::string normLocPath = normalizePath(it->first);
+
+    if (normRequest.find(normLocPath) == 0 &&
+        (normRequest.size() == normLocPath.size() ||
+         normRequest[normLocPath.size()] == '/' || normLocPath == "/")) {
+
+      if (normLocPath.size() > bestLength) {
+        bestLength = normLocPath.size();
         bestMatch = const_cast<location *>(&it->second);
       }
     }
@@ -27,6 +54,8 @@ location *getClosestLocation(const Server &server, const std::string &requestPat
 
   return bestMatch;
 }
+
+
 
 void print_data(data_request& req) 
 {
@@ -40,27 +69,25 @@ void print_data(data_request& req)
 #include <string>
 #include <dirent.h>
 
-std::string listDirectory(const std::string& path) {
+std::string listDirectory(const std::string& path, string reqPath) {
+    cout << "path in listDirect: " << path << endl;
     DIR* dir = opendir(path.c_str());
     std::string html = "<html><body>\n";
     html += "<h1>Index of " + path + "</h1>\n";
     html += "<ul>\n";
-
+    // path = switchLocation();
     if (dir == NULL) {
-        html += "<p><strong>Error:</strong> Cannot open directory.</p>\n";
-        html += "</body></html>\n";
-        return html;
+        cout << " Cannot open directory." << endl;
+        return NULL;
     }
-
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
         std::string name = entry->d_name;
 
-        // Ignore . and ..
         if (name == "." || name == "..")
             continue;
 
-        html += "<li><a href=\"" + path + name + "\">" + name + "</a></li>\n";
+        html += "<li><a href=\"" + reqPath  + "/" + name + "\">" +path+"|"+ name + "</a></li>\n";
     }
 
     closedir(dir);
@@ -68,40 +95,80 @@ std::string listDirectory(const std::string& path) {
     return html;
 }
 
-
-
 int isDirectory(const std::string &fullPath) {
     struct stat info;
     if (stat(fullPath.c_str(), &info) != 0)
-        return 6; // Error
+        return 0; // Error
     return S_ISDIR(info.st_mode);
+}
+
+string removeLocation(string& input, const string& prefix) {
+    size_t pos = 0;
+
+    while (pos < input.size() && input[pos] == '/')
+        pos++;
+    input = string("/") + input;
+    if (input.substr(pos, prefix.size()) == prefix)
+        pos += prefix.size();
+
+    return input.substr(pos);
+}
+
+std::string cleanPath(const std::string& input, const std::string& prefix) {
+    size_t start = input.find_first_not_of('/');
+    if (start == std::string::npos)
+        return "";
+
+    std::string cleaned = input.substr(start);
+    cout << "cleaned: " << cleaned << endl;
+    if (cleaned.compare(0, prefix.size(), prefix) == 0) {
+        cout << "is here !!" << endl;
+        return cleaned.substr(prefix.size());
+    }
+
+    return cleaned;
 }
 
 /// @brief existFiles function check fullPath is file and path is correct
 /// @param S_ISREG is a macro for check file is regular or not (wax file ou la directory ou xi 3jab akhur) n9adro ndirouha ta b access !
 /// @param stat functin kay jib linformations 3la file (kay9lb 3lih ou sf)
 /// @return 0 for success -1 for error
-bool existFile(string &fullPath, location *loc)
+bool existFile(string &path, location *loc, string reqPath, string locPath, int currentFd)
 {
     struct stat st;
-    int check_st = stat(fullPath.c_str(), &st) == 0 && S_ISREG(st.st_mode);
+    int check_st = stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode);
     if (check_st == 0)
     {
-        cout << "hello: " << fullPath << endl;
-        cout << "hello2: " << isDirectory(fullPath) << endl;
-        if (isDirectory(fullPath))
+        if (isDirectory(path))
         {
-            fullPath = checkIndexes(loc, fullPath + "/");
-            if (fullPath == "") cout << "amiiiiiiiiiiiiiiiiiiiiiiiine\n";
-            // cout << "fullIn: " << fullPath << endl;
+            string check = checkIndexes(loc, path + "/");
+            cout << "check: " << check << endl;
+            if (check == "")
+            {
+                // string paths = removeLocation(reqPath, locPath + "/");
+                // string path = removeLocation(reqPath, locPath + "/");
+                cout << "path in existFile: "<< path << endl;
+                std::string body = listDirectory(path, reqPath);
+                // cout << "body : "<< body << endl;
+                std::string response =
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/html\r\n"
+                    "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                    "Connection: close\r\n"
+                    "\r\n" +
+                    body;
+                send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);   
+            }
+            else
+                path = check;
         }
     }
-    return(stat(fullPath.c_str(), &st) == 0 && S_ISREG(st.st_mode));
+    return(stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode));
 }
         
 /// @brief 
 /// @param ios::binary : open mode bax bax maytbadalx lcontent dial file in read operation  
-/// @param ios::in : open mode for readed file 
+/// @param ios::in : open mode for readed file
 string readFile(const string &fullPath)
 {
     std::ifstream file(fullPath.c_str(), ios::in | ios::binary);
@@ -175,53 +242,64 @@ string executeCgi(const string path, string query, string interpreter) {
 }
 
 
-std::string normalizePath(const std::string& path) {
-    std::string result;
-    bool prevSlash = false;
+// std::string     normalizePath(const std::string& path) {
+//     std::string result;
+//     bool prevSlash = false;
 
-    for (size_t i = 0; i < path.length(); ++i) {
-        char c = path[i];
-        if (c == '/') {
-            if (!prevSlash) {
-                result += c;
-                prevSlash = true;
-            }
-        } else {
-            result += c;
-            prevSlash = false;
-        }
-    }
-    return result;
-}
+//     for (size_t i = 0; i < path.length(); ++i) {
+//         char c = path[i];
+//         if (c == '/') {
+//             if (!prevSlash) {
+//                 result += c;
+//                 prevSlash = true;
+//             }
+//         } else {
+//             result += c;
+//             prevSlash = false;
+//         }
+//     }
+//     return result;
+// }
 
 string checkIndexes(location* loc, const string path) {
     std::vector<std::string>* indexes = loc->getInfos("index");
     if (!indexes) {
-        std::cout << "No index list found." << std::endl;
+        cout << "No index list found." << endl;
         return "";
     }
 
     for (size_t i = 0; i < indexes->size(); ++i) {
-        std::ifstream file(path + indexes->at(i).c_str());
+        ifstream file(path + indexes->at(i).c_str());
         if (file.is_open()) {
-            std::cout << "Found existing index file: " << indexes->at(i) << std::endl;
+            cout << "Found existing index file: " << indexes->at(i) << endl;
             file.close();
             return path + indexes->at(i).c_str();
         }
     }
 
-    std::cout << "**************No index files found.*************" << std::endl;
+    cout << "**************No index files found.*************" << endl;
     return "";
 }
 
+////////////////////////////////////////////////////////////////////////////////////////
+
+string removeLeadingSlashes(const string& input) {
+    size_t firstNonSlash = input.find_first_not_of('/');
+    if (firstNonSlash == string::npos)
+        return "";
+    return input.substr(firstNonSlash);
+}
+
 //
-string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd)
+string handleGetRequest1(data_request &req, location *loc, const Server &myServer, int currentFd)
 {
     // 1 check method
     if (req.method == "GET")
     {
         string locPath = normalizePath(loc->path);
         string reqPath = normalizePath(req.path);
+        cout << "localPath : " << locPath << endl;
+        cout << "reqPath : " << reqPath << endl;
         if (loc->getInfos("root") == NULL)
             cout << " rehaaab" << endl;
 
@@ -233,17 +311,14 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         cout << "locPath: " << locPath << endl;
         cout << "reqPath: "<< fullPath << endl;
         
-        // cout << "test33: "<< normalizePath(locPath + string("/") + string(rootVar)) << endl;
-        // cout << "test34: " << fullPathWithR + "/" << endl;
         if (locPath == reqPath || locPath + string("/") == fullPath \
             || normalizePath(locPath + string("/") + string(rootVar)) == normalizePath(fullPathWithR + "/"))
         {
             string indexRe = checkIndexes(loc, rootVar + "/");
             if (indexRe == "" && loc->getInfos("autoindex")->at(0) == "on")
             {
-                cout << "********************" << endl;
-                std::string body = listDirectory("www/");
-
+                std::string body = listDirectory(removeLocation(reqPath, locPath + "/"), "amine");
+                // cout << "body : "<< body << endl;
                 std::string response =
                     "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
@@ -264,12 +339,26 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
             if (found == std::string::npos)
                 fullPath = rootVar + relativePath;
             else
-                fullPath = relativePath;
-            // std::cout << "path substr " << relativePath << std::endl;
+            {
+
+                cout << "********************PROB HNA************************" << endl;
+                cout << "fullPath before: " << fullPath << endl;
+                fullPath = removeLeadingSlashes(removeLocation(relativePath, locPath + "/" + rootVar));
+                cout << "fullPath: " << fullPath << endl;
+                cout << "rootVar: "  << rootVar  << endl;
+                cout << "test: " << removeLocation(fullPath, "/html") << endl;
+                fullPath = removeLeadingSlashes(removeLocation(fullPath, rootVar));
+                fullPath = removeLeadingSlashes(removeLocation(fullPath, "www/"));
+                cout << "second fullPath: " << fullPath << endl;
+                
+                // fullPath = removeLocation(relativePath, locPath + "/" + rootVar);
+                
+                cout << "****************************************************\n";
+            }
         }
         cout << "fullPath__after condition : " << fullPath << endl;
-
-        ///////////////////// CGI/////////////////////////
+        // fullPath = "www/html/index.html";
+        ///////////////////// CGI /////////////////////////
         
         // std::string extension;
                 
@@ -326,12 +415,12 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         ///////////////////////////////////////////
         
         //3 exist file (path)
-        if (!existFile(fullPath, loc))
+        if (!existFile(fullPath, loc, reqPath, locPath, currentFd))
         {
-            cout << "after dir: "<< fullPath << endl;
+            cout << "error dir: "<< fullPath << endl;
             return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         }
-        cout << "after dir: "<< fullPath << endl;
+        cout << "success dir: "<< fullPath << endl;
 
         // 4 open file and read content
         std::string body = readFile(fullPath);
@@ -348,4 +437,74 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         return ait_response.str();
     }
     return "amine";
+}
+
+string switchLocation(const string &locPath, const string &reqPath, const string &rootVar) {
+    if (reqPath.compare(0, locPath.length(), locPath) == 0) {
+        string suffix = reqPath.substr(locPath.length());
+
+        if (!rootVar.empty() && rootVar[rootVar.length() - 1] == '/' &&
+            !suffix.empty() && suffix[0] == '/') {
+            return rootVar + suffix.substr(1);
+        }
+        return rootVar + suffix;
+    }
+    return reqPath;
+}
+
+string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd)
+{
+    string locPath = normalizePath(loc->path);
+    string reqPath = normalizePath(req.path);
+    string rootVar = loc->getInfos("root")->at(0);
+
+    if (loc->getInfos("root") == NULL)
+        cout << " rehaaab" << endl;
+    
+    cout << "localPath : " << locPath << endl;
+    cout << "reqPath : " << reqPath << endl;
+    cout << "rootVar : " << rootVar << endl;
+
+    string path = switchLocation(locPath, reqPath, rootVar);
+    cout << "path: " << path << endl;
+    
+    DIR* dir = opendir(path.c_str());
+    
+    string indexFound = checkIndexes(loc, rootVar + "/");
+    if (loc->getInfos("autoindex")->at(0) == "of")
+        cout << "forbidden !" << endl;
+    if (indexFound == "" && loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
+    {
+        cout << "salam" << endl ;
+        std::string body = listDirectory(path, reqPath);
+        // cout << "body : "<< body << endl;
+        std::string response =
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html\r\n"
+            "Content-Length: " + std::to_string(body.size()) + "\r\n"
+            "Connection: close\r\n"
+            "\r\n" +
+            body;
+        send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+    }
+    if (!existFile(path, loc, reqPath, locPath, currentFd))
+    {
+        cout << "error dir: "<< path << endl;
+        return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    }
+        cout << "success dir: "<< path << endl;
+
+        // 4 open file and read content
+        std::string body = readFile(path);
+        if (body == "error opening !!")
+            return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    
+        std::ostringstream ait_response;
+
+        ait_response << "HTTP/1.1 200 OK\r\n";
+        ait_response << "Content-Type: " << getMimeType(path) << "\r\n";
+        ait_response << "Content-Length: " << body.size() << "\r\n";
+        ait_response << "Connection: close\r\n\r\n";
+        ait_response << body << endl;
+        return ait_response.str();
 }

@@ -117,8 +117,8 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		if(checkRequestProgress())
-			this->printClient();
+		// if(checkRequestProgress())
+		// 	this->printClient();
 	}
 	catch(const int status_code)
 	{
@@ -197,6 +197,7 @@ void client::handleResponse(int currentFd)
 		cout << "before getLocation" << data_rq.path << endl;
 		location* loc = getClosestLocation(this->myServer, data_rq.path);
 		if (loc) {
+			cout << "salam\n";
 		    response = handleGetRequest(this->data_rq, loc, this->myServer, currentFd);
 		}
 		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
