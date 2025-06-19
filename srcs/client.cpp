@@ -196,9 +196,19 @@ void client::handleResponse(int currentFd)
 		std::string response;
 		cout << "before getLocation" << data_rq.path << endl;
 		location* loc = getClosestLocation(this->myServer, data_rq.path);
-		if (loc) {
-			cout << "salam\n";
+		if (loc)
 		    response = handleGetRequest(this->data_rq, loc, this->myServer, currentFd);
+		else
+		{
+			cout << "********************************************" << endl;
+			std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
+				response =
+				"HTTP/1.1 404 Not Found\r\n"
+				"Content-Type: text/html\r\n"
+				"Content-Length: " + std::to_string(body.size()) + "\r\n"
+				"Connection: close\r\n"
+				"\r\n" +
+				body;
 		}
 		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 	}
