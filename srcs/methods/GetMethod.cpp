@@ -452,6 +452,94 @@ string switchLocation(const string &locPath, const string &reqPath, const string
     return reqPath;
 }
 
+//////////////////////////////////////HELP CGI///////////////////////////////////////
+bool isCgiRequest(location *loc, const std::string &path) {
+    std::vector<std::string>* cgi_exts = loc->getInfos("cgi_extension");
+    std::cout << "salam" << std::endl;
+
+    if (!cgi_exts) {
+        std::cout << "cgi_extension NULL" << std::endl;
+        return false;
+    }
+
+    for (size_t i = 0; i < cgi_exts->size(); ++i) {
+        const std::string &ext = (*cgi_exts)[i];
+
+        if (path.size() >= ext.size() &&
+            path.compare(path.size() - ext.size(), ext.size(), ext) == 0) {
+            return true;
+        }
+
+        std::cout << "check: " << path.compare(path.size() - ext.size(), ext.size(), ext) << std::endl;
+    }
+
+    return false;
+}
+
+bool executeCgiScript(const data_request &req, const std::string &scriptPath, location *loc, std::string &output) {
+    int pipefd[2];
+    if (pipe(pipefd) == -1)
+        return false;
+
+    pid_t pid = fork();
+    if (pid < 0)
+        return false;
+
+    if (pid == 0) {
+        // Child process
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[0]);
+        close(pipefd[1]);
+
+        std::vector<std::string> envVec;
+        envVec.push_back("REQUEST_METHOD=GET");
+        envVec.push_back("SCRIPT_FILENAME=" + scriptPath);
+        envVec.push_back("REDIRECT_STATUS=200");
+
+        std::vector<char*> envp;
+        for (size_t i = 0; i < envVec.size(); ++i) {
+            envp.push_back(const_cast<char*>(envVec[i].c_str()));
+        }
+        envp.push_back(NULL);
+
+        // ✅ Secure access to interpreter
+        std::vector<std::string>* cgiPathVec = loc->getInfos("cgi_path");
+        if (!cgiPathVec || cgiPathVec->empty()) {
+            std::cerr << "cgi_path is missing or empty!" << std::endl;
+            exit(1);
+        }
+
+        std::string interpreter = (*cgiPathVec)[0];
+
+        char *args[] = {
+            const_cast<char*>(interpreter.c_str()),
+            const_cast<char*>(scriptPath.c_str()),
+            NULL
+        };
+
+        execve(interpreter.c_str(), args, &envp[0]);
+        perror("execve failed"); // pour debug
+        exit(1); // in case execve fails
+    } else {
+        // Parent process
+        close(pipefd[1]);
+
+        char buffer[1024];
+        ssize_t n;
+        output.clear();
+        while ((n = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
+            output.append(buffer, n);
+        }
+
+        close(pipefd[0]);
+        waitpid(pid, NULL, 0);
+    }
+
+    return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
 string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd)
 {
     string locPath = normalizePath(loc->path);
@@ -471,11 +559,8 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     DIR* dir = opendir(path.c_str());
     
     string indexFound = checkIndexes(loc, rootVar + "/");
-    if (loc->getInfos("autoindex")->at(0) == "of")
-        cout << "forbidden !" << endl;
     if (indexFound == "" && loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
     {
-        cout << "salam" << endl ;
         std::string body = listDirectory(path, reqPath);
         // cout << "body : "<< body << endl;
         std::string response =
@@ -487,13 +572,52 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
             body;
         send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
     }
+
+    if (loc->getInfos("autoindex")->at(0) == "off" && indexFound == "")
+    {
+        std::string body = "<html><body><h1>403 Forbidden</h1></body></html>";
+        std::string response =
+            "HTTP/1.1 403 Forbidden\r\n"
+            "Content-Type: text/html\r\n"
+            "Content-Length: " + std::to_string(body.size()) + "\r\n"
+            "Connection: close\r\n"
+            "\r\n" +
+            body;
+            return response;
+    }
+    
+    ///////////////////// CGI /////////////////////////
+    if (isCgiRequest(getClosestLocation(myServer, "/api"), path)) {
+        std::string cgiOutput;
+        if (!executeCgiScript(req, path, getClosestLocation(myServer, "/api"), cgiOutput)) {
+            return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        }
+        cout << "in CGI***********************" << endl;
+        std::ostringstream cgiResponse;
+        cgiResponse << "HTTP/1.1 200 OK\r\n";
+        cgiResponse << "Content-Type: text/html\r\n";
+        cgiResponse << "Content-Length: " << cgiOutput.size() << "\r\n";
+        cgiResponse << "Connection: close\r\n\r\n";
+        cgiResponse << cgiOutput;
+        return cgiResponse.str();
+    }
+
+    //////////////////////////////////////////////////
+
     if (!existFile(path, loc, reqPath, locPath, currentFd))
     {
         cout << "error dir: "<< path << endl;
-        return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
+        std::string response =
+            "HTTP/1.1 404 Not Found\r\n"
+            "Content-Type: text/html\r\n"
+            "Content-Length: " + std::to_string(body.size()) + "\r\n"
+            "Connection: close\r\n"
+            "\r\n" +
+            body;
+        return response;
     }
         cout << "success dir: "<< path << endl;
-
         // 4 open file and read content
         std::string body = readFile(path);
         if (body == "error opening !!")
