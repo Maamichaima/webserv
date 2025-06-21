@@ -191,6 +191,42 @@ void client::handleResponse(int currentFd)
 			return ;
 		}
 	}
+
+	/////////////////// CGI /////////////////////////
+	location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
+	if (this->data_rq.method != "DELETE" && cgiLoc)
+	{
+		if (isCgiConfigured(cgiLoc))
+		{
+		
+			string locPath = normalizePath(cgiLoc->path);
+			string reqPath = normalizePath(data_rq.path);
+			string root = cgiLoc->getInfos("root")->at(0);
+
+			string cgiPath = switchLocation(locPath, reqPath, root);
+			cout << "cgiPath2: "<< cgiPath << endl;
+
+			vector<string>* exts = cgiLoc->getInfos("cgi_extension");
+			
+			cout <<"checkIndex2: "<< checkIndexes(cgiLoc, cgiPath+ "/") << endl;
+			if (isDirectory(cgiPath) && checkIndexes(cgiLoc, cgiPath + "/") != "")
+				cgiPath = checkIndexes(cgiLoc, cgiPath+ "/");
+			
+			if (checkExtension(cgiPath, *exts))
+			{
+				cout << "3"<<  endl;
+				string cgiOutput;
+				if (executeCgi(cgiPath, data_rq, *cgiLoc, cgiOutput)) {
+				send(currentFd, buildHttpResponse(200, "OK", cgiOutput).c_str(), buildHttpResponse(200, "OK", cgiOutput).size(), MSG_NOSIGNAL);
+				
+				} else {
+				send(currentFd, buildHttpResponse(500, "Internal Server Error", "CGI execution failed").c_str(), buildHttpResponse(500, "Internal Server Error", "CGI execution failed").size(), MSG_NOSIGNAL);
+			}
+		}
+		}
+	}
+
+	//////////////////////////////////////////////////
 	if(this->data_rq.method == "GET")
 	{
 		std::string response;

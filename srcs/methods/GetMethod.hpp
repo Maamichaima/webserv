@@ -12,6 +12,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+
+#include <sys/wait.h>
+#include <dirent.h>
 using namespace std;
 
 location* getClosestLocation(const Server& server, const std::string& requestPath);
@@ -21,3 +24,18 @@ string readFile(const string &fullPath);
 std::string getMimeType(const std::string& path);
 string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd);
 string checkIndexes(location* loc, const string path);
+
+int isDirectory(const std::string &fullPath);
+
+bool isCgiRequest(location *loc, const std::string &path);
+bool executeCgiScript(const data_request &req, const std::string &scriptPath, location *loc, std::string &output);
+string switchLocation(const string &locPath, const string &reqPath, const string &rootVar);
+std::string normalizePath(const std::string &path);
+
+bool endsWith(const std::string& str, const std::string& suffix);
+bool checkExtension(const std::string& url, const std::vector<std::string>& cgiExtensions);
+bool isCgiConfigured(location* loc);
+std::string getExtension(const std::string &path);
+std::string getCgiInterpreter(const std::string &scriptPath, location &loc);
+bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output);
+std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body);
