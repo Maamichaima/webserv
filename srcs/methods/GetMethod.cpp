@@ -3,7 +3,6 @@
 #include <sys/wait.h>
 #include <dirent.h>
 
-// khass rihab txouf fin dirha
 using std::cout;
 
 std::string normalizePath(const std::string &path) {
@@ -240,26 +239,129 @@ string executeCgi(const string path, string query, string interpreter) {
     waitpid(pid, NULL, 0);
     return output;
 }
+//////////////////////////////////////////CGI////////////////////////////////////////////
+bool endsWith(const std::string& str, const std::string& suffix) {
+    if (str.length() < suffix.length()) return false;
+    return str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0;
+}
+
+bool checkExtension(const std::string& url, const std::vector<std::string>& cgiExtensions) {
+    std::cout << "URL to check: " << url << std::endl;
+    for (std::vector<std::string>::const_iterator it = cgiExtensions.begin(); it != cgiExtensions.end(); ++it) {
+        std::cout << "Checking extension: " << *it << std::endl;
+        if ((*it).size() > 1 && (*it)[0] == '.' && endsWith(url, *it)) {
+            std::cout << "Extension matched: " << *it << std::endl;
+            return true;
+        }
+    }
+    std::cout << "No matching extension." << std::endl;
+    return false;
+}
 
 
-// std::string     normalizePath(const std::string& path) {
-//     std::string result;
-//     bool prevSlash = false;
+bool isCgiConfigured(location* loc) {
+    if (!loc)
+        return false;
 
-//     for (size_t i = 0; i < path.length(); ++i) {
-//         char c = path[i];
-//         if (c == '/') {
-//             if (!prevSlash) {
-//                 result += c;
-//                 prevSlash = true;
-//             }
-//         } else {
-//             result += c;
-//             prevSlash = false;
-//         }
-//     }
-//     return result;
-// }
+    const std::vector<std::string>* extensions = loc->getInfos("cgi_extension");
+    const std::vector<std::string>* paths = loc->getInfos("cgi_path");
+
+    if (!extensions || extensions->empty())
+        return false;
+    if (!paths || paths->empty())
+        return false;
+
+    return true;
+}
+#include <string>
+#include <vector>
+#include <iostream>
+
+std::string getExtension(const std::string &path) {
+    size_t dot = path.find_last_of('.');
+    if (dot == std::string::npos)
+        return ""; // No extension
+    return path.substr(dot);
+}
+
+std::string getCgiInterpreter(const std::string &scriptPath, location &loc) {
+    std::vector<std::string>* extensions = loc.getInfos("cgi_extension");
+    std::vector<std::string>* interpreters = loc.getInfos("cgi_path");
+
+    if (!extensions || !interpreters) {
+        std::cerr << "Missing cgi_extension or cgi_path config" << std::endl;
+        return "";
+    }
+
+    std::string ext = getExtension(scriptPath);
+    for (size_t i = 0; i < extensions->size(); ++i) {
+        if ((*extensions)[i] == ext)
+            return (*interpreters)[i];
+    }
+
+    std::cerr << "No CGI interpreter found for extension: " << ext << std::endl;
+    return "";
+}
+
+bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
+    int pipefd[2];
+    if (pipe(pipefd) == -1)
+        return false;
+
+    pid_t pid = fork();
+    if (pid < 0)
+        return false;
+
+    if (pid == 0) {
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[0]);
+
+        std::string cgiPath = getCgiInterpreter(scriptPath, loc);
+		if (cgiPath.empty())
+			return false;
+
+
+        char *argv[] = {
+            (char*)cgiPath.c_str(),     
+            (char*)scriptPath.c_str(),  
+            NULL
+        };
+
+        char *envp[] = {
+            (char*)"GATEWAY_INTERFACE=CGI/1.1",
+            (char*)"REQUEST_METHOD=GET",
+            NULL
+        };
+
+        execve(cgiPath.c_str(), argv, envp);
+        perror("execve failed");
+        exit(1);
+    } else {
+        close(pipefd[1]);
+        char buffer[4096];
+        ssize_t bytesRead;
+        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+            output.append(buffer, bytesRead);
+        close(pipefd[0]);
+        waitpid(pid, NULL, 0);
+        return true;
+    }
+}
+
+std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body) {
+    std::string response;
+
+    response = "HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage + "\r\n";
+    response += "Content-Type: text/html\r\n";
+    response += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+    response += "Connection: close\r\n";
+    response += "\r\n";
+    response += body;
+
+    return response;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
 
 string checkIndexes(location* loc, const string path) {
     std::vector<std::string>* indexes = loc->getInfos("index");
@@ -267,9 +369,11 @@ string checkIndexes(location* loc, const string path) {
         cout << "No index list found." << endl;
         return "";
     }
+    cout << "index 0: "<< indexes->at(0) << endl;
 
     for (size_t i = 0; i < indexes->size(); ++i) {
         ifstream file(path + indexes->at(i).c_str());
+        cout << "nameFile: " << path + indexes->at(i).c_str() << endl;
         if (file.is_open()) {
             cout << "Found existing index file: " << indexes->at(i) << endl;
             file.close();
@@ -455,24 +559,22 @@ string switchLocation(const string &locPath, const string &reqPath, const string
 //////////////////////////////////////HELP CGI///////////////////////////////////////
 bool isCgiRequest(location *loc, const std::string &path) {
     std::vector<std::string>* cgi_exts = loc->getInfos("cgi_extension");
-    std::cout << "salam" << std::endl;
 
     if (!cgi_exts) {
         std::cout << "cgi_extension NULL" << std::endl;
         return false;
     }
-
     for (size_t i = 0; i < cgi_exts->size(); ++i) {
         const std::string &ext = (*cgi_exts)[i];
 
-        if (path.size() >= ext.size() &&
-            path.compare(path.size() - ext.size(), ext.size(), ext) == 0) {
-            return true;
+        if (path.size() >= ext.size()) {
+            std::cout << "check: " << path.compare(path.size() - ext.size(), ext.size(), ext) << std::endl;
+
+            if (path.compare(path.size() - ext.size(), ext.size(), ext) == 0) {
+                return true;
+            }
         }
-
-        std::cout << "check: " << path.compare(path.size() - ext.size(), ext.size(), ext) << std::endl;
     }
-
     return false;
 }
 
@@ -518,8 +620,8 @@ bool executeCgiScript(const data_request &req, const std::string &scriptPath, lo
         };
 
         execve(interpreter.c_str(), args, &envp[0]);
-        perror("execve failed"); // pour debug
-        exit(1); // in case execve fails
+        perror("execve failed");
+        exit(1);
     } else {
         // Parent process
         close(pipefd[1]);
@@ -549,12 +651,12 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     if (loc->getInfos("root") == NULL)
         cout << " rehaaab" << endl;
     
-    cout << "localPath : " << locPath << endl;
-    cout << "reqPath : " << reqPath << endl;
-    cout << "rootVar : " << rootVar << endl;
+    // cout << "localPath : " << locPath << endl;
+    // cout << "reqPath : " << reqPath << endl;
+    // cout << "rootVar : " << rootVar << endl;
 
     string path = switchLocation(locPath, reqPath, rootVar);
-    cout << "path: " << path << endl;
+    // cout << "path: " << path << endl;
     
     DIR* dir = opendir(path.c_str());
     
@@ -586,22 +688,6 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
             return response;
     }
     
-    ///////////////////// CGI /////////////////////////
-    if (isCgiRequest(getClosestLocation(myServer, "/api"), path)) {
-        std::string cgiOutput;
-        if (!executeCgiScript(req, path, getClosestLocation(myServer, "/api"), cgiOutput)) {
-            return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-        }
-        cout << "in CGI***********************" << endl;
-        std::ostringstream cgiResponse;
-        cgiResponse << "HTTP/1.1 200 OK\r\n";
-        cgiResponse << "Content-Type: text/html\r\n";
-        cgiResponse << "Content-Length: " << cgiOutput.size() << "\r\n";
-        cgiResponse << "Connection: close\r\n\r\n";
-        cgiResponse << cgiOutput;
-        return cgiResponse.str();
-    }
-
     //////////////////////////////////////////////////
 
     if (!existFile(path, loc, reqPath, locPath, currentFd))
