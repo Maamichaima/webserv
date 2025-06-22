@@ -395,153 +395,153 @@ string removeLeadingSlashes(const string& input) {
 }
 
 //
-string handleGetRequest1(data_request &req, location *loc, const Server &myServer, int currentFd)
-{
-    // 1 check method
-    if (req.method == "GET")
-    {
-        string locPath = normalizePath(loc->path);
-        string reqPath = normalizePath(req.path);
-        cout << "localPath : " << locPath << endl;
-        cout << "reqPath : " << reqPath << endl;
-        if (loc->getInfos("root") == NULL)
-            cout << " rehaaab" << endl;
+// string handleGetRequest1(data_request &req, location *loc, const Server &myServer, int currentFd)
+// {
+//     // 1 check method
+//     if (req.method == "GET")
+//     {
+//         string locPath = normalizePath(loc->path);
+//         string reqPath = normalizePath(req.path);
+//         cout << "localPath : " << locPath << endl;
+//         cout << "reqPath : " << reqPath << endl;
+//         if (loc->getInfos("root") == NULL)
+//             cout << " rehaaab" << endl;
 
-        string rootVar = loc->getInfos("root")->at(0);
-        string fullPath = reqPath;
-        string fullPathWithR = reqPath;
+//         string rootVar = loc->getInfos("root")->at(0);
+//         string fullPath = reqPath;
+//         string fullPathWithR = reqPath;
 
-        cout << "rootVar : " << rootVar << endl;
-        cout << "locPath: " << locPath << endl;
-        cout << "reqPath: "<< fullPath << endl;
+//         cout << "rootVar : " << rootVar << endl;
+//         cout << "locPath: " << locPath << endl;
+//         cout << "reqPath: "<< fullPath << endl;
         
-        if (locPath == reqPath || locPath + string("/") == fullPath \
-            || normalizePath(locPath + string("/") + string(rootVar)) == normalizePath(fullPathWithR + "/"))
-        {
-            string indexRe = checkIndexes(loc, rootVar + "/");
-            if (indexRe == "" && loc->getInfos("autoindex")->at(0) == "on")
-            {
-                std::string body = listDirectory(removeLocation(reqPath, locPath + "/"), "amine");
-                // cout << "body : "<< body << endl;
-                std::string response =
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html\r\n"
-                    "Content-Length: " + std::to_string(body.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" +
-                    body;
-                send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-            }
-            cout << "indexRe: " << indexRe<< endl;
-            fullPath = indexRe;
-        }
-        else
-        {
-            std::string relativePath = fullPath.substr(locPath.length());
+//         if (locPath == reqPath || locPath + string("/") == fullPath \
+//             || normalizePath(locPath + string("/") + string(rootVar)) == normalizePath(fullPathWithR + "/"))
+//         {
+//             string indexRe = checkIndexes(loc, rootVar + "/");
+//             if (indexRe == "" && loc->getInfos("autoindex")->at(0) == "on")
+//             {
+//                 std::string body = listDirectory(removeLocation(reqPath, locPath + "/"), "amine");
+//                 // cout << "body : "<< body << endl;
+//                 std::string response =
+//                     "HTTP/1.1 200 OK\r\n"
+//                     "Content-Type: text/html\r\n"
+//                     "Content-Length: " + std::to_string(body.size()) + "\r\n"
+//                     "Connection: close\r\n"
+//                     "\r\n" +
+//                     body;
+//                 send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+//             }
+//             cout << "indexRe: " << indexRe<< endl;
+//             fullPath = indexRe;
+//         }
+//         else
+//         {
+//             std::string relativePath = fullPath.substr(locPath.length());
             
-            size_t found = relativePath.find(rootVar);
-            if (found == std::string::npos)
-                fullPath = rootVar + relativePath;
-            else
-            {
+//             size_t found = relativePath.find(rootVar);
+//             if (found == std::string::npos)
+//                 fullPath = rootVar + relativePath;
+//             else
+//             {
 
-                cout << "********************PROB HNA************************" << endl;
-                cout << "fullPath before: " << fullPath << endl;
-                fullPath = removeLeadingSlashes(removeLocation(relativePath, locPath + "/" + rootVar));
-                cout << "fullPath: " << fullPath << endl;
-                cout << "rootVar: "  << rootVar  << endl;
-                cout << "test: " << removeLocation(fullPath, "/html") << endl;
-                fullPath = removeLeadingSlashes(removeLocation(fullPath, rootVar));
-                fullPath = removeLeadingSlashes(removeLocation(fullPath, "www/"));
-                cout << "second fullPath: " << fullPath << endl;
+//                 cout << "********************PROB HNA************************" << endl;
+//                 cout << "fullPath before: " << fullPath << endl;
+//                 fullPath = removeLeadingSlashes(removeLocation(relativePath, locPath + "/" + rootVar));
+//                 cout << "fullPath: " << fullPath << endl;
+//                 cout << "rootVar: "  << rootVar  << endl;
+//                 cout << "test: " << removeLocation(fullPath, "/html") << endl;
+//                 fullPath = removeLeadingSlashes(removeLocation(fullPath, rootVar));
+//                 fullPath = removeLeadingSlashes(removeLocation(fullPath, "www/"));
+//                 cout << "second fullPath: " << fullPath << endl;
                 
-                // fullPath = removeLocation(relativePath, locPath + "/" + rootVar);
+//                 // fullPath = removeLocation(relativePath, locPath + "/" + rootVar);
                 
-                cout << "****************************************************\n";
-            }
-        }
-        cout << "fullPath__after condition : " << fullPath << endl;
-        // fullPath = "www/html/index.html";
-        ///////////////////// CGI /////////////////////////
+//                 cout << "****************************************************\n";
+//             }
+//         }
+//         cout << "fullPath__after condition : " << fullPath << endl;
+//         // fullPath = "www/html/index.html";
+//         ///////////////////// CGI /////////////////////////
         
-        // std::string extension;
+//         // std::string extension;
                 
-        // size_t dotPos = fullPath.find_last_of('.');
-        // size_t qPos = fullPath.find_last_of('?');
+//         // size_t dotPos = fullPath.find_last_of('.');
+//         // size_t qPos = fullPath.find_last_of('?');
 
-        // if (dotPos != string::npos && qPos != string::npos && dotPos < qPos)
-        //     extension = fullPath.substr(dotPos, qPos - dotPos);
-        // else if (dotPos != std::string::npos)
-        //     extension = fullPath.substr(dotPos);
-        // cout << "extension: " << extension << endl;
+//         // if (dotPos != string::npos && qPos != string::npos && dotPos < qPos)
+//         //     extension = fullPath.substr(dotPos, qPos - dotPos);
+//         // else if (dotPos != std::string::npos)
+//         //     extension = fullPath.substr(dotPos);
+//         // cout << "extension: " << extension << endl;
         
-        // loc = getClosestLocation(myServer, "/api");
-        // std::vector<std::string>* cgiExt = loc->getInfos("cgi_extension");
-        // std::vector<std::string>* cgiPath = loc->getInfos("cgi_path");        
+//         // loc = getClosestLocation(myServer, "/api");
+//         // std::vector<std::string>* cgiExt = loc->getInfos("cgi_extension");
+//         // std::vector<std::string>* cgiPath = loc->getInfos("cgi_path");        
         
-        // bool isCgi = false;
+//         // bool isCgi = false;
         
-        // if (cgiExt) {
-        //     for (size_t i = 0; i < cgiExt->size(); ++i) {
-        //         cout << "result: " << (*cgiExt)[i] << endl;
-        //         if (extension == (*cgiExt)[i]) {
-        //             isCgi = true;
-        //             break;
-        //         }
-        //     }
-        // }
-        // //
-        // cout << isCgi << endl;
+//         // if (cgiExt) {
+//         //     for (size_t i = 0; i < cgiExt->size(); ++i) {
+//         //         cout << "result: " << (*cgiExt)[i] << endl;
+//         //         if (extension == (*cgiExt)[i]) {
+//         //             isCgi = true;
+//         //             break;
+//         //         }
+//         //     }
+//         // }
+//         // //
+//         // cout << isCgi << endl;
 
-        // if (isCgi && cgiPath && !cgiPath->empty()) {
-        //     cout << "in CGI\n" << endl;
-        //     std::string interpreter = (*cgiPath)[0];
-        //     cout << "interpreter: " << interpreter << endl;
+//         // if (isCgi && cgiPath && !cgiPath->empty()) {
+//         //     cout << "in CGI\n" << endl;
+//         //     std::string interpreter = (*cgiPath)[0];
+//         //     cout << "interpreter: " << interpreter << endl;
 
-        //     cout << "inQuery\n" << endl;
-        //     std::string query;
-        //     size_t pos = req.path.find('?');
-        //     if (pos != std::string::npos) {
-        //         query = req.path.substr(pos + 1);
-        //         fullPath = root + req.path.substr(0, pos);
-        //     }
-        //     cout << "test: "<< fullPath << endl;
-        //     string cgiOutput = executeCgi(fullPath, query, interpreter);
-        //     std::ostringstream response;
+//         //     cout << "inQuery\n" << endl;
+//         //     std::string query;
+//         //     size_t pos = req.path.find('?');
+//         //     if (pos != std::string::npos) {
+//         //         query = req.path.substr(pos + 1);
+//         //         fullPath = root + req.path.substr(0, pos);
+//         //     }
+//         //     cout << "test: "<< fullPath << endl;
+//         //     string cgiOutput = executeCgi(fullPath, query, interpreter);
+//         //     std::ostringstream response;
 
-        //     response << "HTTP/1.1 200 OK\r\n";
-        //     response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
-        //     response << "Content-Length: " << cgiOutput.size() << "\r\n";
-        //     response << "Connection: close\r\n\r\n";
-        //     response << cgiOutput << endl;
-        //     return response.str();
-        // }
-        ///////////////////////////////////////////
+//         //     response << "HTTP/1.1 200 OK\r\n";
+//         //     response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
+//         //     response << "Content-Length: " << cgiOutput.size() << "\r\n";
+//         //     response << "Connection: close\r\n\r\n";
+//         //     response << cgiOutput << endl;
+//         //     return response.str();
+//         // }
+//         ///////////////////////////////////////////
         
-        //3 exist file (path)
-        if (!existFile(fullPath, loc, reqPath, locPath, currentFd))
-        {
-            cout << "error dir: "<< fullPath << endl;
-            return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-        }
-        cout << "success dir: "<< fullPath << endl;
+//         //3 exist file (path)
+//         if (!existFile(fullPath, loc, reqPath, locPath, currentFd))
+//         {
+//             cout << "error dir: "<< fullPath << endl;
+//             return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+//         }
+//         cout << "success dir: "<< fullPath << endl;
 
-        // 4 open file and read content
-        std::string body = readFile(fullPath);
-        if (body == "error opening !!")
-            return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+//         // 4 open file and read content
+//         std::string body = readFile(fullPath);
+//         if (body == "error opening !!")
+//             return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         
-        std::ostringstream ait_response;
+//         std::ostringstream ait_response;
 
-        ait_response << "HTTP/1.1 200 OK\r\n";
-        ait_response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
-        ait_response << "Content-Length: " << body.size() << "\r\n";
-        ait_response << "Connection: close\r\n\r\n";
-        ait_response << body << endl;
-        return ait_response.str();
-    }
-    return "amine";
-}
+//         ait_response << "HTTP/1.1 200 OK\r\n";
+//         ait_response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
+//         ait_response << "Content-Length: " << body.size() << "\r\n";
+//         ait_response << "Connection: close\r\n\r\n";
+//         ait_response << body << endl;
+//         return ait_response.str();
+//     }
+//     return "amine";
+// }
 
 string switchLocation(const string &locPath, const string &reqPath, const string &rootVar) {
     if (reqPath.compare(0, locPath.length(), locPath) == 0) {
@@ -581,7 +581,7 @@ bool isCgiRequest(location *loc, const std::string &path) {
 bool executeCgiScript(const data_request &req, const std::string &scriptPath, location *loc, std::string &output) {
     int pipefd[2];
     if (pipe(pipefd) == -1)
-        return false;
+        return false;// ina error bach kaykhrej 
 
     pid_t pid = fork();
     if (pid < 0)
@@ -608,7 +608,7 @@ bool executeCgiScript(const data_request &req, const std::string &scriptPath, lo
         std::vector<std::string>* cgiPathVec = loc->getInfos("cgi_path");
         if (!cgiPathVec || cgiPathVec->empty()) {
             std::cerr << "cgi_path is missing or empty!" << std::endl;
-            exit(1);
+            exit(1);// ina error bach kaykhrej 
         }
 
         std::string interpreter = (*cgiPathVec)[0];
@@ -621,7 +621,7 @@ bool executeCgiScript(const data_request &req, const std::string &scriptPath, lo
 
         execve(interpreter.c_str(), args, &envp[0]);
         perror("execve failed");
-        exit(1);
+        exit(1);// ina error bach kaykhrej 
     } else {
         // Parent process
         close(pipefd[1]);
@@ -664,7 +664,7 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     if (indexFound == "" && loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
     {
         std::string body = listDirectory(path, reqPath);
-        // cout << "body : "<< body << endl;
+        cout << "body : "<< body << endl;
         std::string response =
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: text/html\r\n"
@@ -677,37 +677,20 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
 
     if (loc->getInfos("autoindex")->at(0) == "off" && indexFound == "")
     {
-        std::string body = "<html><body><h1>403 Forbidden</h1></body></html>";
-        std::string response =
-            "HTTP/1.1 403 Forbidden\r\n"
-            "Content-Type: text/html\r\n"
-            "Content-Length: " + std::to_string(body.size()) + "\r\n"
-            "Connection: close\r\n"
-            "\r\n" +
-            body;
-            return response;
+        throw(403);
     }
     
     //////////////////////////////////////////////////
 
     if (!existFile(path, loc, reqPath, locPath, currentFd))
     {
-        cout << "error dir: "<< path << endl;
-        std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
-        std::string response =
-            "HTTP/1.1 404 Not Found\r\n"
-            "Content-Type: text/html\r\n"
-            "Content-Length: " + std::to_string(body.size()) + "\r\n"
-            "Connection: close\r\n"
-            "\r\n" +
-            body;
-        return response;
+        throw(404);
     }
         cout << "success dir: "<< path << endl;
         // 4 open file and read content
         std::string body = readFile(path);
         if (body == "error opening !!")
-            return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            throw(500);
     
         std::ostringstream ait_response;
 
