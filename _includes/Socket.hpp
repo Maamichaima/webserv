@@ -1,5 +1,6 @@
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
+
 #include <cstddef>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -13,6 +14,7 @@
 #include <algorithm>
 #include <sys/types.h>
 #include <netdb.h>
+#include <unordered_set>
 
 
 #define BUFFER_SIZE 4024
@@ -22,22 +24,17 @@
 class Socket{
 
     public:
+        int                fd_socket;
+        struct sockaddr_in host_addr;
+        struct addrinfo   *host_info;
 
-
-    int fd_socket;
-    struct sockaddr_in host_addr;
-    struct addrinfo *host_info;
-    int host_addrlen;
-
-    Socket();
-    ~Socket();
-    int     getSocketFd();
-    void    initialize(std::string port, std::string add_ip);
-    bool    create_Socket();
-    bool    bind_Socket();
-    bool    listen_socket();
-    bool    set_nonblocking();
-
+        Socket();
+        int     getSocketFd();
+        bool    initialize(std::string port, std::string add_ip);
+        bool    create_Socket();
+        bool    bind_Socket();
+        bool    listen_socket();
+        ~Socket();
 };
 
 

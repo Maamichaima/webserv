@@ -3,26 +3,12 @@
 #include <cstddef>
 #include <utility>
 
-bool    Tokenizer::tokenizeString(std::string line)
-{
-    std::stringstream s(line);
-    std::string word;
-    
-    while(s >> word) {
-        std::vector<std::string> parts = splitServerConfig(word);
-        tokens.insert(tokens.end(), parts.begin(), parts.end());
-    }
-    
-    return true;
-    
-}
-
+Tokenizer::Tokenizer(){}
 
 void Tokenizer::initialize() {
     current = tokens.begin();
     end = tokens.end();
 }
-
 
 void   Tokenizer::advance() {
     if (current == end ) throw std::runtime_error("Unexpected end of input");
@@ -35,27 +21,9 @@ std::string Tokenizer::peek() {
     return *current;
 }
 
-bool Tokenizer::hasMore()  { return current != end;
+bool Tokenizer::hasMore()  { 
+    return current != end;
 }
-        
-
-void print_map(std::map<std::string, std::vector<std::string> > params) {
-    std::map<std::string, std::vector<std::string > >::iterator it;
-    for (it = params.begin(); it != params.end(); ++it) {
-        std::cout << it->first << ": ";
-        
-        std::vector<std::string> values = it->second;
-        for (size_t i = 0; i < values.size(); ++i) {
-            std::cout << values[i];
-            if (i < values.size() - 1) {
-                std::cout << " ";
-            }
-        }
-        std::cout << std::endl;
-    }
-}
-
-
 
 std::vector<std::string> splitServerConfig(const std::string& input) {
     std::vector<std::string> parts;
@@ -63,10 +31,8 @@ std::vector<std::string> splitServerConfig(const std::string& input) {
     
     for (size_t i = 0; i < input.length(); i++) {
         char c = input[i];
-        
-    
+
         if (c == '{' || c == '}'|| c == ';') {
-           
             if (!current.empty()) {
                 parts.push_back(current);
                 current.clear();
@@ -82,30 +48,21 @@ std::vector<std::string> splitServerConfig(const std::string& input) {
     return parts;
 }
 
-// bool Tokenizer::skipToNextServerBlock() {
-//     while (hasMore()) {
-//         std::string current = peek();
-        
-//         if (current == "{") {
-//             braceStack.push('{');
-//         } 
-//         else if (current == "}") {
-//             if (!braceStack.empty()) {
-//                 braceStack.pop();
-//             }
-//         }
-//         else if (current == "server" && braceStack.empty()) {
-//             return true;
-//         }
-        
-//         advance();
-//     }
-//     return false;
-// }
+bool    Tokenizer::tokenizeString(std::string line)
+{
+    std::stringstream s(line);
+    std::string word;
+    while(s >> word) {
+        std::vector<std::string> parts = splitServerConfig(word);
+        tokens.insert(tokens.end(), parts.begin(), parts.end());
+    }
+    return true;
+}
+
 
 bool    Tokenizer::parse(ServerManager &manager) {
     while (hasMore()) {
-        if (peek() == "server" ) { // make sure it's the first element in the server or it's preceded by }
+        if (peek() == "server" ) {
             advance();
             if (peek() == "{") {
                 braceStack.push('{'); 
@@ -113,7 +70,7 @@ bool    Tokenizer::parse(ServerManager &manager) {
                 Server server;
                 if (!server.createServer(*this))
                 {
-                    std::cerr << "Error: server creation failed due to a syntaxe error " << std::endl;
+                    std::cerr << "Error: server creation failed due to syntaxe error " << std::endl;
                     return false;
                 }
                 else
@@ -125,21 +82,21 @@ bool    Tokenizer::parse(ServerManager &manager) {
                         if(!braceStack.empty())
                             return false;
                         manager.addServer(server);
-                        std::cout << "new server added" << std::endl;
                         advance();
                     }
                     else
                         return false;
                 }
-
             }
-            else 
+            else {
+                std::cerr << "Error: server creation failed due to  syntaxe error " << std::endl;
                 return false;
+            }
         }
         else if (!peek().empty()) { 
+            std::cerr << "Error: server creation failed due to  syntaxe error " << std::endl;
             return false;
         }
-
     }
     return true;
 }
@@ -153,7 +110,6 @@ bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
 
     std::string line;
     std::ifstream inputFile(argv[1]);
-    
     if (!inputFile.is_open()) {
         std::cerr << "Failed to open file: " << argv[1] << std::endl;
         return false;
@@ -166,16 +122,18 @@ bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
         }
         tokenizer.tokenizeString(line);
     }
-    
     tokenizer.initialize();
-   
-    if(!tokenizer.parse(manager))//catch errors
-        return false;
- 
-    
-    return (true);
-    
 
-         
+    try {
+        if (!tokenizer.parse(manager)) {
+            return false;  
+        }
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Tokenizer error: " << e.what() << std::endl;
+        return false; 
+    }
+ 
+    return (true);    
 }
+
 Tokenizer::~Tokenizer(){}
