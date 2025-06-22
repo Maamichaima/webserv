@@ -84,21 +84,17 @@ int parser::parse(client &client)
 			}
 			header = get_line(client.buffer);
 		}
-		if(header == "\r\n")
+		if(header == "\r\n")// ila makaynach hade \r\n ??? 
 		{
 			client.check_http_body_rules();
 			client.flag = 2;
 			client.buffer.erase(0, header.size());
             client.data_rq.bodyNameFile = RandomString(5);
-			location *location = getClosestLocation(client.myServer, client.data_rq.path);
-			if(location)
-			{
-				std::map<std::string, std::vector<std::string> >::iterator it = location->infos.find("allowed_methods");
-				if(it != location->infos.end() && std::find(it->second.begin(), it->second.end(), client.data_rq.method) == it->second.end())
-					throw 405;// method not allowed
-			}
+			std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("allowed_methods");
+			if(it != client.data_rq.myCloseLocation->infos.end() && std::find(it->second.begin(), it->second.end(), client.data_rq.method) == it->second.end())
+				throw (405);
 			if(client.data_rq.method == "DELETE")
-				deleteMethode(client.data_rq.path);
+				deleteMethode(client);
 		}
 	}
 	if(client.flag == 2)
@@ -141,7 +137,7 @@ int parser::parse(client &client)
 		{
 			if(client.data_rq.size_body)
 			{
-				std::string body = get_line_size(client.buffer, client.data_rq.size_body);
+				std::string body = get_line_size(client.buffer, client.data_rq.size_body);//hdgfbh
 				this->setDateToStruct(client, body, client.flag);
 				client.data_rq.size_body -= body.size();
 				client.buffer.erase(0, body.size());
@@ -164,7 +160,14 @@ void toLower(std::string &str)
     }
 }
 
-void parser::setDateToStruct(client &client, std::string &buffer, int flag)
+int isRedirect(std::string red)
+{
+	if(red == "301" || red == "302" || red == "302" || red == "307" || red == "308")
+		return 1;
+	return 0;
+}
+
+void parser::setDateToStruct(client &client, std::string &buffer, int flag)//const ??
 {
     if(flag == 0)
     {
@@ -172,7 +175,7 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
         std::deque<std::string> startLine = split(str, " ");
         client.data_rq.method = startLine[0];
 		size_t pos = startLine[1].find("?");
-		if(startLine[1].size() >= 8000)
+		if(startLine[1].size() >= 8000)// khedmi b start line kolha 
 			throw (414);// URI Too Long
 		if(pos != std::string::npos)
 		{
@@ -185,7 +188,7 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
     }
     if(flag == 1)
     {
-        std::string str = get_line(buffer);
+		std::string str = get_line(buffer);
 		size_t pos = str.find(":");
 		size_t size = str.find("\r\n");
 		std::string key = str.substr(0, pos);
@@ -194,7 +197,19 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)
         client.data_rq.headers[key] = value;
 		if(key == "host")
 		{
-			client.myServer=*chooseServer(SocketToServers[client.server_fd],client.data_rq.headers["host"]);
+			client.myServer = *chooseServer(SocketToServers[client.server_fd],client.data_rq.headers["host"]);
+			client.data_rq.myCloseLocation = getClosestLocation(client.myServer, client.data_rq.path);
+			if(client.data_rq.myCloseLocation == NULL)
+				throw(404);
+			std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("redirect");
+			if(it != client.data_rq.myCloseLocation->infos.end())
+			{
+				if(isRedirect(client.data_rq.myCloseLocation->infos["redirect"][0]))
+				{
+					client.data_rs.headers["Location"] = client.data_rq.myCloseLocation->infos["redirect"][1];
+					throw(std::atoi(client.data_rq.myCloseLocation->infos["redirect"][0].c_str()));
+				}
+			}
 		}
     }
     if(flag == 2)
