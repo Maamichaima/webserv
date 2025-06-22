@@ -226,34 +226,47 @@ void client::handleResponse(int currentFd)
 		}
 	}
 
-	//////////////////////////////////////////////////
-	if(this->data_rq.method == "GET")
+	try
 	{
-		std::string response;
-		cout << "before getLocation" << data_rq.path << endl;
-		location* loc = getClosestLocation(this->myServer, data_rq.path);
-		if (loc)
-		    response = handleGetRequest(this->data_rq, loc, this->myServer, currentFd);
-		else
-		{
-			cout << "********************************************" << endl;
-			std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
-				response =
-				"HTTP/1.1 404 Not Found\r\n"
-				"Content-Type: text/html\r\n"
-				"Content-Length: " + std::to_string(body.size()) + "\r\n"
-				"Connection: close\r\n"
-				"\r\n" +
-				body;
-		}
-		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+		if(this->data_rq.method == "GET")
+        {
+            std::string response;
+            cout << "before getLocation" << data_rq.path << endl;
+            location* loc = getClosestLocation(this->myServer, data_rq.path);
+            if (loc)
+                response = handleGetRequest(this->data_rq, loc, this->myServer, currentFd);
+            else
+            {
+                // cout << "********************************************" << endl;
+                // std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
+                //     response =
+                //     "HTTP/1.1 404 Not Found\r\n"
+                //     "Content-Type: text/html\r\n"
+                //     "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                //     "Connection: close\r\n"
+                //     "\r\n" +
+                //     body;
+                throw(404);
+            }
+            send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+            return ;
+        }
 	}
-	else
+	catch(const int &statusCode)
 	{
+		this->data_rs.status_code = statusCode;
+	}
+	//////////////////////////////////////////////////
+	// if(this->data_rq.method == "GET")
+    // {
+
+    // }
+	// else
+	// {
 		setDataResponse();
 		std::string response = buildResponse();
 		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-	}
+	// }
 }
 
 void client::check_http_body_rules()
