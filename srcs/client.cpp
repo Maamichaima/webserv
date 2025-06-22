@@ -192,60 +192,56 @@ void client::handleResponse(int currentFd)
 		}
 	}
 
-	/////////////////// CGI /////////////////////////
-	location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
-	if (this->data_rq.method != "DELETE" && cgiLoc)
-	{
-		if (isCgiConfigured(cgiLoc))
-		{
-		
-			string locPath = normalizePath(cgiLoc->path);
-			string reqPath = normalizePath(data_rq.path);
-			string root = cgiLoc->getInfos("root")->at(0);
-
-			string cgiPath = switchLocation(locPath, reqPath, root);
-			cout << "cgiPath2: "<< cgiPath << endl;
-
-			vector<string>* exts = cgiLoc->getInfos("cgi_extension");
-			
-			cout <<"checkIndex2: "<< checkIndexes(cgiLoc, cgiPath+ "/") << endl;
-			if (isDirectory(cgiPath) && checkIndexes(cgiLoc, cgiPath + "/") != "")
-				cgiPath = checkIndexes(cgiLoc, cgiPath+ "/");
-			
-			if (checkExtension(cgiPath, *exts))
-			{
-				cout << "3"<<  endl;
-				string cgiOutput;
-				if (executeCgi(cgiPath, data_rq, *cgiLoc, cgiOutput)) {
-				send(currentFd, buildHttpResponse(200, "OK", cgiOutput).c_str(), buildHttpResponse(200, "OK", cgiOutput).size(), MSG_NOSIGNAL);
-				
-				} else {
-				send(currentFd, buildHttpResponse(500, "Internal Server Error", "CGI execution failed").c_str(), buildHttpResponse(500, "Internal Server Error", "CGI execution failed").size(), MSG_NOSIGNAL);
-			}
-		}
-		}
-	}
-
 	try
 	{
+	    /////////////////// CGI /////////////////////////
+        location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
+        if (this->data_rq.method != "DELETE" && cgiLoc)
+        {
+            if (isCgiConfigured(cgiLoc))
+            {
+                string locPath = normalizePath(cgiLoc->path);
+                string reqPath = normalizePath(data_rq.path);
+                string root;
+                vector<string>* exts;
+
+                std::map<std::string, std::vector<std::string> >::iterator itRoot = cgiLoc->infos.find("root");
+                if(itRoot == cgiLoc->infos.end()) 
+                    throw(404);
+                root  = cgiLoc->getInfos("root")->at(0);    
+                
+                string cgiPath = switchLocation(locPath, reqPath, root);
+
+                std::map<std::string, std::vector<std::string> >::iterator itCgi = cgiLoc->infos.find("cgi_extension");
+                if(itCgi == cgiLoc->infos.end()) 
+                    throw(404);
+                exts = cgiLoc->getInfos("cgi_extension");
+                
+                if (isDirectory(cgiPath) && checkIndexes(cgiLoc, cgiPath + "/") != "")
+                    cgiPath = checkIndexes(cgiLoc, cgiPath+ "/");
+                
+                if (checkExtension(cgiPath, *exts))
+                {
+                    string cgiOutput;
+                    if (executeCgi(cgiPath, data_rq, *cgiLoc, cgiOutput)) {
+                        send(currentFd, buildHttpResponse(200, "OK", cgiOutput).c_str(), buildHttpResponse(200, "OK", cgiOutput).size(), MSG_NOSIGNAL); 
+                        return;
+                    }
+                    throw(500);
+                }
+            }
+        }
+        /////////////////////////GET///////////////////////
 		if(this->data_rq.method == "GET")
         {
             std::string response;
-            cout << "before getLocation" << data_rq.path << endl;
             location* loc = getClosestLocation(this->myServer, data_rq.path);
             if (loc)
                 response = handleGetRequest(this->data_rq, loc, this->myServer, currentFd);
             else
             {
-                // cout << "********************************************" << endl;
-                // std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
-                //     response =
-                //     "HTTP/1.1 404 Not Found\r\n"
-                //     "Content-Type: text/html\r\n"
-                //     "Content-Length: " + std::to_string(body.size()) + "\r\n"
-                //     "Connection: close\r\n"
-                //     "\r\n" +
-                //     body;
+
+          
                 throw(404);
             }
             send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
@@ -253,20 +249,12 @@ void client::handleResponse(int currentFd)
         }
 	}
 	catch(const int &statusCode)
-	{
+    {
 		this->data_rs.status_code = statusCode;
-	}
-	//////////////////////////////////////////////////
-	// if(this->data_rq.method == "GET")
-    // {
-
-    // }
-	// else
-	// {
-		setDataResponse();
-		std::string response = buildResponse();
-		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-	// }
+    }
+    setDataResponse();
+    std::string response = buildResponse();
+    send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 }
 
 void client::check_http_body_rules()
