@@ -168,7 +168,6 @@ void ServerManager::printAllServerInfo() {
         }
         server.printLocations();  
         std::cout << std::endl;
-        
     }
     std::cout << "----- END SERVER INFORMATION -----" << std::endl;
 }
