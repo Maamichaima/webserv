@@ -206,7 +206,7 @@ bool check_allowed_methods(std::vector<std::string> values)
     while(it != values.end())
     {
         std::string value = *it;
-        if(value != "POST" && value != "GET" )
+        if(value != "POST" && value != "GET" && value != "DELETE")
             return false;
         ++it;
 

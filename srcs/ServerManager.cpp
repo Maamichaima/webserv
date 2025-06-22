@@ -277,6 +277,7 @@ void    ServerManager::handle_cnx()
 
             // cout << "recieved buffer from client" << endl;
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
+			std::cout << "====== " << buffer << "====\n";
             if(bytesRead <= 0)
             {
                 if (bytesRead == 0){
@@ -288,8 +289,8 @@ void    ServerManager::handle_cnx()
                 }
                 clients[currentFd].closeConnection = true;
             }
-            else {
-                // buffer[bytesRead] = '\0';
+            else 
+			{
 	            clients[currentFd].buffer.append(buffer, bytesRead);
                 std::memset(buffer, 0, BUFFER_SIZE);   
             }
