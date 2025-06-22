@@ -42,14 +42,13 @@ int deleteDir(const std::string& path)
 	while((entry = readdir(dir)) != NULL)
 	{
 		std::string name = entry->d_name;
-		// std::cout << name << "\n";
 		if (name == "." || name == "..")
 			continue;
 		std::string fullPath = path + "/" + name;
 		deleteDir(fullPath);
 	}
 	closedir(dir);// hhh/ccc/./
-	if (rmdir(path.c_str()) == 0)
+	if (std::remove(path.c_str()) == 0)
 	{
 		std::cout << "Directory deleted: " << path << "\n";
 		return (204);
@@ -61,19 +60,34 @@ int deleteDir(const std::string& path)
 	}
 }
 
-void deleteMethode(std::string path)
+std::string getPathToDelete(const client &client)
 {
-	if(path == "/")//add path of our project w
+	std::string new_path = client.data_rq.path;
+	std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("root");
+	if(it == client.data_rq.myCloseLocation->infos.end())
+		throw(403); // Forbiden
+	int pos = new_path.find(client.data_rq.myCloseLocation->path);
+	if(pos != std::string::npos)
+		new_path.erase(pos, client.data_rq.myCloseLocation->path.length());
+	new_path = client.data_rq.myCloseLocation->infos["root"][0] + new_path;
+	std::cout << new_path << "\n";
+	return new_path;
+}
+
+void deleteMethode(const client &client)
+{
+	std::string pathtoDelete = getPathToDelete(client);
+	if(pathtoDelete == "/")//add path of our project w
 		throw(403);
-    if (pathType(path) == 1)//is a dir
+    if (pathType(pathtoDelete) == 1)//is a dir
 	{
-		if(!path.empty() && path[path.length() - 1] != '/')// ila kan empty 
+		if(!pathtoDelete.empty() && pathtoDelete[pathtoDelete.length() - 1] != '/')// ila kan empty 
 			throw(409);
-		throw (deleteDir(path));
+		throw (deleteDir(pathtoDelete));
 	}
-	else if(pathType(path) == 2) //is file 
+	else if(pathType(pathtoDelete) == 2) //is file 
 	{
-		deleteFile(path);
+		deleteFile(pathtoDelete);
 	}
 	else
 		throw (404);// file no exixte ;

@@ -179,6 +179,7 @@ string readFile(const string &fullPath)
     return fileContent.str();
 }
 
+// diro map 
 std::string getMimeType(const std::string& path) {
     if (path.length() >= 5 && path.substr(path.length() - 5) == ".html") return "text/html";
     if (path.length() >= 4 && path.substr(path.length() - 4) == ".css") return "text/css";

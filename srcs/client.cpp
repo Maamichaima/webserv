@@ -94,7 +94,9 @@ int isError(int numStatusCode)
 {
 	if(numStatusCode == 400 || numStatusCode == 404 || numStatusCode == 411 ||
 		 numStatusCode == 500 || numStatusCode == 501 || numStatusCode == 505 || 
-		 numStatusCode == 405 || numStatusCode == 409 || numStatusCode == 403)
+		 numStatusCode == 405 || numStatusCode == 409 || numStatusCode == 403 ||
+		 numStatusCode == 413 || numStatusCode == 301 || numStatusCode == 308 || 
+		 numStatusCode == 307 || numStatusCode == 302 || numStatusCode == 303 || numStatusCode == 304)
 		return 1;
 	return 0;
 }
@@ -124,7 +126,6 @@ void client::parseRequest()
 	{
 		this->data_rs.status_code = status_code;
 	}
-	
 }
 
 std::string headersToOneString(std::map<std::string, std::string> headers)
@@ -157,9 +158,12 @@ std::string to_string(T value) {
 void client::setDataResponse()
 {
 	this->data_rs.startLine = "HTTP/1.1 " + to_string(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
-	this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
-	this->data_rs.headers["Content-Length"] = to_string(client::errorPages[this->data_rs.status_code].size());
-	this->data_rs.body = client::errorPages[this->data_rs.status_code];
+	if(this->data_rs.status_code / 100 != 3)
+	{
+		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
+		this->data_rs.headers["Content-Length"] = to_string(client::errorPages[this->data_rs.status_code].size());
+		this->data_rs.body = client::errorPages[this->data_rs.status_code];
+	} 
 }
 
 void client::setStatusCode()
@@ -259,7 +263,6 @@ void client::handleResponse(int currentFd)
 
 void client::check_http_body_rules()
 {
-	// set exention here
 	if(this->data_rq.method != "GET" && this->data_rq.method != "POST" && this->data_rq.method != "DELETE")
 		throw(501);// Not Implemented
 	std::map<std::string, std::string>::iterator it_cLenght = this->data_rq.headers.find("content-length");
