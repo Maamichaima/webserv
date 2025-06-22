@@ -11,17 +11,14 @@
 class ServerManager{
 
     private:
-        std::vector<Server> servers;
-        std::map<int,client> clients;
-        ;
-        static size_t numServer ;
-        int epollFd;
-        struct epoll_event events[MAX_EVENTS];
+        int                     epollFd;
+        struct epoll_event      events[MAX_EVENTS];
+        std::vector<Server>     servers;
+        std::map<int,client>    clients;
     public:
         ServerManager();
         std::vector<Server>     get_servers();
         std::map<int,client>    get_clients();
-        size_t                  getNumServer();
         void                    addServer(Server& server);
         bool                    initializeAll() ;
         std::vector<int>        getAllSocketFds() ;
@@ -30,8 +27,8 @@ class ServerManager{
         bool                    Add_new_event(int fd_socket);
         void                    handle_cnx();
         Socket*                 findSocketByFd(int fd);
-        std::map<int, Socket*>  getFdToSocketMap();
         void                    routeRequest();
+        void                    checkTimeOut();
 };
 
 

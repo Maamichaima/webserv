@@ -4,7 +4,7 @@
 
 bool   valide_port(const std::string& port){
 
-    for(int i  ; i < port.size() ;i++){
+    for(int i = 0 ; i < port.size() ;i++){
         char c = port[i];
         if(!isdigit(c))
             return false;
@@ -14,53 +14,8 @@ bool   valide_port(const std::string& port){
         return false;
     
     return true;
-}
+}                                                                                           
 
-bool    valide_ip_address(const std::string & ip)
-{
-    if (ip == "localhost")
-        return true;
-
-    std::vector<std::string> octets;
-    std::string temp = "";
-
-    for(size_t i = 0; i < ip.size(); ++i)
-    {
-        if(ip[i] == '.')
-        {
-            octets.push_back(temp);
-            temp = "";
-        }
-        else
-        {
-            temp += ip[i];
-        }
-    }
-    if(!temp.empty())
-        octets.push_back(temp);
-    
-
-    if(octets.size() != 4)
-        return false;
-
-    for(int i  ; i < octets.size() ;i++)
-    {
-        const std::string octet = octets[i];
-        if(octet.empty())
-            return false;
-        for (int i  ; i < octet.size() ;i++)
-        {
-            char c = octet[i];
-            if (!isdigit(c))
-                return false;
-        }
-        int num = std::atoi(octet.c_str());
-        if (num < 0 || num > 255)
-            return false;
-    }
-
-    return true;
-}
 
 bool check_listen( std::vector<std::string> values,Server &server)
 {
@@ -85,17 +40,9 @@ bool check_listen( std::vector<std::string> values,Server &server)
 
 bool check_host(std::vector<std::string> values,Server &server)
 {
-    if(values.empty())
+    if(values.size() != 1)
         return false;
-    std::vector<std::string>::iterator it = values.begin();
-    while(it != values.end())
-    {
-        std::string value = *it;
-        if (!valide_ip_address(value))
-                    return false;
-         server.set_IpAddress(value);
-        ++it;
-    }
+    server.set_IpAddress(values[0]);
     return true;
 }
 
@@ -199,6 +146,15 @@ bool    param_Syntaxe(std::string key, std::vector<std::string> values, Server &
         return false;
 }
 
+bool check_all_keys(std::string key){
+
+    if(key == "root" || key == "index" || key == "allowed_methods" || key == "autoindex" || 
+        key == "redirect" || key == "cgi_extension" || key == "upload_store" || key =="cgi_path" ||
+        key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key =="host" )
+        return true;
+    else
+        return false;
+}
 
 bool check_allowed_methods(std::vector<std::string> values)
 {
@@ -206,7 +162,7 @@ bool check_allowed_methods(std::vector<std::string> values)
     while(it != values.end())
     {
         std::string value = *it;
-        if(value != "POST" && value != "GET" )
+        if(value != "POST" && value != "GET" && value != "DELETE")
             return false;
         ++it;
 
@@ -223,6 +179,42 @@ bool check_autoindex(std::vector<std::string> values)
     return true;
 }
 
+
+bool check_cgi_directives( std::map<std::string, std::vector<std::string> > infos )
+{
+    std::map<std::string, std::vector<std::string> >::iterator cgi_ext_it = infos.find("cgi_extension");
+    std::map<std::string, std::vector<std::string> >::iterator cgi_path_it = infos.find("cgi_path");
+    
+    if (cgi_ext_it != infos.end() && cgi_path_it != infos.end()) 
+        return cgi_ext_it->second.size() == cgi_path_it->second.size();
+    
+    bool cgi_ext_exists = (cgi_ext_it != infos.end());
+    bool cgi_path_exists = (cgi_path_it != infos.end());
+    
+    if (cgi_ext_exists != cgi_path_exists) {
+        return false; 
+    }
+    
+    if (cgi_ext_exists && cgi_path_exists) {
+        return cgi_ext_it->second.size() == cgi_path_it->second.size();
+    }
+    return true;
+}
+
+
+
+bool check_redirect(std::vector<std::string> values){
+
+    if(values.size() != 2)
+        return false;
+    std::string code = values[0];
+    for(int i = 0 ; i < code.size() ;i++){
+        if(!isdigit(code[i]))
+            return false;
+    }
+    return true;
+}
+
 bool Directives_syntaxe(std::string key, std::vector<std::string> values)
 {
     
@@ -232,14 +224,10 @@ bool Directives_syntaxe(std::string key, std::vector<std::string> values)
         return(check_allowed_methods(values));
     else if( key == "autoindex")
         return(check_autoindex(values));
-    else if(key == "redirect" && !(values.size() == 2 || values.size() == 1))
-        return(false);
+    else if(key == "redirect")
+        return(check_redirect(values));
     else if(key == "upload_store" &&  values.size() != 1) 
         return(false);
-    // else if(key =="cgi_extension" )
-    //     return();
-    // else if(key == "cgi_path")
-    //     return();
     else
         return true;
 

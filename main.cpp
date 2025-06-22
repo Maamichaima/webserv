@@ -2,7 +2,7 @@
 #include "_includes/Socket.hpp"
 #include "_includes/Server.hpp"
 #include "srcs/methods/DeleteMethod.hpp"
-
+#include "_includes/ServerLogger.hpp"
 
 
 int main(int argc,char **argv){
@@ -13,7 +13,7 @@ int main(int argc,char **argv){
     
     //manager.printAllServerInfo();
     manager.initializeAll();
-   
+    //exampleUsage();
 
     while(1)
     {
