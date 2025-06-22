@@ -1,33 +1,30 @@
-
 #include "../_includes/Socket.hpp"
 
-Socket::Socket() :fd_socket(-1), host_addrlen(0) {
+Socket::Socket() :fd_socket(-1) {
     host_info = NULL;
     memset(&host_addr, 0, sizeof(host_addr));
 }
 
 Socket::~Socket() {
-    // if (fd_socket != -1) {
-    //     close(fd_socket);
-    // }
 }
-int Socket::getSocketFd(){
+
+int Socket::getSocketFd() {
     return(fd_socket);
 }
-void    Socket::initialize(std::string port, std::string add_ip){
+
+bool    Socket::initialize(std::string port, std::string add_ip){
     struct addrinfo hints;
     std::memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;  
     hints.ai_socktype = SOCK_STREAM; 
     hints.ai_flags = AI_PASSIVE;
 
-
     int status = getaddrinfo(add_ip.c_str(), port.c_str(), &hints, &host_info);
     if (status != 0) {
-        std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
-        exit(EXIT_FAILURE);
+        std::cerr << "getaddrinfo error: "  << std::endl;
+        return false;
     }
-
+    return true;
 }
 
 bool Socket::create_Socket(){
@@ -42,7 +39,6 @@ bool Socket::create_Socket(){
         fd_socket = -1;
         return false;
     }
-   // std::cout << "socket created successfully\n" <<std::endl;
     return true;
 }
 
@@ -52,7 +48,6 @@ bool   Socket::bind_Socket(){
         close(fd_socket);
         return false;
     }
-    //std::cout << "socket successfully bound to address\n" << std::endl;
     return true;
 }
 
@@ -64,10 +59,3 @@ bool    Socket::listen_socket(){
     return true;
 }
 
-bool Socket::set_nonblocking()
-{
-    if (fcntl(fd_socket, F_SETFL, O_NONBLOCK) == -1) {
-        return false;
-    }
-    return true;
-}

@@ -9,7 +9,9 @@
 
 #include "parser.hpp"
 #include "Server.hpp"
+#include <time.h>
 // class parser;
+#define TIMEOUT 180
 struct data_request
 {
     std::string method;
@@ -51,7 +53,7 @@ class client
         static std::map<int, std::string> errorPages;
         static std::map<int, std::string> description;
 		data_response data_rs;
-
+        time_t lastActivityTime;
 
         client();
         client(std::string buff, int fd);
