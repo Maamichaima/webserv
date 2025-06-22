@@ -138,11 +138,12 @@ bool existFile(string &path, location *loc, string reqPath, string locPath, int 
     int check_st = stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode);
     if (check_st == 0)
     {
+        cout << "path: " << path << endl;
         if (isDirectory(path))
         {
-            string check = checkIndexes(loc, path + "/");
-            cout << "check: " << check << endl;
-            if (check == "")
+            string checkIndex = checkIndexes(loc, path + "/");
+            cout << "checkIndex: " << checkIndex << endl;
+            if (checkIndex == "")
             {
                 // string paths = removeLocation(reqPath, locPath + "/");
                 // string path = removeLocation(reqPath, locPath + "/");
@@ -159,7 +160,7 @@ bool existFile(string &path, location *loc, string reqPath, string locPath, int 
                 send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);   
             }
             else
-                path = check;
+                path = checkIndex;
         }
     }
     return(stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode));
@@ -171,7 +172,7 @@ bool existFile(string &path, location *loc, string reqPath, string locPath, int 
 string readFile(const string &fullPath)
 {
     std::ifstream file(fullPath.c_str(), ios::in | ios::binary);
-    if (!file) return "error opening !!";
+    if (!file) return "";
     else cout << "opning file !!\n" ;
     std::ostringstream fileContent;
     fileContent << file.rdbuf();
@@ -189,56 +190,6 @@ std::string getMimeType(const std::string& path) {
     return "text/plain";
 }
 
-string executeCgi(const string path, string query, string interpreter) {
-    int fd[2];
-    pid_t pid;
-    if(pipe(fd) == -1) {perror("pipe"); return NULL;}
-    pid = fork();
-    if (pid == -1){perror("pipe"); return NULL;}
-    if (pid == 0)
-    {
-        dup2(fd[1], STDOUT_FILENO);
-        close(fd[0]);
-        close(fd[1]);
-        char *args[] = {
-			(char *)interpreter.c_str(),//1
-			(char *)path.c_str(), //2
-            NULL
-        };
-
-        string script_filename = "SCRIPT_FILENAME=" + path;
-        string query_string = "QUERY_STRING=" + query;
-
-        char *env[] = {
-            (char *)"REQUEST_METHOD=GET",
-            (char *)script_filename.c_str(),
-            (char *)query_string.c_str(),
-            (char *)"SERVER_PROTOCOL=HTTP/1.1",
-            (char *)"REMOTE_ADDR=127.0.0.1",
-            (char *)"HTTP_HOST=localhost",
-            NULL
-        };
-
-        
-        execve(interpreter.c_str(), args, env);
-
-        perror("execve");
-        exit(1);
-    }
-
-     close(fd[1]);
-
-    string output;
-    char buffer[1024];
-    ssize_t bytesRead;
-    while ((bytesRead = read(fd[0], buffer, sizeof(buffer))) > 0) {
-        output.append(buffer, bytesRead);
-    }
-
-    close(fd[0]);
-    waitpid(pid, NULL, 0);
-    return output;
-}
 //////////////////////////////////////////CGI////////////////////////////////////////////
 bool endsWith(const std::string& str, const std::string& suffix) {
     if (str.length() < suffix.length()) return false;
@@ -365,23 +316,16 @@ std::string buildHttpResponse(int statusCode, const std::string &statusMessage, 
 
 string checkIndexes(location* loc, const string path) {
     std::vector<std::string>* indexes = loc->getInfos("index");
-    if (!indexes) {
-        cout << "No index list found." << endl;
+    if (!indexes)
         return "";
-    }
-    cout << "index 0: "<< indexes->at(0) << endl;
 
     for (size_t i = 0; i < indexes->size(); ++i) {
         ifstream file(path + indexes->at(i).c_str());
-        cout << "nameFile: " << path + indexes->at(i).c_str() << endl;
         if (file.is_open()) {
-            cout << "Found existing index file: " << indexes->at(i) << endl;
             file.close();
             return path + indexes->at(i).c_str();
         }
     }
-
-    cout << "**************No index files found.*************" << endl;
     return "";
 }
 
@@ -560,20 +504,14 @@ string switchLocation(const string &locPath, const string &reqPath, const string
 bool isCgiRequest(location *loc, const std::string &path) {
     std::vector<std::string>* cgi_exts = loc->getInfos("cgi_extension");
 
-    if (!cgi_exts) {
-        std::cout << "cgi_extension NULL" << std::endl;
+    if (!cgi_exts)
         return false;
-    }
     for (size_t i = 0; i < cgi_exts->size(); ++i) {
         const std::string &ext = (*cgi_exts)[i];
 
-        if (path.size() >= ext.size()) {
-            std::cout << "check: " << path.compare(path.size() - ext.size(), ext.size(), ext) << std::endl;
-
-            if (path.compare(path.size() - ext.size(), ext.size(), ext) == 0) {
+        if (path.size() >= ext.size())
+            if (path.compare(path.size() - ext.size(), ext.size(), ext) == 0)
                 return true;
-            }
-        }
     }
     return false;
 }
@@ -588,7 +526,6 @@ bool executeCgiScript(const data_request &req, const std::string &scriptPath, lo
         return false;
 
     if (pid == 0) {
-        // Child process
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[0]);
         close(pipefd[1]);
@@ -604,7 +541,7 @@ bool executeCgiScript(const data_request &req, const std::string &scriptPath, lo
         }
         envp.push_back(NULL);
 
-        // ✅ Secure access to interpreter
+        // had lparty gha tbdl blblan dial index li galt chaima
         std::vector<std::string>* cgiPathVec = loc->getInfos("cgi_path");
         if (!cgiPathVec || cgiPathVec->empty()) {
             std::cerr << "cgi_path is missing or empty!" << std::endl;
@@ -621,9 +558,9 @@ bool executeCgiScript(const data_request &req, const std::string &scriptPath, lo
 
         execve(interpreter.c_str(), args, &envp[0]);
         perror("execve failed");
-        exit(1);// ina error bach kaykhrej 
-    } else {
-        // Parent process
+        exit(1); // ina error bach kaykhrej 
+    } 
+    else {
         close(pipefd[1]);
 
         char buffer[1024];
@@ -646,22 +583,19 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
 {
     string locPath = normalizePath(loc->path);
     string reqPath = normalizePath(req.path);
-    string rootVar = loc->getInfos("root")->at(0);
+    string rootVar;
 
-    if (loc->getInfos("root") == NULL)
-        cout << " rehaaab" << endl;
-    
-    // cout << "localPath : " << locPath << endl;
-    // cout << "reqPath : " << reqPath << endl;
-    // cout << "rootVar : " << rootVar << endl;
-
+    std::map<std::string, std::vector<std::string> >::iterator itRoot = loc->infos.find("root");
+    if(itRoot == loc->infos.end())
+        throw(404);
+    rootVar = loc->getInfos("root")->at(0);
     string path = switchLocation(locPath, reqPath, rootVar);
     // cout << "path: " << path << endl;
     
     DIR* dir = opendir(path.c_str());
     
     string indexFound = checkIndexes(loc, rootVar + "/");
-    if (indexFound == "" && loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
+    if (indexFound == "" && loc->getInfos("autoindex") && loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
     {
         std::string body = listDirectory(path, reqPath);
         cout << "body : "<< body << endl;
@@ -674,22 +608,16 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
             body;
         send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
     }
-
-    if (loc->getInfos("autoindex")->at(0) == "off" && indexFound == "")
-    {
+    else if (!loc->getInfos("autoindex") || loc->getInfos("autoindex")->at(0) == "off" && indexFound == "")
         throw(403);
-    }
     
     //////////////////////////////////////////////////
 
-    if (!existFile(path, loc, reqPath, locPath, currentFd))
-    {
+    if (!existFile(path, loc, reqPath, locPath, currentFd)) 
         throw(404);
-    }
-        cout << "success dir: "<< path << endl;
-        // 4 open file and read content
+
         std::string body = readFile(path);
-        if (body == "error opening !!")
+        if (body == "")
             throw(500);
     
         std::ostringstream ait_response;
