@@ -596,21 +596,30 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     DIR* dir = opendir(path.c_str());
     
     string indexFound = checkIndexes(loc, rootVar + "/");
-    if (indexFound == "" && loc->getInfos("autoindex") && loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
+    cout <<"indexFound : "<< indexFound << endl;
+    if (indexFound == "")
     {
-        std::string body = listDirectory(path, reqPath);
-        cout << "body : "<< body << endl;
-        std::string response =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/html\r\n"
-            "Content-Length: " + std::to_string(body.size()) + "\r\n"
-            "Connection: close\r\n"
-            "\r\n" +
-            body;
-        send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+        if (loc->getInfos("autoindex"))
+        {
+            if (loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
+            {
+                std::string body = listDirectory(path, reqPath);
+                cout << "body : "<< body << endl;
+                std::string response =
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/html\r\n"
+                    "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                    "Connection: close\r\n"
+                    "\r\n" +
+                    body;
+                send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+            }
+            else
+                throw(403);
+        }
+        else
+                throw(403);
     }
-    else if (!loc->getInfos("autoindex") || loc->getInfos("autoindex")->at(0) == "off" && indexFound == "")
-        throw(403);
     
     //////////////////////////////////////////////////
 
