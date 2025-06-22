@@ -1,38 +1,57 @@
 #include "../_includes/Server.hpp"
 #include <cstddef>
 
-
-
 Server::Server() {
     ip_address = "";
     MaxBodySize = 0;
     for (std::vector<std::string>::iterator it = port.begin(); it != port.end(); ++it) {
         comb[*it] = Socket();
     }
-
 }
     
-Server::~Server(){}
+Server::~Server(){
+}
 
-void Server::set_IpAddress(std::string ip){
+void Server::set_IpAddress(std::string ip) {
     ip_address = ip;
 }
 
-void    Server::set_Port(std::string port){
+void    Server::set_Port(std::string port) {
    this->port.push_back(port);
 }
 
-bool check_all_keys(std::string key){
-
-    if(key == "root" || key == "index" || key == "allowed_methods" || key == "autoindex" || 
-        key == "redirect" || key == "cgi_extension" || key == "upload_store" || key =="cgi_path" ||
-        key == "listen" || key == "server_name" || key == "client_max_body_size" || key == "error_page" || key =="host" )
-        return true;
-    else
-        return false;
+std::vector<std::string> Server::getPort() {
+    if(!port.empty())
+        return(port);
+    port.push_back("8080");  
+    return(port);
 }
 
-std::vector<std::string> peekValues(Tokenizer& tokenizer,bool &foundSemicolon) {//pick
+std::string Server::getIpAddress(){
+    return(ip_address);
+}
+
+location & Server::getLocations(std::string key) {
+    return locations[key];
+}
+
+
+Server& Server::operator=(const Server &other) {
+
+    if (this != &other) {  
+        ip_address = other.ip_address;
+        MaxBodySize = other.MaxBodySize;
+        port = other.port;
+        comb = other.comb;
+        serverNames = other.serverNames;
+        locations = other.locations;
+        errorPages = other.errorPages;
+    }
+    return *this;
+
+}
+
+std::vector<std::string> peekValues(Tokenizer& tokenizer,bool &foundSemicolon) {
     std::vector<std::string> vec;
     
     while (tokenizer.hasMore() && tokenizer.peek() != ";" && !check_all_keys(tokenizer.peek()) )  { 
@@ -44,6 +63,37 @@ std::vector<std::string> peekValues(Tokenizer& tokenizer,bool &foundSemicolon) {
         tokenizer.advance(); 
     }
     return vec;
+}
+
+bool location::check_locations_key(std::string key, std::vector<std::string> values){
+
+    if(key == "root" || key == "index" || key == "allowed_methods" || key == "autoindex" || 
+        key == "redirect" || key == "cgi_extension" || key == "upload_store" || key =="cgi_path")
+        return  Directives_syntaxe( key,  values);
+    else
+        return false;
+
+}
+
+bool location::validParameter(Tokenizer& tokenizer) {
+    std::string key;
+    bool foundSemicolon = false;
+    while (tokenizer.hasMore() && tokenizer.peek() != "}") {
+        key = tokenizer.peek();
+        if (infos.find(key) != infos.end()) 
+            return false;
+        tokenizer.advance();
+        std::vector<std::string> newValues = peekValues(tokenizer,foundSemicolon);
+        if(newValues.empty() || !foundSemicolon )
+            return false;
+        if(!check_locations_key(key,newValues))
+            return false;
+        infos.insert(std::make_pair(key, newValues));
+    }
+    if(!tokenizer.hasMore() || !check_cgi_directives(infos))
+        return false;
+
+    return true;
 }
 
 bool    Server::createLocation(Tokenizer& tokenizer) {
@@ -68,7 +118,7 @@ bool    Server::createLocation(Tokenizer& tokenizer) {
     return true;
 }
 
-bool Server::createParam(Tokenizer& tokenizer) {
+bool    Server::createParam(Tokenizer& tokenizer) {
 
     std::string key = tokenizer.peek();
     bool foundSemicolon = false;
@@ -80,11 +130,8 @@ bool Server::createParam(Tokenizer& tokenizer) {
     return true;
 }
 
-    
 
-
-
-bool Server::createServer(Tokenizer& tokenizer) {
+bool    Server::createServer(Tokenizer& tokenizer) {
     while (tokenizer.hasMore() && tokenizer.peek() != "}")
      {
         if (tokenizer.peek() == "location") {
@@ -103,21 +150,7 @@ bool Server::createServer(Tokenizer& tokenizer) {
     return true;
 }
 
-
-std::vector<std::string> Server::getPort() {
-    if(!port.empty())
-        return(port);
-    port.push_back("8080");  
-    return(port);
-}
-
-std::string Server::getIpAddress(){
-
-    return(ip_address);
-}
-
-
-Socket* findExistingSocket(std::vector<Server>& servers, const std::string& port, int currentIndex)//
+Socket* findExistingSocket(std::vector<Server>& servers, const std::string& port, int currentIndex)
 {
     for (int i = 0; i < currentIndex; i++) {
         std::map<std::string, Socket>::iterator it = servers[i].comb.find(port);
@@ -130,8 +163,6 @@ Socket* findExistingSocket(std::vector<Server>& servers, const std::string& port
 
 bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
     
-   // initialize with  all the elm in the port vector 
-   //befor initializing we check if the fd_socket of a specific port already exist in a the vector of servers 
    for(size_t i = 0; i < port.size(); i++)
     {
         std::string currentPort = port[i];
@@ -145,11 +176,8 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
                       << " (fd: " << existingSocket->fd_socket << ")" << std::endl;
         }
         else{
-
             Socket  *socket = &comb[port[i]];
-            socket->initialize(port[i],getIpAddress());
-        
-            if (!socket->create_Socket()) {
+            if (!socket->initialize(port[i],getIpAddress()) || !socket->create_Socket()){
                 std::cerr << "Failed to create socket for port " << currentPort << std::endl;
                 return false;
             }
@@ -157,15 +185,14 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
                 std::cerr << "Failed to bind socket for port " << currentPort << std::endl;
                 return false;
             }
-            
             if (!socket->listen_socket()) {
                 std::cerr << "Failed to listen on socket for port " << currentPort << std::endl;
                 return false;
             }
-            
             std::cout << "Server "  
                         << " created new socket for port " << currentPort 
                         << " (fd: " << socket->fd_socket << ")" << std::endl; 
+           // std::cout << "\033[1;36m[WebServ]\033[0m " << "\033[1;32mServer " << i + 1 << " ["  << ":"  << "] started successfully\033[0m" << std::endl;
            
         }
     }
@@ -173,14 +200,23 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
 }
 
 
-
-location & Server::getLocations(std::string key)  {
-    return locations[key];
+std::string location::getPath() const {
+    return path;
 }
 
-// Socket & Server::getSocket(){
-//     return socket;
-// }
+std::vector<std::string>* location::getInfos(std::string key){
+
+    std::map<std::string, std::vector<std::string> >::iterator it = infos.begin();
+
+    while(it != infos.end())
+    {
+        if(it->first == key)
+            return &it->second;
+        it++;
+    }
+    std::cout << "key is unavailable in the location" << std::endl;
+    return(NULL);
+}
 
   
 void Server::printLocations() {
@@ -221,67 +257,4 @@ void Server::printLocations() {
 
 
 
-bool location::check_locations_key(std::string key, std::vector<std::string> values){
 
-    if(key == "root" || key == "index" || key == "allowed_methods" || key == "autoindex" || 
-        key == "redirect" || key == "cgi_extension" || key == "upload_store" || key =="cgi_path")
-        return  Directives_syntaxe( key,  values);
-    else
-        return false;
-
-}
-
-bool location::validParameter(Tokenizer& tokenizer) {
-    std::string key;
-    bool foundSemicolon = false;
-    while (tokenizer.hasMore() && tokenizer.peek() != "}") {
-        key = tokenizer.peek();
-        if (infos.find(key) != infos.end()) 
-            return false;
-        tokenizer.advance();
-        std::vector<std::string> newValues = peekValues(tokenizer,foundSemicolon);
-        if(newValues.empty() || !foundSemicolon )
-            return false;
-        if(!check_locations_key(key,newValues))
-            return false;
-        infos.insert(std::make_pair(key, newValues));//insert 
-    }
-    if(!tokenizer.hasMore() )
-        return false;
-
-    return true;
-}
-
-
-
-
-
-std::vector<std::string>* location::getInfos(std::string key){
-
-    std::map<std::string, std::vector<std::string> >::iterator it = infos.begin();
-
-    while(it != infos.end())
-    {
-        if(it->first == key)
-            return &it->second;
-        it++;
-    }
-    std::cout << "key is unavailable in the location" << std::endl;
-    return(NULL);
-}
-
-
-Server& Server::operator=(const Server &other) {
-
-    if (this != &other) {  
-        ip_address = other.ip_address;
-        MaxBodySize = other.MaxBodySize;
-        port = other.port;
-        comb = other.comb;
-        serverNames = other.serverNames;
-        locations = other.locations;
-        errorPages = other.errorPages;
-    }
-    return *this;
-
-}
