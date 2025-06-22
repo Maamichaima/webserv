@@ -198,6 +198,7 @@ void client::handleResponse(int currentFd)
 
 	try
 	{
+		cout << "path: "<< data_rq.queryContent << endl;
 	    /////////////////// CGI /////////////////////////
         location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
         if (this->data_rq.method != "DELETE" && cgiLoc)
@@ -215,7 +216,7 @@ void client::handleResponse(int currentFd)
                 root  = cgiLoc->getInfos("root")->at(0);    
                 
                 string cgiPath = switchLocation(locPath, reqPath, root);
-
+				cout << "cgiPath: " << cgiPath << endl;
                 std::map<std::string, std::vector<std::string> >::iterator itCgi = cgiLoc->infos.find("cgi_extension");
                 if(itCgi == cgiLoc->infos.end()) 
                     throw(404);
@@ -244,8 +245,6 @@ void client::handleResponse(int currentFd)
                 response = handleGetRequest(this->data_rq, loc, this->myServer, currentFd);
             else
             {
-
-          
                 throw(404);
             }
             send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);

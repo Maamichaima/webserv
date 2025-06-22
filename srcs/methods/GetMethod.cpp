@@ -74,11 +74,9 @@ std::string listDirectory(const std::string& path, string reqPath) {
     std::string html = "<html><body>\n";
     html += "<h1>Index of " + path + "</h1>\n";
     html += "<ul>\n";
-    // path = switchLocation();
-    if (dir == NULL) {
-        cout << " Cannot open directory." << endl;
-        return NULL;
-    }
+
+    if (dir == NULL)
+        throw(500);
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
         std::string name = entry->d_name;
@@ -259,7 +257,7 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
     int pipefd[2];
     if (pipe(pipefd) == -1)
         return false;
-
+    cout << "scriptPath: " << scriptPath << endl;
     pid_t pid = fork();
     if (pid < 0)
         return false;
@@ -270,18 +268,20 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
 
         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
 		if (cgiPath.empty())
-			return false;
+			exit(1);
 
-
+        string query = req.queryContent;
         char *argv[] = {
             (char*)cgiPath.c_str(),     
             (char*)scriptPath.c_str(),  
             NULL
         };
 
+        string reqMethod = "REQUEST_METHOD=" + req.method;
         char *envp[] = {
             (char*)"GATEWAY_INTERFACE=CGI/1.1",
-            (char*)"REQUEST_METHOD=GET",
+            (char*)reqMethod.c_str(),
+            (char*)query.c_str(),
             NULL
         };
 
@@ -295,7 +295,11 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
             output.append(buffer, bytesRead);
         close(pipefd[0]);
-        waitpid(pid, NULL, 0);
+        int status;
+        waitpid(pid, &status, 0);
+
+        if (status != 0)
+            throw(500);
         return true;
     }
 }
@@ -517,67 +521,6 @@ bool isCgiRequest(location *loc, const std::string &path) {
     return false;
 }
 
-bool executeCgiScript(const data_request &req, const std::string &scriptPath, location *loc, std::string &output) {
-    int pipefd[2];
-    if (pipe(pipefd) == -1)
-        return false;// ina error bach kaykhrej 
-
-    pid_t pid = fork();
-    if (pid < 0)
-        return false;
-
-    if (pid == 0) {
-        dup2(pipefd[1], STDOUT_FILENO);
-        close(pipefd[0]);
-        close(pipefd[1]);
-
-        std::vector<std::string> envVec;
-        envVec.push_back("REQUEST_METHOD=GET");
-        envVec.push_back("SCRIPT_FILENAME=" + scriptPath);
-        envVec.push_back("REDIRECT_STATUS=200");
-
-        std::vector<char*> envp;
-        for (size_t i = 0; i < envVec.size(); ++i) {
-            envp.push_back(const_cast<char*>(envVec[i].c_str()));
-        }
-        envp.push_back(NULL);
-
-        // had lparty gha tbdl blblan dial index li galt chaima
-        std::vector<std::string>* cgiPathVec = loc->getInfos("cgi_path");
-        if (!cgiPathVec || cgiPathVec->empty()) {
-            std::cerr << "cgi_path is missing or empty!" << std::endl;
-            exit(1);// ina error bach kaykhrej 
-        }
-
-        std::string interpreter = (*cgiPathVec)[0];
-
-        char *args[] = {
-            const_cast<char*>(interpreter.c_str()),
-            const_cast<char*>(scriptPath.c_str()),
-            NULL
-        };
-
-        execve(interpreter.c_str(), args, &envp[0]);
-        perror("execve failed");
-        exit(1); // ina error bach kaykhrej 
-    } 
-    else {
-        close(pipefd[1]);
-
-        char buffer[1024];
-        ssize_t n;
-        output.clear();
-        while ((n = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
-            output.append(buffer, n);
-        }
-
-        close(pipefd[0]);
-        waitpid(pid, NULL, 0);
-    }
-
-    return true;
-}
-
 /////////////////////////////////////////////////////////////////////////////////////
 
 string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd)
@@ -591,7 +534,7 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         throw(404);
     rootVar = loc->getInfos("root")->at(0);
     string path = switchLocation(locPath, reqPath, rootVar);
-    // cout << "path: " << path << endl;
+    // cout << "***path: " << path << endl;
     
     DIR* dir = opendir(path.c_str());
     
