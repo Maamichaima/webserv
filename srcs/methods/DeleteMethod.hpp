@@ -3,4 +3,4 @@
 #include <dirent.h>
 #include <stdio.h>
 
-void deleteMethode(std::string path);
+void deleteMethode(const client &client);
