@@ -143,11 +143,8 @@ bool existFile(string &path, location *loc, string reqPath, string locPath, int 
             cout << "checkIndex: " << checkIndex << endl;
             if (checkIndex == "")
             {
-                // string paths = removeLocation(reqPath, locPath + "/");
-                // string path = removeLocation(reqPath, locPath + "/");
                 cout << "path in existFile: "<< path << endl;
                 std::string body = listDirectory(path, reqPath);
-                // cout << "body : "<< body << endl;
                 std::string response =
                     "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
@@ -196,11 +193,8 @@ bool endsWith(const std::string& str, const std::string& suffix) {
 }
 
 bool checkExtension(const std::string& url, const std::vector<std::string>& cgiExtensions) {
-    std::cout << "URL to check: " << url << std::endl;
     for (std::vector<std::string>::const_iterator it = cgiExtensions.begin(); it != cgiExtensions.end(); ++it) {
-        std::cout << "Checking extension: " << *it << std::endl;
         if ((*it).size() > 1 && (*it)[0] == '.' && endsWith(url, *it)) {
-            std::cout << "Extension matched: " << *it << std::endl;
             return true;
         }
     }
@@ -257,7 +251,6 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
     int pipefd[2];
     if (pipe(pipefd) == -1)
         return false;
-    cout << "scriptPath: " << scriptPath << endl;
     pid_t pid = fork();
     if (pid < 0)
         return false;
@@ -534,12 +527,10 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         throw(404);
     rootVar = loc->getInfos("root")->at(0);
     string path = switchLocation(locPath, reqPath, rootVar);
-    // cout << "***path: " << path << endl;
     
     DIR* dir = opendir(path.c_str());
     
     string indexFound = checkIndexes(loc, rootVar + "/");
-    cout <<"indexFound : "<< indexFound << endl;
     if (indexFound == "")
     {
         if (loc->getInfos("autoindex"))
@@ -547,7 +538,6 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
             if (loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
             {
                 std::string body = listDirectory(path, reqPath);
-                cout << "body : "<< body << endl;
                 std::string response =
                     "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
