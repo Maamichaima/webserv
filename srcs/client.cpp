@@ -119,8 +119,8 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		// if(checkRequestProgress())
-		// 	this->printClient();
+		if(checkRequestProgress())
+			this->printClient();
 	}
 	catch(const int status_code)
 	{
@@ -236,7 +236,7 @@ void client::handleResponse(int currentFd)
             }
         }
         /////////////////////////GET///////////////////////
-		if(this->data_rq.method == "GET")
+		if(this->data_rq.method == "GET" && !isError(this->data_rs.status_code))
         {
             std::string response;
             location* loc = getClosestLocation(this->myServer, data_rq.path);
@@ -244,8 +244,6 @@ void client::handleResponse(int currentFd)
                 response = handleGetRequest(this->data_rq, loc, this->myServer, currentFd);
             else
             {
-
-          
                 throw(404);
             }
             send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
@@ -258,6 +256,7 @@ void client::handleResponse(int currentFd)
     }
     setDataResponse();
     std::string response = buildResponse();
+	std::cout << "***********" << response << "***************" << "\n";
     send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 }
 
