@@ -196,11 +196,47 @@ void client::handleResponse(int currentFd)
 		}
 	}
 
+    location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
+    //////////////ReSend if not "/" in the end//////////////// mzl fiha moxkil
+    if (data_rq.path.back() != '/' && cgiLoc)
+    {
+        string locPath = normalizePath(cgiLoc->path);
+        string reqPath = normalizePath(data_rq.path);
+        string root;
+        std::map<std::string, std::vector<std::string> >::iterator itRoot = cgiLoc->infos.find("root");
+        if(itRoot == cgiLoc->infos.end()) 
+            throw(404);
+
+        root  = cgiLoc->getInfos("root")->at(0);          
+        string resendPath = switchLocation(locPath, reqPath, root);
+  
+        cout << "***********************\n";
+        cout << "reqPath: " << resendPath << endl;
+        cout << isDirectory(resendPath) << endl;
+        cout << "***********************\n";
+
+        if (isDirectory(resendPath) && checkIndexes(cgiLoc, resendPath + "/") != "" && 
+    			!resendPath.empty() && resendPath.back() != '/') {
+		
+		std::string newLocation = data_rq.path + "/";
+		std::string response = 
+			"HTTP/1.1 301 Moved Permanently\r\n"
+			"Location: " + newLocation + "\r\n"
+			"Content-Length: 0\r\n"
+			"Connection: close\r\n"
+			"\r\n";
+
+		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+		return;
+		}
+
+    }
+
+    // }
+    //////////////////////////////////////////////////////////
 	try
 	{
-		cout << "path: "<< data_rq.queryContent << endl;
 	    /////////////////// CGI /////////////////////////
-        location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
         if (this->data_rq.method != "DELETE" && cgiLoc)
         {
             if (isCgiConfigured(cgiLoc))
@@ -216,7 +252,6 @@ void client::handleResponse(int currentFd)
                 root  = cgiLoc->getInfos("root")->at(0);    
                 
                 string cgiPath = switchLocation(locPath, reqPath, root);
-				cout << "cgiPath: " << cgiPath << endl;
                 std::map<std::string, std::vector<std::string> >::iterator itCgi = cgiLoc->infos.find("cgi_extension");
                 if(itCgi == cgiLoc->infos.end()) 
                     throw(404);
@@ -224,7 +259,6 @@ void client::handleResponse(int currentFd)
                 
                 if (isDirectory(cgiPath) && checkIndexes(cgiLoc, cgiPath + "/") != "")
                     cgiPath = checkIndexes(cgiLoc, cgiPath+ "/");
-                
                 if (checkExtension(cgiPath, *exts))
                 {
                     string cgiOutput;
