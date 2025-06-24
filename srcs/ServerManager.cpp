@@ -142,6 +142,7 @@ void    ServerManager::handle_cnx()
         }
         else if(events[i].events & EPOLLIN){
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
+			std::cout << "======== " << buffer << " =========\n";
             if(bytesRead <= 0)
                 clients[currentFd].closeConnection = true;
             else {

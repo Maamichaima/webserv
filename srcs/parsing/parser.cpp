@@ -204,11 +204,12 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)//con
 			std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("redirect");
 			if(it != client.data_rq.myCloseLocation->infos.end())
 			{
-				if(isRedirect(client.data_rq.myCloseLocation->infos["redirect"][0]))
-				{
+				// if(isRedirect(client.data_rq.myCloseLocation->infos["redirect"][0]))
+				// {
 					client.data_rs.headers["Location"] = client.data_rq.myCloseLocation->infos["redirect"][1];
+					client.data_rs.flaIsRedirect = 1;
 					throw(std::atoi(client.data_rq.myCloseLocation->infos["redirect"][0].c_str()));
-				}
+				// }
 			}
 		}
     }
