@@ -1,7 +1,7 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 #include "Socket.hpp"
-#include "tokenizer.hpp"
+#include "Tokenizer.hpp"
 
 
 class ServerManager;

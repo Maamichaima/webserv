@@ -54,7 +54,7 @@ bool ServerManager::initializeAll() {
 }
 
 std::vector<int> ServerManager::getAllSocketFds() {
-    std::unordered_set<int> unique_fds;
+    std::set<int> unique_fds;
     
     for (size_t i = 0; i < servers.size(); i++) {
         std::map<std::string, Socket>& server_sockets = servers[i].comb;
@@ -124,7 +124,6 @@ void    ServerManager::handle_cnx()
     //checkTimeOut();
     for(int i = 0; i < numEvents; i++){
 
-        bool closeConnection = false;
         int currentFd = events[i].data.fd; 
        
         if(find(fds.begin(),fds.end(),currentFd) != fds.end()){ 
