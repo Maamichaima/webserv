@@ -214,7 +214,7 @@ std::vector<std::string>* location::getInfos(std::string key){
             return &it->second;
         it++;
     }
-    std::cout << "key is unavailable in the location" << std::endl;
+    // std::cout << "key is unavailable in the location" << std::endl;
     return(NULL);
 }
 
