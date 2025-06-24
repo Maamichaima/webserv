@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <utility>
 
+
+
 Tokenizer::Tokenizer(){}
 
 void Tokenizer::initialize() {
@@ -70,7 +72,6 @@ bool    Tokenizer::parse(ServerManager &manager) {
                 Server server;
                 if (!server.createServer(*this))
                 {
-                    std::cerr << "Error: server creation failed due to syntaxe error " << std::endl;
                     return false;
                 }
                 else
@@ -80,7 +81,10 @@ bool    Tokenizer::parse(ServerManager &manager) {
                             braceStack.pop(); 
                         }
                         if(!braceStack.empty())
+                        {   
+                            ServerLogger::configSyntaxError(" UNCLOSED PRACES {} ");
                             return false;
+                        }
                         manager.addServer(server);
                         advance();
                     }
@@ -89,12 +93,12 @@ bool    Tokenizer::parse(ServerManager &manager) {
                 }
             }
             else {
-                std::cerr << "Error: server creation failed due to  syntaxe error " << std::endl;
+                ServerLogger::configSyntaxError(" EXPECTED { AFTER SERVER KEYWORD ");
                 return false;
             }
         }
         else if (!peek().empty()) { 
-            std::cerr << "Error: server creation failed due to  syntaxe error " << std::endl;
+            ServerLogger::configSyntaxError(" ");
             return false;
         }
     }
@@ -104,14 +108,14 @@ bool    Tokenizer::parse(ServerManager &manager) {
 bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
 {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+        ServerLogger::serverError("Usage: ./webserv <config_file>" );
         return false;
     }
 
     std::string line;
     std::ifstream inputFile(argv[1]);
     if (!inputFile.is_open()) {
-        std::cerr << "Failed to open file: " << argv[1] << std::endl;
+        ServerLogger::serverError(" FAILED TO OPEN FILE !!  " );
         return false;
     }
     
@@ -123,15 +127,15 @@ bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
         tokenizer.tokenizeString(line);
     }
     tokenizer.initialize();
-
     try {
-        if (!tokenizer.parse(manager)) {
+        if (!tokenizer.parse(manager)) 
             return false;  
-        }
-    } catch (...) {
-        std::cerr << "Tokenizer error: "  << std::endl;
+    } 
+    catch (...) 
+    {   
         return false; 
     }
+    ServerLogger::serverStarted();
  
     return (true);    
 }

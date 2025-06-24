@@ -25,7 +25,7 @@ client::client()
 	this->data_rq.flag_error = 0;
 	this->closeConnection = false;
 	this->data_rs.flaIsRedirect = 0;
-
+	lastActivityTime = time(NULL);
 	setErrorPages();
 	setDescription();
 }
@@ -120,8 +120,9 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		if(checkRequestProgress())
-			this->printClient();
+		checkRequestProgress();
+		//if(checkRequestProgress())
+			//this->printClient();
 	}
 	catch(const int status_code)
 	{
@@ -195,12 +196,14 @@ void client::handleResponse(int currentFd)
 		std::string content;
 		if(readFileContent(it->second, content))
 		{
+			
 			this->data_rs.startLine = "HTTP/1.1 " + to_string(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
 			this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";// "charset=UTF-8" « é » affiché comme � ou un caractère bizarre.
 			this->data_rs.headers["Content-Length"] = to_string(content.size());
 			this->data_rs.body = content;
 			std::string response = buildResponse();
 			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+			ServerLogger::responseSent(this->data_rs.status_code);
 			return ;
 		}
 	}
@@ -236,6 +239,7 @@ void client::handleResponse(int currentFd)
 			"\r\n";
 
 		send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+		ServerLogger::responseSent(this->data_rs.status_code);
 		return;
 		}
 
@@ -273,6 +277,7 @@ void client::handleResponse(int currentFd)
                     string cgiOutput;
                     if (executeCgi(cgiPath, data_rq, *cgiLoc, cgiOutput)) {
                         send(currentFd, buildHttpResponse(200, "OK", cgiOutput).c_str(), buildHttpResponse(200, "OK", cgiOutput).size(), MSG_NOSIGNAL); 
+						ServerLogger::responseSent(this->data_rs.status_code);
                         return;
                     }
                     throw(500);
@@ -291,6 +296,7 @@ void client::handleResponse(int currentFd)
                 throw(404);
             }
             send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+			ServerLogger::responseSent(this->data_rs.status_code);
             return ;
         }
 	}
@@ -302,6 +308,7 @@ void client::handleResponse(int currentFd)
     std::string response = buildResponse();
 	// std::cout << "***********" << response << "***************" << "\n";
     send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+	ServerLogger::responseSent(this->data_rs.status_code);
 }
 
 void client::check_http_body_rules()

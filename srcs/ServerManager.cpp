@@ -25,23 +25,20 @@ bool ServerManager::initializeAll() {
     std::set<int> epollFds;
     for (size_t i = 0; i < servers.size() ; i++){
       
-        if (!servers[i].initialize(this->servers, static_cast<int>(i))) {
-            std::cerr << "Failed to initialize a server" << std::endl;
+        if (!servers[i].initialize(this->servers, static_cast<int>(i))) 
             continue;
-        }
         std::map<std::string, Socket>& serverComb = servers[i].comb;
         for (std::map<std::string, Socket>::iterator it = serverComb.begin(); 
              it != serverComb.end(); ++it) {
 
             int fd = it->second.fd_socket;
-               // std::cout << "fd socket " << fd << endl;
             if (epollFds.find(fd) == epollFds.end())
             {    
                 struct epoll_event event;
                 event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP ;
                 event.data.fd = fd;
                 if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &event) < 0) {
-                    std::cerr <<"epoll_ctl failed for client socket"<< std::endl;
+                    ServerLogger::serverError("epoll_ctl failed for server socket");
                     return false; 
                 }
                 epollFds.insert(fd);
@@ -77,7 +74,7 @@ bool ServerManager::Add_new_event(int fd_socket){
     event.events = EPOLLIN | EPOLLOUT |  EPOLLRDHUP | EPOLLHUP;
     event.data.fd = fd_socket;
     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd_socket, &event) < 0) {
-        std::cerr <<"epoll_ctl failed for client socket"<< std::endl;
+        ServerLogger::serverError("epoll_ctl failed for client socket");
         close(fd_socket);
         return false;
     }
@@ -91,10 +88,11 @@ void  ServerManager::checkTimeOut(){
         int clientFd = it->first;
         client& cl = it->second;
         double elapsed = difftime(now, cl.lastActivityTime);
+        //std::cout << "now  " << now <<  "last read  " << cl.lastActivityTime << std::endl;
         if (elapsed >= TIMEOUT)
         {
             if (epoll_ctl(epollFd, EPOLL_CTL_DEL, clientFd, NULL) == -1) {
-                std::cerr << "epoll_ctl: EPOLL_CTL_DEL" << std::endl;
+                ServerLogger::serverError("epoll_ctl: EPOLL_CTL_DEL");
             }
             clients.erase(clientFd);
             close(clientFd);
@@ -105,8 +103,9 @@ void ClientDisconnected(std::map<int, client> &clients ,int epollFd,int currentF
 {
 
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, NULL) == -1) {
-        std::cerr << "epoll_ctl: EPOLL_CTL_DEL" << std::endl;
+        ServerLogger::serverError("epoll_ctl: EPOLL_CTL_DEL");
     }
+    ServerLogger::clientDisconnected();
     clients.erase(currentFd);
     close(currentFd);
 }
@@ -119,9 +118,9 @@ void    ServerManager::handle_cnx()
     std::vector<int>::iterator it;
     int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
     if(numEvents < 0){
-        std::cerr <<"epoll_wait failed" << std::endl; 
+        ServerLogger::serverError("epoll_wait failed");
     }
-    //checkTimeOut();
+    checkTimeOut();
     for(int i = 0; i < numEvents; i++){
 
         int currentFd = events[i].data.fd; 
@@ -131,7 +130,8 @@ void    ServerManager::handle_cnx()
             if (client_fd < 0) 
                 continue;
             clients[client_fd].server_fd = currentFd;
-            std::cout << "connection accepted from client "  <<std::endl;
+            ServerLogger::clientConnected(8080); // find server port 
+            
             if(!Add_new_event(client_fd))
                 continue;
         }
@@ -141,11 +141,19 @@ void    ServerManager::handle_cnx()
         }
         else if(events[i].events & EPOLLIN){
             ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
-			std::cout << "======== " << buffer << " =========\n";
+            clients[currentFd].lastActivityTime = time(NULL);
+			
             if(bytesRead <= 0)
+              {  
+                if (bytesRead == 0)
+                {
+                    std::cout << "here "<< std::endl;
+                    /* code */
+                }
+                    
                 clients[currentFd].closeConnection = true;
+            }
             else {
-                clients[currentFd].lastActivityTime = time(NULL);
 	            clients[currentFd].buffer.append(buffer, bytesRead);
                 std::memset(buffer, 0, BUFFER_SIZE);   
             }
@@ -162,6 +170,7 @@ void    ServerManager::handle_cnx()
             if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, NULL) == -1) {
                 std::cerr << "epoll_ctl: EPOLL_CTL_DEL" << std::endl;
             }
+            ServerLogger::clientDisconnected();
             clients.erase(currentFd);
             close(currentFd);
         }

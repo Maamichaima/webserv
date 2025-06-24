@@ -136,11 +136,16 @@ bool    Server::createServer(Tokenizer& tokenizer) {
      {
         if (tokenizer.peek() == "location") {
             if(!createLocation(tokenizer))
+            {   
+                ServerLogger::configSyntaxError(" ERROR IN LOCATION ");
                 return false;
-
+            }
         } else {
             if(!createParam(tokenizer))
+            {
+                ServerLogger::configSyntaxError(" ERROR IN SERVER DIRECTIVES ");
                 return false;
+            }
         }
     }
     if (!tokenizer.hasMore()) {
@@ -171,28 +176,27 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
         if(existingSocket != NULL)
         {
             comb[currentPort] = *existingSocket;
-            std::cout << "Server " 
-                      << " sharing existing socket for port " << currentPort 
-                      << " (fd: " << existingSocket->fd_socket << ")" << std::endl;
+            std::cout << BOLD << BLUE << "[" << ServerLogger::getCurrentTime() << "]" << RESET 
+            << " " << BOLD << CYAN << "[WebServ]" << RESET 
+            << " " << BOLD << GREEN << "🚀 Server  created successfully sharing existing PORT !! "  
+            << BOLD << YELLOW  << ":" << port[i] << RESET << std::endl;
         }
         else{
             Socket  *socket = &comb[port[i]];
-            if (!socket->initialize(port[i],getIpAddress()) || !socket->create_Socket()){
-                std::cerr << "Failed to create socket for port " << currentPort << std::endl;
+            if (!socket->initialize(port[i],getIpAddress()) || !socket->create_Socket())
+            {
+                std::cout << " <getaddrinfo> error " << BOLD << RED << "✗ Failed to bind port " << port[i] << RESET << std::endl;
                 return false;
             }
             if (!socket->bind_Socket()) {
-                std::cerr << "Failed to bind socket for port " << currentPort << std::endl;
+                ServerLogger::portBindError(port[i]); 
                 return false;
             }
             if (!socket->listen_socket()) {
-                std::cerr << "Failed to listen on socket for port " << currentPort << std::endl;
+                ServerLogger::portListenError(port[i]);
                 return false;
             }
-            std::cout << "Server "  
-                        << " created new socket for port " << currentPort 
-                        << " (fd: " << socket->fd_socket << ")" << std::endl; 
-           // std::cout << "\033[1;36m[WebServ]\033[0m " << "\033[1;32mServer " << i + 1 << " ["  << ":"  << "] started successfully\033[0m" << std::endl;
+            ServerLogger::serverCreated(port[i]);
            
         }
     }

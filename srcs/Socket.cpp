@@ -20,10 +20,8 @@ bool    Socket::initialize(std::string port, std::string add_ip){
     hints.ai_flags = AI_PASSIVE;
 
     int status = getaddrinfo(add_ip.c_str(), port.c_str(), &hints, &host_info);
-    if (status != 0) {
-        std::cerr << "getaddrinfo error: "  << std::endl;
+    if (status != 0) 
         return false;
-    }
     return true;
 }
 

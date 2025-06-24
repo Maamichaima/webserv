@@ -11,7 +11,7 @@
 #include "Server.hpp"
 #include <time.h>
 // class parser;
-#define TIMEOUT 180
+#define TIMEOUT 20
 struct data_request
 {
     std::string method;
