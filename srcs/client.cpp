@@ -24,6 +24,7 @@ client::client()
 	this->data_rq.is_chunked = 0;
 	this->data_rq.flag_error = 0;
 	this->closeConnection = false;
+	this->data_rs.flaIsRedirect = 0;
 
 	setErrorPages();
 	setDescription();
@@ -119,8 +120,8 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		// if(checkRequestProgress())
-		// 	this->printClient();
+		if(checkRequestProgress())
+			this->printClient();
 	}
 	catch(const int status_code)
 	{
@@ -158,12 +159,20 @@ std::string to_string(T value) {
 void client::setDataResponse()
 {
 	this->data_rs.startLine = "HTTP/1.1 " + to_string(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
-	if(this->data_rs.status_code / 100 != 3)
+	
+	if(this->data_rs.status_code / 100 != 3 && this->data_rs.flaIsRedirect == 0)
 	{
 		this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
 		this->data_rs.headers["Content-Length"] = to_string(client::errorPages[this->data_rs.status_code].size());
 		this->data_rs.body = client::errorPages[this->data_rs.status_code];
-	} 
+	}
+	else if(this->data_rs.status_code / 100 != 3)
+	{
+		this->data_rs.body = this->data_rq.myCloseLocation->infos["redirect"][1];//"<!DOCTYPE html><html><head></head><body>" + this->data_rq.myCloseLocation->infos["redirect"][1] + "</body></html>";
+		
+		this->data_rs.headers["Content-Type"] = "text/txt;";
+		this->data_rs.headers["Content-Length"] = to_string(this->data_rs.body.size());
+	}
 }
 
 void client::setStatusCode()
@@ -249,7 +258,7 @@ void client::handleResponse(int currentFd)
                 std::map<std::string, std::vector<std::string> >::iterator itRoot = cgiLoc->infos.find("root");
                 if(itRoot == cgiLoc->infos.end()) 
                     throw(404);
-                root  = cgiLoc->getInfos("root")->at(0);    
+                root  = cgiLoc->getInfos("root")->at(0) + "/";    
                 
                 string cgiPath = switchLocation(locPath, reqPath, root);
                 std::map<std::string, std::vector<std::string> >::iterator itCgi = cgiLoc->infos.find("cgi_extension");
@@ -271,7 +280,7 @@ void client::handleResponse(int currentFd)
             }
         }
         /////////////////////////GET///////////////////////
-		if(this->data_rq.method == "GET")
+		if(this->data_rq.method == "GET" && !isError(this->data_rs.status_code))
         {
             std::string response;
             location* loc = getClosestLocation(this->myServer, data_rq.path);
@@ -291,6 +300,7 @@ void client::handleResponse(int currentFd)
     }
     setDataResponse();
     std::string response = buildResponse();
+	std::cout << "***********" << response << "***************" << "\n";
     send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 }
 
