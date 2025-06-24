@@ -34,6 +34,7 @@ struct data_response
 	std::map<std::string, std::string> headers;
 	std::string body;
 	int status_code;
+	int flaIsRedirect;
 }typedef data_response;
 
 class client
