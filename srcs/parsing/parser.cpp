@@ -49,9 +49,14 @@ int parser::parse(client &client)
 	if(client.flag == 0)
 	{
 		std::string start_line = get_line(client.buffer);
+		// if (!start_line.empty())
+		// {
+		// 	std::cout << "========" << client.buffer;
+		// 	exit (0);
+		// }
 		if(start_line.find("\r\n") == std::string::npos)
 		{
-			return 2;
+			return -2;
 		}
 		else if(parse_startligne(start_line))
 		{
@@ -146,7 +151,7 @@ int parser::parse(client &client)
 				client.flag = 3;
 		}
 	}
-	return 1;
+	return -1;
 }
 
 void toLower(std::string &str)
@@ -158,13 +163,6 @@ void toLower(std::string &str)
         str[i] = tolower(str[i]);
         i++;
     }
-}
-
-int isRedirect(std::string red)
-{
-	if(red == "301" || red == "302" || red == "302" || red == "307" || red == "308")
-		return 1;
-	return 0;
 }
 
 void parser::setDateToStruct(client &client, std::string &buffer, int flag)//const ??
