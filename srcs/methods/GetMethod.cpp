@@ -525,11 +525,11 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     std::map<std::string, std::vector<std::string> >::iterator itRoot = loc->infos.find("root");
     if(itRoot == loc->infos.end())
         throw(404);
-    rootVar = loc->getInfos("root")->at(0) + "/";
+    rootVar = loc->getInfos("root")->at(0);
     string path = switchLocation(locPath, reqPath, rootVar);
     
+
     DIR* dir = opendir(path.c_str());
-    
     string indexFound = checkIndexes(loc, rootVar + "/");
     if (indexFound == "")
     {
@@ -548,10 +548,12 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
                 send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
             }
             else
-                throw(403);
+			{
+				throw(403);
+			}
         }
         else
-                throw(403);
+            throw(403);
     }
     
     //////////////////////////////////////////////////
