@@ -120,8 +120,8 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		if(checkRequestProgress())
-			this->printClient();
+		if(checkRequestProgress()) {}
+			// this->printClient();
 	}
 	catch(const int status_code)
 	{
@@ -204,7 +204,6 @@ void client::handleResponse(int currentFd)
 			return ;
 		}
 	}
-
     location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
     //////////////ReSend if not "/" in the end//////////////// mzl fiha moxkil
     if (data_rq.path.back() != '/' && cgiLoc)
@@ -218,15 +217,9 @@ void client::handleResponse(int currentFd)
 
         root  = cgiLoc->getInfos("root")->at(0);          
         string resendPath = switchLocation(locPath, reqPath, root);
-  
-        cout << "***********************\n";
-        cout << "reqPath: " << resendPath << endl;
-        cout << isDirectory(resendPath) << endl;
-        cout << "***********************\n";
 
         if (isDirectory(resendPath) && checkIndexes(cgiLoc, resendPath + "/") != "" && 
-    			!resendPath.empty() && resendPath.back() != '/') {
-		
+    			!resendPath.empty()) {
 		std::string newLocation = data_rq.path + "/";
 		std::string response = 
 			"HTTP/1.1 301 Moved Permanently\r\n"
@@ -240,8 +233,6 @@ void client::handleResponse(int currentFd)
 		}
 
     }
-
-    // }
     //////////////////////////////////////////////////////////
 	try
 	{
@@ -300,7 +291,6 @@ void client::handleResponse(int currentFd)
     }
     setDataResponse();
     std::string response = buildResponse();
-	// std::cout << "***********" << response << "***************" << "\n";
     send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 }
 
