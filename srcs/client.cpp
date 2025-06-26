@@ -26,6 +26,7 @@ client::client()
 	this->closeConnection = false;
 	this->data_rs.flaIsRedirect = 0;
 	this->data_rs.status_code = -1;
+	this->data_rq.isCgi = 0;
 
 	setErrorPages();
 	setDescription();
@@ -218,7 +219,7 @@ void client::handleResponse(int currentFd)
 			return ;
 		}
 	}
-	if(this->data_rs.status_code < 0)
+	if(this->data_rs.status_code < 0 || this->data_rq.isCgi)
 	{
 		try
 		{

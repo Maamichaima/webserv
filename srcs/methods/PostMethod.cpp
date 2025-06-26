@@ -123,7 +123,7 @@ std::string getExtention(data_request data)
     {
         return (mimeMap[data.headers["content-type"]]);
     }
-    return "text/html";
+    return "";
 }
 
 void post(client &client, std::string buffer)
@@ -131,7 +131,7 @@ void post(client &client, std::string buffer)
     std::map<std::string, std::vector<std::string>>::iterator it = client.data_rq.myCloseLocation->infos.find("upload_store");// check if mylocation not null 
     if(client.data_rq.myCloseLocation && it != client.data_rq.myCloseLocation->infos.end())
     {
-        std::string name_file = client.data_rq.myCloseLocation->infos["upload_store"][0] + client.data_rq.bodyNameFile  + getExtention(client.data_rq);
+        std::string name_file = client.data_rq.myCloseLocation->infos["upload_store"][0] + "/" + client.data_rq.bodyNameFile + getExtention(client.data_rq);
 		std::ofstream file(name_file, std::ios::app);
 		// std::cout << name_file << "==========\n";
 		if (!file.is_open())
