@@ -26,6 +26,7 @@ struct data_request
     int flag_chunked;
     int is_chunked;
     int flag_error;
+    int isCgi;
 }typedef data_request;
 
 struct data_response

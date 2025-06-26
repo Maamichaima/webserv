@@ -246,6 +246,7 @@ std::string getCgiInterpreter(const std::string &scriptPath, location &loc) {
 }
 
 // bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
+//     cout << "in excutecgi !!" << endl;
 //     int pipefd[2];
 //     if (pipe(pipefd) == -1)
 //         return false;
@@ -277,7 +278,6 @@ std::string getCgiInterpreter(const std::string &scriptPath, location &loc) {
 //         };
 
 //         execve(cgiPath.c_str(), argv, envp);
-//         perror("execve failed");
 //         exit(1);
 //     } else {
 //         close(pipefd[1]);
@@ -296,8 +296,8 @@ std::string getCgiInterpreter(const std::string &scriptPath, location &loc) {
 // }
 
 bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
-    int pipefd[2]; // For reading CGI output
-    int inputfd[2]; // For sending POST data
+    int pipefd[2];
+    int inputfd[2];
 
     if (pipe(pipefd) == -1 || pipe(inputfd) == -1)
         return false;
@@ -306,8 +306,15 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
     if (pid < 0)
         return false;
 
+    string postBody;
+
+    std::map<std::string, std::vector<std::string> >::iterator itBody = loc.infos.find("upload_store");
+    if(itBody == loc.infos.end())
+        throw(404);
+
+    postBody = loc.getInfos("upload_store")->at(0);
+
     if (pid == 0) {
-        // CHILD PROCESS
 
         dup2(pipefd[1], STDOUT_FILENO); // stdout -> pipe
         close(pipefd[0]);
@@ -329,6 +336,7 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
             NULL
         };
 
+
         std::string method = "REQUEST_METHOD=" + req.method;
         std::string queryString = "QUERY_STRING=" + req.queryContent;
         // std::string contentLength = "CONTENT_LENGTH=" + std::to_string(req.body.length());
@@ -348,18 +356,15 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
         envp.push_back(NULL);
 
         execve(cgiPath.c_str(), argv, envp.data());
-        perror("execve failed");
         exit(1);
     } else {
-        // PARENT PROCESS
 
         close(pipefd[1]);
         close(inputfd[0]);
 
-        // For POST, write the body to CGI stdin
-        // if (req.method == "POST") {
-        //     write(inputfd[1], req.body.c_str(), req.body.length());
-        // }
+        if (req.method == "POST") {
+            write(inputfd[1], postBody.c_str(), postBody.length());
+        }
         
         close(inputfd[1]);
 
@@ -376,7 +381,6 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
         return true;
     }
 }
-
 
 std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body) {
     std::string response;
@@ -493,6 +497,7 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
         if (body == "")
             throw(500);
     
+    //////////////////////////////////////////
         std::ostringstream ait_response;
 
         ait_response << "HTTP/1.1 200 OK\r\n";

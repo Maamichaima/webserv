@@ -209,6 +209,10 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)//con
 					throw(std::atoi(client.data_rq.myCloseLocation->infos["redirect"][0].c_str()));
 				// }
 			}
+			std::map<std::string, std::vector<std::string> >::iterator itEx = client.data_rq.myCloseLocation->infos.find("cgi_extension");
+			std::map<std::string, std::vector<std::string> >::iterator itPath = client.data_rq.myCloseLocation->infos.find("cgi_path");
+			if(itEx != client.data_rq.myCloseLocation->infos.end() && itPath != client.data_rq.myCloseLocation->infos.end())
+				client.data_rq.isCgi = 1;
 		}
     }
     if(flag == 2)
