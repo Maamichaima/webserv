@@ -1,6 +1,7 @@
 #include "../_includes/client.hpp"
 #include "methods/GetMethod.hpp"
 #include "methods/DeleteMethod.hpp"
+// #include "client.hpp"
 
 int readFileContent(const std::string& filePath, std::string &content) {
 	std::ifstream file(filePath.c_str());
@@ -30,6 +31,7 @@ client::client()
 	setDescription();
 }
 
+
 client::client(std::string buff, int fd) : parc(parser())
 {
 	this->buffer = buff;
@@ -42,6 +44,7 @@ client::client(std::string buff, int fd) : parc(parser())
 
 client &client::operator=(const client &obj)
 {
+	
 	if (this != &obj)
 	{
 		this->buffer = obj.buffer;

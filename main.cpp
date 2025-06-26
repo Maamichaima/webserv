@@ -15,12 +15,7 @@ int main(int argc,char **argv){
     manager.initializeAll();
     //exampleUsage();
 
-    while(1)
-    {
-        
-        manager.handle_cnx();
-          
-    }
+    manager.RunServer();
 }
 
 
