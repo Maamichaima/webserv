@@ -69,7 +69,7 @@ void print_data(data_request& req)
 #include <dirent.h>
 
 std::string listDirectory(const std::string& path, string reqPath) {
-    cout << "path in listDirect: " << path << endl;
+    // cout << "path in listDirect: " << path << endl;
     DIR* dir = opendir(path.c_str());
     std::string html = "<html><body>\n";
     html += "<h1>Index of " + path + "</h1>\n";
@@ -136,14 +136,12 @@ bool existFile(string &path, location *loc, string reqPath, string locPath, int 
     int check_st = stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode);
     if (check_st == 0)
     {
-        cout << "path: " << path << endl;
         if (isDirectory(path))
         {
             string checkIndex = checkIndexes(loc, path + "/");
-            cout << "checkIndex: " << checkIndex << endl;
             if (checkIndex == "")
             {
-                cout << "path in existFile: "<< path << endl;
+                // cout << "path in existFile: "<< path << endl;
                 std::string body = listDirectory(path, reqPath);
                 std::string response =
                     "HTTP/1.1 200 OK\r\n"
@@ -247,55 +245,138 @@ std::string getCgiInterpreter(const std::string &scriptPath, location &loc) {
     return "";
 }
 
+// bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
+//     int pipefd[2];
+//     if (pipe(pipefd) == -1)
+//         return false;
+//     pid_t pid = fork();
+//     if (pid < 0)
+//         return false;
+
+//     if (pid == 0) {
+//         dup2(pipefd[1], STDOUT_FILENO);
+//         close(pipefd[0]);
+
+//         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
+// 		if (cgiPath.empty())
+// 			exit(1);
+
+//         string query = req.queryContent;
+//         char *argv[] = {
+//             (char*)cgiPath.c_str(),     
+//             (char*)scriptPath.c_str(),  
+//             NULL
+//         };
+
+//         string reqMethod = "REQUEST_METHOD=" + req.method;
+//         char *envp[] = {
+//             (char*)"GATEWAY_INTERFACE=CGI/1.1",
+//             (char*)reqMethod.c_str(),
+//             (char*)query.c_str(),
+//             NULL
+//         };
+
+//         execve(cgiPath.c_str(), argv, envp);
+//         perror("execve failed");
+//         exit(1);
+//     } else {
+//         close(pipefd[1]);
+//         char buffer[4096];
+//         ssize_t bytesRead;
+//         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+//             output.append(buffer, bytesRead);
+//         close(pipefd[0]);
+//         int status;
+//         waitpid(pid, &status, 0);
+
+//         if (status != 0)
+//             throw(500);
+//         return true;
+//     }
+// }
+
 bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
-    int pipefd[2];
-    if (pipe(pipefd) == -1)
+    int pipefd[2]; // For reading CGI output
+    int inputfd[2]; // For sending POST data
+
+    if (pipe(pipefd) == -1 || pipe(inputfd) == -1)
         return false;
+
     pid_t pid = fork();
     if (pid < 0)
         return false;
 
     if (pid == 0) {
-        dup2(pipefd[1], STDOUT_FILENO);
+        // CHILD PROCESS
+
+        dup2(pipefd[1], STDOUT_FILENO); // stdout -> pipe
         close(pipefd[0]);
+        close(pipefd[1]);
+
+        if (req.method == "POST") {
+            dup2(inputfd[0], STDIN_FILENO); // stdin <- pipe
+        }
+        close(inputfd[1]);
+        close(inputfd[0]);
 
         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
-		if (cgiPath.empty())
-			exit(1);
+        if (cgiPath.empty())
+            exit(1);
 
-        string query = req.queryContent;
         char *argv[] = {
-            (char*)cgiPath.c_str(),     
-            (char*)scriptPath.c_str(),  
+            (char *)cgiPath.c_str(),
+            (char *)scriptPath.c_str(),
             NULL
         };
 
-        string reqMethod = "REQUEST_METHOD=" + req.method;
-        char *envp[] = {
-            (char*)"GATEWAY_INTERFACE=CGI/1.1",
-            (char*)reqMethod.c_str(),
-            (char*)query.c_str(),
-            NULL
-        };
+        std::string method = "REQUEST_METHOD=" + req.method;
+        std::string queryString = "QUERY_STRING=" + req.queryContent;
+        // std::string contentLength = "CONTENT_LENGTH=" + std::to_string(req.body.length());
+        std::string contentType = "CONTENT_TYPE=application/x-www-form-urlencoded"; // or req.contentType
 
-        execve(cgiPath.c_str(), argv, envp);
+        std::vector<char *> envp;
+        envp.push_back((char *)"GATEWAY_INTERFACE=CGI/1.1");
+        envp.push_back((char *)method.c_str());
+
+        if (req.method == "GET")
+            envp.push_back((char *)queryString.c_str());
+        // else if (req.method == "POST") {
+        //     envp.push_back((char *)contentLength.c_str());
+        //     envp.push_back((char *)contentType.c_str());
+        // }
+
+        envp.push_back(NULL);
+
+        execve(cgiPath.c_str(), argv, envp.data());
         perror("execve failed");
         exit(1);
     } else {
+        // PARENT PROCESS
+
         close(pipefd[1]);
+        close(inputfd[0]);
+
+        // For POST, write the body to CGI stdin
+        // if (req.method == "POST") {
+        //     write(inputfd[1], req.body.c_str(), req.body.length());
+        // }
+        
+        close(inputfd[1]);
+
         char buffer[4096];
         ssize_t bytesRead;
         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
             output.append(buffer, bytesRead);
         close(pipefd[0]);
+
         int status;
         waitpid(pid, &status, 0);
-
         if (status != 0)
             throw(500);
         return true;
     }
 }
+
 
 std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body) {
     std::string response;
@@ -335,155 +416,6 @@ string removeLeadingSlashes(const string& input) {
         return "";
     return input.substr(firstNonSlash);
 }
-
-//
-// string handleGetRequest1(data_request &req, location *loc, const Server &myServer, int currentFd)
-// {
-//     // 1 check method
-//     if (req.method == "GET")
-//     {
-//         string locPath = normalizePath(loc->path);
-//         string reqPath = normalizePath(req.path);
-//         cout << "localPath : " << locPath << endl;
-//         cout << "reqPath : " << reqPath << endl;
-//         if (loc->getInfos("root") == NULL)
-//             cout << " rehaaab" << endl;
-
-//         string rootVar = loc->getInfos("root")->at(0);
-//         string fullPath = reqPath;
-//         string fullPathWithR = reqPath;
-
-//         cout << "rootVar : " << rootVar << endl;
-//         cout << "locPath: " << locPath << endl;
-//         cout << "reqPath: "<< fullPath << endl;
-        
-//         if (locPath == reqPath || locPath + string("/") == fullPath \
-//             || normalizePath(locPath + string("/") + string(rootVar)) == normalizePath(fullPathWithR + "/"))
-//         {
-//             string indexRe = checkIndexes(loc, rootVar + "/");
-//             if (indexRe == "" && loc->getInfos("autoindex")->at(0) == "on")
-//             {
-//                 std::string body = listDirectory(removeLocation(reqPath, locPath + "/"), "amine");
-//                 // cout << "body : "<< body << endl;
-//                 std::string response =
-//                     "HTTP/1.1 200 OK\r\n"
-//                     "Content-Type: text/html\r\n"
-//                     "Content-Length: " + std::to_string(body.size()) + "\r\n"
-//                     "Connection: close\r\n"
-//                     "\r\n" +
-//                     body;
-//                 send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-//             }
-//             cout << "indexRe: " << indexRe<< endl;
-//             fullPath = indexRe;
-//         }
-//         else
-//         {
-//             std::string relativePath = fullPath.substr(locPath.length());
-            
-//             size_t found = relativePath.find(rootVar);
-//             if (found == std::string::npos)
-//                 fullPath = rootVar + relativePath;
-//             else
-//             {
-
-//                 cout << "********************PROB HNA************************" << endl;
-//                 cout << "fullPath before: " << fullPath << endl;
-//                 fullPath = removeLeadingSlashes(removeLocation(relativePath, locPath + "/" + rootVar));
-//                 cout << "fullPath: " << fullPath << endl;
-//                 cout << "rootVar: "  << rootVar  << endl;
-//                 cout << "test: " << removeLocation(fullPath, "/html") << endl;
-//                 fullPath = removeLeadingSlashes(removeLocation(fullPath, rootVar));
-//                 fullPath = removeLeadingSlashes(removeLocation(fullPath, "www/"));
-//                 cout << "second fullPath: " << fullPath << endl;
-                
-//                 // fullPath = removeLocation(relativePath, locPath + "/" + rootVar);
-                
-//                 cout << "****************************************************\n";
-//             }
-//         }
-//         cout << "fullPath__after condition : " << fullPath << endl;
-//         // fullPath = "www/html/index.html";
-//         ///////////////////// CGI /////////////////////////
-        
-//         // std::string extension;
-                
-//         // size_t dotPos = fullPath.find_last_of('.');
-//         // size_t qPos = fullPath.find_last_of('?');
-
-//         // if (dotPos != string::npos && qPos != string::npos && dotPos < qPos)
-//         //     extension = fullPath.substr(dotPos, qPos - dotPos);
-//         // else if (dotPos != std::string::npos)
-//         //     extension = fullPath.substr(dotPos);
-//         // cout << "extension: " << extension << endl;
-        
-//         // loc = getClosestLocation(myServer, "/api");
-//         // std::vector<std::string>* cgiExt = loc->getInfos("cgi_extension");
-//         // std::vector<std::string>* cgiPath = loc->getInfos("cgi_path");        
-        
-//         // bool isCgi = false;
-        
-//         // if (cgiExt) {
-//         //     for (size_t i = 0; i < cgiExt->size(); ++i) {
-//         //         cout << "result: " << (*cgiExt)[i] << endl;
-//         //         if (extension == (*cgiExt)[i]) {
-//         //             isCgi = true;
-//         //             break;
-//         //         }
-//         //     }
-//         // }
-//         // //
-//         // cout << isCgi << endl;
-
-//         // if (isCgi && cgiPath && !cgiPath->empty()) {
-//         //     cout << "in CGI\n" << endl;
-//         //     std::string interpreter = (*cgiPath)[0];
-//         //     cout << "interpreter: " << interpreter << endl;
-
-//         //     cout << "inQuery\n" << endl;
-//         //     std::string query;
-//         //     size_t pos = req.path.find('?');
-//         //     if (pos != std::string::npos) {
-//         //         query = req.path.substr(pos + 1);
-//         //         fullPath = root + req.path.substr(0, pos);
-//         //     }
-//         //     cout << "test: "<< fullPath << endl;
-//         //     string cgiOutput = executeCgi(fullPath, query, interpreter);
-//         //     std::ostringstream response;
-
-//         //     response << "HTTP/1.1 200 OK\r\n";
-//         //     response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
-//         //     response << "Content-Length: " << cgiOutput.size() << "\r\n";
-//         //     response << "Connection: close\r\n\r\n";
-//         //     response << cgiOutput << endl;
-//         //     return response.str();
-//         // }
-//         ///////////////////////////////////////////
-        
-//         //3 exist file (path)
-//         if (!existFile(fullPath, loc, reqPath, locPath, currentFd))
-//         {
-//             cout << "error dir: "<< fullPath << endl;
-//             return "HTTP/1.1 405 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-//         }
-//         cout << "success dir: "<< fullPath << endl;
-
-//         // 4 open file and read content
-//         std::string body = readFile(fullPath);
-//         if (body == "error opening !!")
-//             return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-        
-//         std::ostringstream ait_response;
-
-//         ait_response << "HTTP/1.1 200 OK\r\n";
-//         ait_response << "Content-Type: " << getMimeType(fullPath) << "\r\n";
-//         ait_response << "Content-Length: " << body.size() << "\r\n";
-//         ait_response << "Connection: close\r\n\r\n";
-//         ait_response << body << endl;
-//         return ait_response.str();
-//     }
-//     return "amine";
-// }
 
 string switchLocation(const string &locPath, const string &reqPath, const string &rootVar) {
     if (reqPath.compare(0, locPath.length(), locPath) == 0) {
@@ -525,10 +457,10 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     std::map<std::string, std::vector<std::string> >::iterator itRoot = loc->infos.find("root");
     if(itRoot == loc->infos.end())
         throw(404);
-    rootVar = loc->getInfos("root")->at(0);
+    rootVar = loc->getInfos("root")->at(0) + "/";
     string path = switchLocation(locPath, reqPath, rootVar);
-    
 
+    
     DIR* dir = opendir(path.c_str());
     string indexFound = checkIndexes(loc, rootVar + "/");
     if (indexFound == "")
@@ -547,10 +479,6 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
                     body;
                 send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
             }
-            else
-			{
-				throw(403);
-			}
         }
         else
             throw(403);
