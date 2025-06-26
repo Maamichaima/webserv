@@ -233,7 +233,7 @@ void client::handleResponse(int currentFd)
 				if(itRoot == cgiLoc->infos.end()) 
 					throw(404);
 	
-				root  = cgiLoc->getInfos("root")->at(0);          
+				root  = cgiLoc->getInfos("root")->at(0) + "/";          
 				string resendPath = switchLocation(locPath, reqPath, root);
 		
 				// cout << "***********************\n";
@@ -242,7 +242,7 @@ void client::handleResponse(int currentFd)
 				// cout << "***********************\n";
 	
 				if (isDirectory(resendPath) && checkIndexes(cgiLoc, resendPath + "/") != "" && 
-						!resendPath.empty() && resendPath.back() != '/') {
+						!resendPath.empty()) {
 				
 				std::string newLocation = data_rq.path + "/";
 				std::string response = 
@@ -258,8 +258,8 @@ void client::handleResponse(int currentFd)
 	
 			}
 	
-			// }
 			//////////////////////////////////////////////////////////
+
 			/////////////////// CGI /////////////////////////
 			if (this->data_rq.method != "DELETE" && cgiLoc)
 			{
