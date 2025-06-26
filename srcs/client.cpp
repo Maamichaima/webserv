@@ -319,7 +319,7 @@ void client::handleResponse(int currentFd)
 	}
     setDataResponse();
     std::string response = buildResponse();
-	std::cout << "***********" << response << "***************" << "\n";
+	// std::cout << "***********" << response << "***************" << "\n";
     send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 }
 
