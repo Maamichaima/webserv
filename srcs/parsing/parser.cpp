@@ -27,9 +27,9 @@ std::string get_line_size(std::string str, int size)
 	std::string sub;
 
 	if(size > str.size())
-	return str;
+		return str;
 	sub = str.substr(0, size);
-	return sub;
+		return sub;
 }
 
 int isNumber(std::string str)
@@ -49,11 +49,6 @@ int parser::parse(client &client)
 	if(client.flag == 0)
 	{
 		std::string start_line = get_line(client.buffer);
-		// if (!start_line.empty())
-		// {
-		// 	std::cout << "========" << client.buffer;
-		// 	exit (0);
-		// }
 		if(start_line.find("\r\n") == std::string::npos)
 		{
 			return -2;
@@ -68,7 +63,7 @@ int parser::parse(client &client)
 		}
 		else
 		{
-			std::cout << "=====" << start_line << "===== start line problem \n";
+			// std::cout << "=====" << start_line << "===== start line problem \n";
 			throw (400);
 		}
 	}
@@ -89,7 +84,7 @@ int parser::parse(client &client)
 			}
 			header = get_line(client.buffer);
 		}
-		if(header == "\r\n")// ila makaynach hade \r\n ??? 
+		if(header == "\r\n")
 		{
 			client.check_http_body_rules();
 			client.flag = 2;
@@ -165,6 +160,16 @@ void toLower(std::string &str)
     }
 }
 
+void checkKeyValueContent(std::string key, std::string value)
+{
+	key = trim(key);
+	value = trim(value);
+	if(key.length() == 0 || value.length() == 0)
+		throw(400);
+	if(!isMatch("[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&'*+\\-.^_`|~]+", key))
+		throw(400);
+}
+
 void parser::setDateToStruct(client &client, std::string &buffer, int flag)//const ??
 {
     if(flag == 0)
@@ -191,7 +196,8 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)//con
 		size_t size = str.find("\r\n");
 		std::string key = str.substr(0, pos);
 		std::string value = str.substr(pos + 2, size - pos - 2);
-		toLower(key);// ila kanet fiha whatspaces
+		checkKeyValueContent(key, value);
+		toLower(key);
         client.data_rq.headers[key] = value;
 		if(key == "host")
 		{
@@ -202,12 +208,9 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)//con
 			std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("redirect");
 			if(it != client.data_rq.myCloseLocation->infos.end())
 			{
-				// if(isRedirect(client.data_rq.myCloseLocation->infos["redirect"][0]))
-				// {
-					client.data_rs.headers["Location"] = client.data_rq.myCloseLocation->infos["redirect"][1];
-					client.data_rs.flaIsRedirect = 1;
-					throw(std::atoi(client.data_rq.myCloseLocation->infos["redirect"][0].c_str()));
-				// }
+				client.data_rs.headers["Location"] = client.data_rq.myCloseLocation->infos["redirect"][1];
+				client.data_rs.flaIsRedirect = 1;
+				throw(std::atoi(client.data_rq.myCloseLocation->infos["redirect"][0].c_str()));
 			}
 		}
     }
@@ -218,5 +221,3 @@ void parser::setDateToStruct(client &client, std::string &buffer, int flag)//con
     }
 }
 
-
-//std::string getErrorPath(int error);

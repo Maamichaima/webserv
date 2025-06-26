@@ -23,6 +23,6 @@ class parser
 int parse_header(std::string str);
 int parse_startligne(std::string str);
 std::string get_line(std::string str);
-
+std::string trim(const std::string& str);
 #include "client.hpp"
 

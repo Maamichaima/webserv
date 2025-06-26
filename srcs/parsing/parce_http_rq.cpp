@@ -134,3 +134,16 @@ int parse_header(std::string str)
 		return 0;
 	return 1;
 }
+
+
+std::string trim(const std::string& str) {
+    int start = 0;
+    while (start < str.size() && std::isspace(str[start]))
+        ++start;
+
+    int end = str.size();
+    while (end > start && std::isspace(str[end - 1]))
+        --end;
+
+    return str.substr(start, end - start);
+}
