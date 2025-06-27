@@ -162,9 +162,9 @@ bool existFile(string &path, location *loc, string reqPath, string locPath, int 
 /// @brief 
 /// @param ios::binary : open mode bax bax maytbadalx lcontent dial file in read operation  
 /// @param ios::in : open mode for readed file
-string readFile(const string &fullPath)
+string readFile(const string &path)
 {
-    std::ifstream file(fullPath.c_str(), ios::in | ios::binary);
+    std::ifstream file(path.c_str(), ios::in | ios::binary);
     if (!file) return "";
     else cout << "opning file !!\n" ;
     std::ostringstream fileContent;
@@ -196,7 +196,7 @@ bool checkExtension(const std::string& url, const std::vector<std::string>& cgiE
             return true;
         }
     }
-    std::cout << "No matching extension." << std::endl;
+    // std::cout << "No matching extension." << std::endl;
     return false;
 }
 
@@ -245,142 +245,142 @@ std::string getCgiInterpreter(const std::string &scriptPath, location &loc) {
     return "";
 }
 
-// bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
-//     cout << "in excutecgi !!" << endl;
-//     int pipefd[2];
-//     if (pipe(pipefd) == -1)
-//         return false;
-//     pid_t pid = fork();
-//     if (pid < 0)
-//         return false;
-
-//     if (pid == 0) {
-//         dup2(pipefd[1], STDOUT_FILENO);
-//         close(pipefd[0]);
-
-//         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
-// 		if (cgiPath.empty())
-// 			exit(1);
-
-//         string query = req.queryContent;
-//         char *argv[] = {
-//             (char*)cgiPath.c_str(),     
-//             (char*)scriptPath.c_str(),  
-//             NULL
-//         };
-
-//         string reqMethod = "REQUEST_METHOD=" + req.method;
-//         char *envp[] = {
-//             (char*)"GATEWAY_INTERFACE=CGI/1.1",
-//             (char*)reqMethod.c_str(),
-//             (char*)query.c_str(),
-//             NULL
-//         };
-
-//         execve(cgiPath.c_str(), argv, envp);
-//         exit(1);
-//     } else {
-//         close(pipefd[1]);
-//         char buffer[4096];
-//         ssize_t bytesRead;
-//         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-//             output.append(buffer, bytesRead);
-//         close(pipefd[0]);
-//         int status;
-//         waitpid(pid, &status, 0);
-
-//         if (status != 0)
-//             throw(500);
-//         return true;
-//     }
-// }
-
 bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
+    cout << "in excutecgi !!" << endl;
     int pipefd[2];
-    int inputfd[2];
-
-    if (pipe(pipefd) == -1 || pipe(inputfd) == -1)
+    if (pipe(pipefd) == -1)
         return false;
-
     pid_t pid = fork();
     if (pid < 0)
         return false;
 
-    string postBody;
-
-    std::map<std::string, std::vector<std::string> >::iterator itBody = loc.infos.find("upload_store");
-    if(itBody == loc.infos.end())
-        throw(404);
-
-    postBody = loc.getInfos("upload_store")->at(0);
-
     if (pid == 0) {
-
-        dup2(pipefd[1], STDOUT_FILENO); // stdout -> pipe
+        dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[0]);
-        close(pipefd[1]);
-
-        if (req.method == "POST") {
-            dup2(inputfd[0], STDIN_FILENO); // stdin <- pipe
-        }
-        close(inputfd[1]);
-        close(inputfd[0]);
 
         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
-        if (cgiPath.empty())
-            exit(1);
+		if (cgiPath.empty())
+			exit(1);
 
+        string query = req.queryContent;
         char *argv[] = {
-            (char *)cgiPath.c_str(),
-            (char *)scriptPath.c_str(),
+            (char*)cgiPath.c_str(),     
+            (char*)scriptPath.c_str(),  
             NULL
         };
 
+        string reqMethod = "REQUEST_METHOD=" + req.method;
+        char *envp[] = {
+            (char*)"GATEWAY_INTERFACE=CGI/1.1",
+            (char*)reqMethod.c_str(),
+            (char*)query.c_str(),
+            NULL
+        };
 
-        std::string method = "REQUEST_METHOD=" + req.method;
-        std::string queryString = "QUERY_STRING=" + req.queryContent;
-        // std::string contentLength = "CONTENT_LENGTH=" + std::to_string(req.body.length());
-        std::string contentType = "CONTENT_TYPE=application/x-www-form-urlencoded"; // or req.contentType
-
-        std::vector<char *> envp;
-        envp.push_back((char *)"GATEWAY_INTERFACE=CGI/1.1");
-        envp.push_back((char *)method.c_str());
-
-        if (req.method == "GET")
-            envp.push_back((char *)queryString.c_str());
-        // else if (req.method == "POST") {
-        //     envp.push_back((char *)contentLength.c_str());
-        //     envp.push_back((char *)contentType.c_str());
-        // }
-
-        envp.push_back(NULL);
-
-        execve(cgiPath.c_str(), argv, envp.data());
+        execve(cgiPath.c_str(), argv, envp);
         exit(1);
     } else {
-
         close(pipefd[1]);
-        close(inputfd[0]);
-
-        if (req.method == "POST") {
-            write(inputfd[1], postBody.c_str(), postBody.length());
-        }
-        
-        close(inputfd[1]);
-
         char buffer[4096];
         ssize_t bytesRead;
         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
             output.append(buffer, bytesRead);
         close(pipefd[0]);
-
         int status;
         waitpid(pid, &status, 0);
+
         if (status != 0)
             throw(500);
         return true;
     }
 }
+
+// bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
+//     int pipefd[2];
+//     int inputfd[2];
+
+//     if (pipe(pipefd) == -1 || pipe(inputfd) == -1)
+//         return false;
+
+//     pid_t pid = fork();
+//     if (pid < 0)
+//         return false;
+
+//     string postBody;
+
+//     std::map<std::string, std::vector<std::string> >::iterator itBody = loc.infos.find("upload_store");
+//     if(itBody == loc.infos.end())
+//         throw(404);
+
+//     postBody = loc.getInfos("upload_store")->at(0);
+
+//     if (pid == 0) {
+
+//         dup2(pipefd[1], STDOUT_FILENO); // stdout -> pipe
+//         close(pipefd[0]);
+//         close(pipefd[1]);
+
+//         if (req.method == "POST") {
+//             dup2(inputfd[0], STDIN_FILENO); // stdin <- pipe
+//         }
+//         close(inputfd[1]);
+//         close(inputfd[0]);
+
+//         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
+//         if (cgiPath.empty())
+//             exit(1);
+
+//         char *argv[] = {
+//             (char *)cgiPath.c_str(),
+//             (char *)scriptPath.c_str(),
+//             NULL
+//         };
+
+
+//         std::string method = "REQUEST_METHOD=" + req.method;
+//         std::string queryString = "QUERY_STRING=" + req.queryContent;
+//         // std::string contentLength = "CONTENT_LENGTH=" + std::to_string(req.body.length());
+//         std::string contentType = "CONTENT_TYPE=application/x-www-form-urlencoded"; // or req.contentType
+
+//         std::vector<char *> envp;
+//         envp.push_back((char *)"GATEWAY_INTERFACE=CGI/1.1");
+//         envp.push_back((char *)method.c_str());
+
+//         if (req.method == "GET")
+//             envp.push_back((char *)queryString.c_str());
+//         // else if (req.method == "POST") {
+//         //     envp.push_back((char *)contentLength.c_str());
+//         //     envp.push_back((char *)contentType.c_str());
+//         // }
+
+//         envp.push_back(NULL);
+
+//         execve(cgiPath.c_str(), argv, envp.data());
+//         exit(1);
+//     } else {
+
+//         close(pipefd[1]);
+//         close(inputfd[0]);
+
+//         if (req.method == "POST") {
+//             write(inputfd[1], postBody.c_str(), postBody.length());
+//         }
+        
+//         close(inputfd[1]);
+
+//         char buffer[4096];
+//         ssize_t bytesRead;
+//         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+//             output.append(buffer, bytesRead);
+//         close(pipefd[0]);
+
+//         int status;
+//         waitpid(pid, &status, 0);
+//         if (status != 0)
+//             throw(500);
+//         return true;
+//     }
+// }
 
 std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body) {
     std::string response;
@@ -450,9 +450,74 @@ bool isCgiRequest(location *loc, const std::string &path) {
     return false;
 }
 
+///////////////////////////////////////////////////////////////////
+size_t getFileSize(const std::string& path) {
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0) {
+        return st.st_size;
+    }
+    return 0;
+}
+
+void client::sendFileChunk(int currentFd) {
+    const size_t CHUNK_SIZE = 8192;
+    char buffer[CHUNK_SIZE];
+    
+    size_t toRead = std::min(CHUNK_SIZE, this->bytesRemaining);
+    ssize_t bytesRead = read(this->fileFd, buffer, toRead);
+    
+    std::cout << "[DEBUG] sendFileChunk - toRead: " << toRead << ", bytesRead: " << bytesRead << std::endl;
+    
+    if (bytesRead <= 0) {
+        std::cout << "[DEBUG] Read error or EOF" << std::endl;
+        if (this->fileFd >= 0) {
+            close(this->fileFd);
+            this->fileFd = -1;
+        }
+        this->closeConnection = true;
+        return;
+    }
+    
+    ssize_t bytesSent = send(currentFd, buffer, bytesRead, MSG_NOSIGNAL);
+    std::cout << "[DEBUG] Bytes sent: " << bytesSent << "/" << bytesRead << std::endl;
+    
+    if (bytesSent > 0) {
+        this->bytesRemaining -= bytesSent;
+        std::cout << "[DEBUG] Bytes remaining: " << this->bytesRemaining << std::endl;
+        
+        if (bytesSent < bytesRead) {
+            lseek(this->fileFd, -(bytesRead - bytesSent), SEEK_CUR);
+            this->bytesRemaining += (bytesRead - bytesSent);
+        }
+    } 
+    else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        std::cout << "[DEBUG] Socket would block, retry later" << std::endl;
+        lseek(this->fileFd, -bytesRead, SEEK_CUR);
+        return;
+    }
+    else {
+        std::cout << "[DEBUG] Send error: " << strerror(errno) << std::endl;
+        if (this->fileFd >= 0) {
+            close(this->fileFd);
+            this->fileFd = -1;
+        }
+        this->closeConnection = true;
+        return;
+    }
+    
+    // Si tout le fichier est envoyé
+    if (this->bytesRemaining == 0) {
+        std::cout << "[DEBUG] File transfer complete!" << std::endl;
+        if (this->fileFd >= 0) {
+            close(this->fileFd);
+            this->fileFd = -1;
+        }
+        this->closeConnection = true;
+    }
+}
 /////////////////////////////////////////////////////////////////////////////////////
 
-string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd)
+string handleGetRequest(std::map<int, client>& clients, data_request &req, location *loc, const Server &myServer, int currentFd)
 {
     string locPath = normalizePath(loc->path);
     string reqPath = normalizePath(req.path);
@@ -464,7 +529,6 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     rootVar = loc->getInfos("root")->at(0) + "/";
     string path = switchLocation(locPath, reqPath, rootVar);
 
-    
     DIR* dir = opendir(path.c_str());
     string indexFound = checkIndexes(loc, rootVar + "/");
     if (indexFound == "")
@@ -491,19 +555,115 @@ string handleGetRequest(data_request &req, location *loc, const Server &myServer
     //////////////////////////////////////////////////
 
     if (!existFile(path, loc, reqPath, locPath, currentFd)) 
-        throw(404);
+    throw(404);
+
+
+    // std::ostringstream headers;
+    // headers << "HTTP/1.1 200 OK\r\n";
+    // headers << "Content-Type: " << getMimeType(path) << "\r\n";
+    // headers << "Content-Length: " << getFileSize(path) << "\r\n";
+    // headers << "Connection: close\r\n\r\n";
+    
+    // // Stocker les informations pour l'envoi par chunks
+    // clients[currentFd].fileToSend = path;
+    // clients[currentFd].headersSent = false;
+    // clients[currentFd].fileFd = open(path.c_str(), O_RDONLY);
+    // clients[currentFd].bytesRemaining = getFileSize(path);
+    
+    // return headers.str();
 
         std::string body = readFile(path);
         if (body == "")
             throw(500);
-    
-    //////////////////////////////////////////
+                
+        //////////////////////////////////////////
         std::ostringstream ait_response;
-
+        
         ait_response << "HTTP/1.1 200 OK\r\n";
         ait_response << "Content-Type: " << getMimeType(path) << "\r\n";
         ait_response << "Content-Length: " << body.size() << "\r\n";
         ait_response << "Connection: close\r\n\r\n";
         ait_response << body << endl;
-        return ait_response.str();
+        return ait_response.str();    
+}
+
+
+std::string client::prepareGetResponse(std::map<int, client>& clients, data_request &req, location *loc, const Server &myServer, int currentFd)
+{
+    string locPath = normalizePath(loc->path);
+    string reqPath = normalizePath(req.path);
+    string rootVar;
+
+    std::map<std::string, std::vector<std::string> >::iterator itRoot = loc->infos.find("root");
+    if(itRoot == loc->infos.end())
+        throw(404);
+    rootVar = loc->getInfos("root")->at(0) + "/";
+    string path = switchLocation(locPath, reqPath, rootVar);
+
+    // Vérifier si c'est un répertoire avec autoindex
+    DIR* dir = opendir(path.c_str());
+    string indexFound = checkIndexes(loc, rootVar + "/");
+    if (indexFound == "")
+    {
+        if (loc->getInfos("autoindex"))
+        {
+            if (loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
+            {
+                std::string body = listDirectory(path, reqPath);
+                std::string response =
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/html\r\n"
+                    "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                    "Connection: close\r\n"
+                    "\r\n" +
+                    body;
+                return response; // Retour direct pour autoindex
+            }
+        }
+        else
+            throw(403);
+    }
+    
+    std::cout << "[DEBUG] File path: " << path << std::endl;
+    
+    if (!existFile(path, loc, reqPath, locPath, currentFd)) {
+        std::cout << "[DEBUG] File does not exist: " << path << std::endl;
+        throw(404);
+    }
+
+     size_t fileSize = getFileSize(path);
+    std::cout << "[DEBUG] File size: " << fileSize << " bytes" << std::endl;
+    
+    const size_t CHUNKED_THRESHOLD = 1024 * 1024; // Remettre à 1MB
+    
+    if (fileSize > CHUNKED_THRESHOLD) {
+        std::cout << "[DEBUG] Using chunked transfer for large file" << std::endl;
+        
+        this->fileFd = open(path.c_str(), O_RDONLY);
+        if (this->fileFd == -1) {
+            std::cout << "[DEBUG] Failed to open file: " << strerror(errno) << std::endl;
+            throw(500);
+        }
+        
+        this->bytesRemaining = fileSize;
+        this->fileSize = fileSize;
+        this->fileToSend = path;
+        
+        // IMPORTANT: Ne pas fermer la connexion pour les gros fichiers
+        this->closeConnection = false;
+        
+        std::string mimeType = getMimeType(path);
+        std::cout << "[DEBUG] MIME type: " << mimeType << std::endl;
+        
+        std::ostringstream headers;
+        headers << "HTTP/1.1 200 OK\r\n";
+        headers << "Content-Type: " << mimeType << "\r\n";
+        headers << "Content-Length: " << fileSize << "\r\n";
+        headers << "Accept-Ranges: bytes\r\n";
+        headers << "Connection: close\r\n\r\n";  // On ferme après le transfert complet
+        
+        return headers.str();
+    }
+    
+    return "";
 }
