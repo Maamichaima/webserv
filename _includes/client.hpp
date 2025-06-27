@@ -58,6 +58,14 @@ class client
 		data_response data_rs;
         time_t lastActivityTime;
 
+
+        //////////////////////////////
+        std::string fileToSend;
+        int fileFd;
+        size_t bytesRemaining;
+        bool headersSent;
+        size_t fileSize;
+        ////////////////////////////
         client();
         client(std::string buff, int fd);
         client &operator=(const client &obj);
@@ -70,10 +78,13 @@ class client
         void parseRequest();
 		std::string buildResponse();
 		void setDataResponse();
-		void handleResponse(int currentFd);
+		// void handleResponse(int currentFd);
+        void handleResponse(int currentFd, std::map<int, client>& clients);
+        std::string prepareGetResponse(std::map<int, client>& clients, data_request &req, location *loc, const Server &myServer, int currentFd);
 		void setDescription();
 		void setErrorPages();
 		void setStatusCode();
+        void sendFileChunk(int currentFd);
 };
 
 std::string get_line(std::string str);

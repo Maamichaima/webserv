@@ -155,8 +155,12 @@ void    ServerManager::handle_cnx()
             clients[currentFd].parseRequest();
         else if (events[i].events & EPOLLOUT) // check request is done 
         {
-			clients[currentFd].handleResponse(currentFd);
-			clients[currentFd].closeConnection = true;
+			clients[currentFd].handleResponse(currentFd, clients);
+            if (clients[currentFd].closeConnection) {
+                close(currentFd);
+                epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, NULL);
+                clients.erase(currentFd);
+    }
         }
         if(clients[currentFd].closeConnection)
         {
