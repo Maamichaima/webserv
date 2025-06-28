@@ -213,23 +213,23 @@ bool isCgiConfigured(location* loc) {
 #include <vector>
 #include <iostream>
 
-std::string getExtension(const std::string &path) {
+std::string getExtensions(const std::string &path) {
     size_t dot = path.find_last_of('.');
     if (dot == std::string::npos)
         return ""; // No extension
     return path.substr(dot);
 }
 
-std::string getCgiInterpreter(const std::string &scriptPath, location &loc) {
-    std::vector<std::string>* extensions = loc.getInfos("cgi_extension");
-    std::vector<std::string>* interpreters = loc.getInfos("cgi_path");
+std::string getCgiInterpreter(const std::string &scriptPath, location *loc) {
+    std::vector<std::string>* extensions = loc->getInfos("cgi_extension");
+    std::vector<std::string>* interpreters = loc->getInfos("cgi_path");
 
     if (!extensions || !interpreters) {
         std::cerr << "Missing cgi_extension or cgi_path config" << std::endl;
         return "";
     }
 
-    std::string ext = getExtension(scriptPath);
+    std::string ext = getExtensions(scriptPath);
     for (size_t i = 0; i < extensions->size(); ++i) {
         if ((*extensions)[i] == ext)
             return (*interpreters)[i];
@@ -239,8 +239,183 @@ std::string getCgiInterpreter(const std::string &scriptPath, location &loc) {
     return "";
 }
 
-bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
-    cout << "in excutecgi !!" << endl;
+// bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
+//     cout << "in executeCgi for method: " << req.method << endl;
+    
+//     int pipefd[2];
+//     int inputPipe[2];
+    
+//     if (pipe(pipefd) == -1)
+//         return false;
+    
+//     // Create input pipe for POST data
+//     bool needInputPipe = (req.method == "POST" && !req.bodyNameFile.empty());
+//     if (needInputPipe && pipe(inputPipe) == -1) {
+//         close(pipefd[0]);
+//         close(pipefd[1]);
+//         return false;
+//     }
+    
+//     pid_t pid = fork();
+//     if (pid < 0) {
+//         close(pipefd[0]);
+//         close(pipefd[1]);
+//         if (needInputPipe) {
+//             close(inputPipe[0]);
+//             close(inputPipe[1]);
+//         }
+//         return false;
+//     }
+
+//     if (pid == 0) { // Child process
+//         // Redirect stdout to pipe
+//         dup2(pipefd[1], STDOUT_FILENO);
+//         close(pipefd[0]);
+//         close(pipefd[1]);
+        
+//         // For POST, redirect stdin from input pipe
+//         if (needInputPipe) {
+//             dup2(inputPipe[0], STDIN_FILENO);
+//             close(inputPipe[0]);
+//             close(inputPipe[1]);
+//         }
+
+//         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
+//         if (cgiPath.empty())
+//             exit(1);
+
+//         char *argv[] = {
+//             (char*)cgiPath.c_str(),     
+//             (char*)scriptPath.c_str(),  
+//             NULL
+//         };
+
+//         // Prepare environment variables
+//         std::vector<std::string> envStrings;
+//         std::vector<char*> envp;
+        
+//         // Basic CGI environment
+//         envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
+//         envStrings.push_back("REQUEST_METHOD=" + req.method);
+//         envStrings.push_back("SCRIPT_NAME=" + scriptPath);
+//         envStrings.push_back("SERVER_PROTOCOL=HTTP/1.1");
+        
+//         // Method-specific environment variables
+//         if (req.method == "GET") {
+//             envStrings.push_back("QUERY_STRING=" + req.queryContent);
+//         }
+//         else if (req.method == "POST") {
+//             std::string bodyContent;
+//             if (!req.bodyNameFile.empty()) {
+//                 std::ifstream bodyFile(req.bodyNameFile.c_str());
+//                 if (bodyFile.is_open()) {
+//                     std::string line;
+//                     while (std::getline(bodyFile, line)) {
+//                         bodyContent += line + "\n";
+//                     }
+//                     bodyFile.close();
+//                 }
+//             }
+            
+//             envStrings.push_back("CONTENT_LENGTH=" + std::to_string(bodyContent.size()));
+            
+//             // Set Content-Type from headers if available
+//             std::map<std::string, std::string>::const_iterator contentTypeIt = req.headers.find("content-type");
+//             if (contentTypeIt != req.headers.end()) {
+//                 envStrings.push_back("CONTENT_TYPE=" + contentTypeIt->second);
+//             } else {
+//                 envStrings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
+//             }
+            
+//             // Also include query string for POST if it exists
+//             if (!req.queryContent.empty()) {
+//                 envStrings.push_back("QUERY_STRING=" + req.queryContent);
+//             } else {
+//                 envStrings.push_back("QUERY_STRING=");
+//             }
+            
+//             // Store bodyContent for writing to stdin later
+//             // We'll need to modify the parent process part too
+//         }
+        
+//         // Add HTTP headers as environment variables
+//         for (std::map<std::string, std::string>::const_iterator it = req.headers.begin(); 
+//              it != req.headers.end(); ++it) {
+//             std::string headerName = "HTTP_" + it->first;
+//             // Convert to uppercase and replace - with _
+//             for (size_t i = 0; i < headerName.length(); ++i) {
+//                 headerName[i] = std::toupper(headerName[i]);
+//                 if (headerName[i] == '-') headerName[i] = '_';
+//             }
+//             envStrings.push_back(headerName + "=" + it->second);
+//         }
+        
+//         // Convert strings to char* array
+//         for (size_t i = 0; i < envStrings.size(); ++i) {
+//             envp.push_back(const_cast<char*>(envStrings[i].c_str()));
+//         }
+//         envp.push_back(NULL);
+
+//         execve(cgiPath.c_str(), argv, &envp[0]);
+//         exit(1);
+//     } 
+//     else { // Parent process
+//         close(pipefd[1]);
+        
+//         if (needInputPipe) {
+//             close(inputPipe[0]);
+            
+//             // Read and write POST data to CGI script's stdin
+//             if (!req.bodyNameFile.empty()) {
+//                 std::string bodyContent;
+//                 std::ifstream bodyFile(req.bodyNameFile.c_str());
+//                 if (bodyFile.is_open()) {
+//                     std::string line;
+//                     while (std::getline(bodyFile, line)) {
+//                         bodyContent += line + "\n";
+//                     }
+//                     bodyFile.close();
+                    
+//                     if (!bodyContent.empty()) {
+//                         ssize_t written = write(inputPipe[1], bodyContent.c_str(), bodyContent.size());
+//                         if (written != static_cast<ssize_t>(bodyContent.size())) {
+//                             cout << "Warning: Not all POST data was written to CGI" << endl;
+//                         }
+//                     }
+//                 }
+//             }
+//             close(inputPipe[1]);
+//         }
+        
+//         // Read CGI output
+//         char buffer[4096];
+//         ssize_t bytesRead;
+//         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
+//             output.append(buffer, bytesRead);
+//         }
+//         close(pipefd[0]);
+
+//         int status;
+//         waitpid(pid, &status, 0);
+
+//         if (WEXITSTATUS(status) != 0) {
+//             cout << "CGI script exited with status: " << WEXITSTATUS(status) << endl;
+//             throw(500);
+//         }
+        
+//         return true;
+//     }
+// }
+
+
+bool executeCgi(const std::string &scriptPath, const data_request &req, std::string &output) {
+
+
+    // string storeLocation = req.myCloseLocation->getInfos("upload_store")->at(0);
+    // std::string pathBody = storeLocation + "/" + req.bodyNameFile + getExtention(req);
+    // cout << "pathBody: " << pathBody << endl;
+    //content type in headers
+    string tmp;
     int pipefd[2];
     if (pipe(pipefd) == -1)
         return false;
@@ -252,7 +427,7 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[0]);
 
-        std::string cgiPath = getCgiInterpreter(scriptPath, loc);
+        std::string cgiPath = getCgiInterpreter(scriptPath, req.myCloseLocation);
 		if (cgiPath.empty())
 			exit(1);
 
@@ -288,93 +463,6 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, location
         return true;
     }
 }
-
-// bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
-//     int pipefd[2];
-//     int inputfd[2];
-
-//     if (pipe(pipefd) == -1 || pipe(inputfd) == -1)
-//         return false;
-
-//     pid_t pid = fork();
-//     if (pid < 0)
-//         return false;
-
-//     string postBody;
-
-//     std::map<std::string, std::vector<std::string> >::iterator itBody = loc.infos.find("upload_store");
-//     if(itBody == loc.infos.end())
-//         throw(404);
-
-//     postBody = loc.getInfos("upload_store")->at(0);
-
-//     if (pid == 0) {
-
-//         dup2(pipefd[1], STDOUT_FILENO); // stdout -> pipe
-//         close(pipefd[0]);
-//         close(pipefd[1]);
-
-//         if (req.method == "POST") {
-//             dup2(inputfd[0], STDIN_FILENO); // stdin <- pipe
-//         }
-//         close(inputfd[1]);
-//         close(inputfd[0]);
-
-//         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
-//         if (cgiPath.empty())
-//             exit(1);
-
-//         char *argv[] = {
-//             (char *)cgiPath.c_str(),
-//             (char *)scriptPath.c_str(),
-//             NULL
-//         };
-
-
-//         std::string method = "REQUEST_METHOD=" + req.method;
-//         std::string queryString = "QUERY_STRING=" + req.queryContent;
-//         // std::string contentLength = "CONTENT_LENGTH=" + std::to_string(req.body.length());
-//         std::string contentType = "CONTENT_TYPE=application/x-www-form-urlencoded"; // or req.contentType
-
-//         std::vector<char *> envp;
-//         envp.push_back((char *)"GATEWAY_INTERFACE=CGI/1.1");
-//         envp.push_back((char *)method.c_str());
-
-//         if (req.method == "GET")
-//             envp.push_back((char *)queryString.c_str());
-//         // else if (req.method == "POST") {
-//         //     envp.push_back((char *)contentLength.c_str());
-//         //     envp.push_back((char *)contentType.c_str());
-//         // }
-
-//         envp.push_back(NULL);
-
-//         execve(cgiPath.c_str(), argv, envp.data());
-//         exit(1);
-//     } else {
-
-//         close(pipefd[1]);
-//         close(inputfd[0]);
-
-//         if (req.method == "POST") {
-//             write(inputfd[1], postBody.c_str(), postBody.length());
-//         }
-        
-//         close(inputfd[1]);
-
-//         char buffer[4096];
-//         ssize_t bytesRead;
-//         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-//             output.append(buffer, bytesRead);
-//         close(pipefd[0]);
-
-//         int status;
-//         waitpid(pid, &status, 0);
-//         if (status != 0)
-//             throw(500);
-//         return true;
-//     }
-// }
 
 std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body) {
     std::string response;
@@ -459,17 +547,14 @@ void client::sendFileChunk(int currentFd) {
     
     size_t toRead = std::min(CHUNK_SIZE, this->bytesRemaining);
     if (!this->fileStream->is_open()) {
-        std::cout << "[DEBUG] File stream not open" << std::endl;
         this->closeConnection = true;
         return;
     }
     this->fileStream->read(buffer, toRead);
     std::streamsize bytesRead = this->fileStream->gcount();
     
-    std::cout << "[DEBUG] sendFileChunk - toRead: " << toRead << ", bytesRead: " << bytesRead << std::endl;
     
     if (bytesRead <= 0) {
-        std::cout << "[DEBUG] Read error or EOF" << std::endl;
         if (this->fileStream->is_open()) {
             this->fileStream->close();
         }
@@ -478,11 +563,9 @@ void client::sendFileChunk(int currentFd) {
     }
     
     ssize_t bytesSent = send(currentFd, buffer, bytesRead, MSG_NOSIGNAL);
-    std::cout << "[DEBUG] Bytes sent: " << bytesSent << "/" << bytesRead << std::endl;
     
     if (bytesSent > 0) {
         this->bytesRemaining -= bytesSent;
-        std::cout << "[DEBUG] Bytes remaining: " << this->bytesRemaining << std::endl;
         
         if (bytesSent < bytesRead) {
             this->fileStream->seekg(-(bytesRead - bytesSent), std::ios::cur);
@@ -490,12 +573,10 @@ void client::sendFileChunk(int currentFd) {
         }
     } 
     else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-        std::cout << "[DEBUG] Socket would block, retry later" << std::endl;
         this->fileStream->seekg(-bytesRead, std::ios::cur);
         return;
     }
     else {
-        std::cout << "[DEBUG] Send error: " << strerror(errno) << std::endl;
         if (this->fileStream->is_open()) {
             this->fileStream->close();
         }
@@ -505,7 +586,6 @@ void client::sendFileChunk(int currentFd) {
     
     // Si tout le fichier est envoyé
     if (this->bytesRemaining == 0) {
-        std::cout << "[DEBUG] File transfer complete!" << std::endl;
         if (this->fileStream->is_open()) {
             this->fileStream->close();
         }
@@ -620,27 +700,22 @@ std::string client::prepareGetResponse(std::map<int, client>& clients, data_requ
         }
     }
     
-    std::cout << "[DEBUG] File path: " << path << std::endl;
     
     // Now check if the file exists
     struct stat st;
     if (stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
-        std::cout << "[DEBUG] File does not exist: " << path << std::endl;
         throw(404);
     }
 
     size_t fileSize = getFileSize(path);
-    std::cout << "[DEBUG] File size: " << fileSize << " bytes" << std::endl;
     
     const size_t CHUNKED_THRESHOLD = 1024 * 1024; // 1MB
     
     if (fileSize > CHUNKED_THRESHOLD) {
-        std::cout << "[DEBUG] Using chunked transfer for large file" << std::endl;
         
         // Use ifstream instead of open
         this->fileStream->open(path.c_str(), std::ios::in | std::ios::binary);
         if (!this->fileStream->is_open()) {
-            std::cout << "[DEBUG] Failed to open file with ifstream: " << path << std::endl;
             throw(500);
         }
         
@@ -652,7 +727,6 @@ std::string client::prepareGetResponse(std::map<int, client>& clients, data_requ
         this->closeConnection = false;
         
         std::string mimeType = getMimeType(path);
-        std::cout << "[DEBUG] MIME type: " << mimeType << std::endl;
         
         std::ostringstream headers;
         headers << "HTTP/1.1 200 OK\r\n";
