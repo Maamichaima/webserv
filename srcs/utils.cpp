@@ -123,7 +123,6 @@ std::deque<std::string> split(const std::string& str, const std::string& delimit
     return result;
 }
 
-// move it mnehna 
 std::string get_line_size(std::string str, int size)
 {
 	std::string sub;

@@ -40,7 +40,7 @@ int parser::parse(client &client)
 		else
 			throw (400); //Bad Request start line probl
 	}
-	if(client.flagProgress == 1)
+	if(client.flagProgress == 1)// check headers dup
 	{
 		std::string header = get_line(client.buffer);
 		while (header != "\r\n" && header.find("\r\n") != std::string::npos)
