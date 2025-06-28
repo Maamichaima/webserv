@@ -181,7 +181,8 @@ void    ServerManager::RunServer()
             else if (events[i].events & EPOLLOUT) 
             {
                 clients[currentFd].handleResponse(currentFd, clients);
-                clients[currentFd].closeConnection = true;
+                if(clients[currentFd].closeConnection)
+                    ClientDisconnected(currentFd);
             }
             if(clients[currentFd].closeConnection)
                 ClientDisconnected(currentFd);
