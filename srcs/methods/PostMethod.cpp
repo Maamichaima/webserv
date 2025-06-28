@@ -74,6 +74,7 @@ std::map<std::string, std::string> createMimeTypeMap() {
     inverseMimeMap["application/xhtml+xml"] = ".xhtml";
     inverseMimeMap["application/xspf+xml"] = ".xspf";
     inverseMimeMap["application/zip"] = ".zip";
+    inverseMimeMap["application/x-www-form-urlencoded"] = ".urlencoded";
     inverseMimeMap["application/octet-stream"] = ".bin";  // Default for unknown binaries
 
     // Audio
