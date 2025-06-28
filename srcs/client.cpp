@@ -15,21 +15,21 @@ int readFileContent(const std::string& filePath, std::string &content) {
 	return 1;
 }
 
-client::client() :fileFd(-1), bytesRemaining(0), headersSent(false), fileSize(0)
+client::client() : bytesRemaining(0), headersSent(false), fileSize(0), fileStream(new std::ifstream())
 {
-	this->flag = 0;
-	this->data_rq.size_body = 0;
-	this->data_rq.size_chunked = -1;
-	this->data_rq.flag_chunked = 0;
-	this->data_rq.is_chunked = 0;
-	this->data_rq.flag_error = 0;
-	this->closeConnection = false;
-	this->data_rs.flaIsRedirect = 0;
-	this->data_rs.status_code = -1;
-	this->data_rq.isCgi = 0;
+    this->flag = 0;
+    this->data_rq.size_body = 0;
+    this->data_rq.size_chunked = -1;
+    this->data_rq.flag_chunked = 0;
+    this->data_rq.is_chunked = 0;
+    this->data_rq.flag_error = 0;
+    this->closeConnection = false;
+    this->data_rs.flaIsRedirect = 0;
+    this->data_rs.status_code = -1;
+    this->data_rq.isCgi = 0;
 
-	setErrorPages();
-	setDescription();
+    setErrorPages();
+    setDescription();
 }
 
 client::client(std::string buff, int fd) : parc(parser())
@@ -54,6 +54,13 @@ client &client::operator=(const client &obj)
 
 client::~client()
 {
+	if (fileStream) {
+		if (fileStream->is_open()) {
+			fileStream->close();
+		}
+		delete fileStream;
+		fileStream = NULL;
+	}
 	// close (server_fd);
 }
 
@@ -298,18 +305,17 @@ void client::handleResponse(int currentFd, std::map<int, client>& clients)
 
         std::cout << "[DEBUG] GET request for: " << data_rq.path << std::endl;
         std::cout << "[DEBUG] headersSent: " << (headersSent ? "true" : "false") << std::endl;
-        std::cout << "[DEBUG] fileFd: " << fileFd << std::endl;
         std::cout << "[DEBUG] bytesRemaining: " << bytesRemaining << std::endl;
 
         // NOUVEAU: Si on a déjà un fichier ouvert pour cette connexion
-        if (this->fileFd >= 0 && this->bytesRemaining > 0) {
+        if (this->fileStream->is_open() && this->bytesRemaining > 0) {
             std::cout << "[DEBUG] Continuing file transfer..." << std::endl;
             this->sendFileChunk(currentFd);
             return;
         }
 
         // Si c'est la première fois (pas encore de headers envoyés)
-        if (!this->headersSent && this->fileFd == -1) {
+        if (!this->headersSent && !this->fileStream->is_open()) {
             std::cout << "[DEBUG] Preparing GET response..." << std::endl;
             std::string headers = this->prepareGetResponse(clients, this->data_rq, loc, this->myServer, currentFd);
             if (!headers.empty()) {
@@ -320,7 +326,7 @@ void client::handleResponse(int currentFd, std::map<int, client>& clients)
                     this->headersSent = true;
                     // IMPORTANT: NE PAS FAIRE RETURN ICI, commencer à envoyer le contenu immédiatement
                     std::cout << "[DEBUG] Starting file content transfer..." << std::endl;
-                    if (this->fileFd >= 0 && this->bytesRemaining > 0) {
+                    if (this->fileStream->is_open() && this->bytesRemaining > 0) {
                         this->sendFileChunk(currentFd);
                         return;
                     }
@@ -335,17 +341,16 @@ void client::handleResponse(int currentFd, std::map<int, client>& clients)
         }
         
         // Si les headers sont envoyés et qu'on a un fichier à envoyer
-        if (this->headersSent && this->fileFd >= 0 && this->bytesRemaining > 0) {
+        if (this->headersSent && this->fileStream->is_open() && this->bytesRemaining > 0) {
             std::cout << "[DEBUG] Sending chunk... remaining: " << bytesRemaining << std::endl;
             this->sendFileChunk(currentFd);
             return;
         }
         
         // Si le fichier est complètement envoyé
-        if (this->fileFd >= 0 && this->bytesRemaining == 0) {
+        if (this->fileStream->is_open() && this->bytesRemaining == 0) {
             std::cout << "[DEBUG] File completely sent, closing..." << std::endl;
-            close(this->fileFd);
-            this->fileFd = -1;
+            this->fileStream->close();
             this->closeConnection = true;
             return;
         }

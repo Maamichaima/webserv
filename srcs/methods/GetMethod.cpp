@@ -2,6 +2,7 @@
 #include "GetMethod.hpp"
 #include <sys/wait.h>
 #include <dirent.h>
+#include <fstream>
 
 using std::cout;
 
@@ -141,16 +142,9 @@ bool existFile(string &path, location *loc, string reqPath, string locPath, int 
             string checkIndex = checkIndexes(loc, path + "/");
             if (checkIndex == "")
             {
-                // cout << "path in existFile: "<< path << endl;
-                std::string body = listDirectory(path, reqPath);
-                std::string response =
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html\r\n"
-                    "Content-Length: " + std::to_string(body.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" +
-                    body;
-                send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);   
+                // Don't send response here, just return false
+                // The calling function will handle autoindex
+                return false;
             }
             else
                 path = checkIndex;
@@ -464,15 +458,20 @@ void client::sendFileChunk(int currentFd) {
     char buffer[CHUNK_SIZE];
     
     size_t toRead = std::min(CHUNK_SIZE, this->bytesRemaining);
-    ssize_t bytesRead = read(this->fileFd, buffer, toRead);
+    if (!this->fileStream->is_open()) {
+        std::cout << "[DEBUG] File stream not open" << std::endl;
+        this->closeConnection = true;
+        return;
+    }
+    this->fileStream->read(buffer, toRead);
+    std::streamsize bytesRead = this->fileStream->gcount();
     
     std::cout << "[DEBUG] sendFileChunk - toRead: " << toRead << ", bytesRead: " << bytesRead << std::endl;
     
     if (bytesRead <= 0) {
         std::cout << "[DEBUG] Read error or EOF" << std::endl;
-        if (this->fileFd >= 0) {
-            close(this->fileFd);
-            this->fileFd = -1;
+        if (this->fileStream->is_open()) {
+            this->fileStream->close();
         }
         this->closeConnection = true;
         return;
@@ -486,20 +485,19 @@ void client::sendFileChunk(int currentFd) {
         std::cout << "[DEBUG] Bytes remaining: " << this->bytesRemaining << std::endl;
         
         if (bytesSent < bytesRead) {
-            lseek(this->fileFd, -(bytesRead - bytesSent), SEEK_CUR);
+            this->fileStream->seekg(-(bytesRead - bytesSent), std::ios::cur);
             this->bytesRemaining += (bytesRead - bytesSent);
         }
     } 
     else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
         std::cout << "[DEBUG] Socket would block, retry later" << std::endl;
-        lseek(this->fileFd, -bytesRead, SEEK_CUR);
+        this->fileStream->seekg(-bytesRead, std::ios::cur);
         return;
     }
     else {
         std::cout << "[DEBUG] Send error: " << strerror(errno) << std::endl;
-        if (this->fileFd >= 0) {
-            close(this->fileFd);
-            this->fileFd = -1;
+        if (this->fileStream->is_open()) {
+            this->fileStream->close();
         }
         this->closeConnection = true;
         return;
@@ -508,9 +506,8 @@ void client::sendFileChunk(int currentFd) {
     // Si tout le fichier est envoyé
     if (this->bytesRemaining == 0) {
         std::cout << "[DEBUG] File transfer complete!" << std::endl;
-        if (this->fileFd >= 0) {
-            close(this->fileFd);
-            this->fileFd = -1;
+        if (this->fileStream->is_open()) {
+            this->fileStream->close();
         }
         this->closeConnection = true;
     }
@@ -600,15 +597,12 @@ std::string client::prepareGetResponse(std::map<int, client>& clients, data_requ
     rootVar = loc->getInfos("root")->at(0) + "/";
     string path = switchLocation(locPath, reqPath, rootVar);
 
-    // Vérifier si c'est un répertoire avec autoindex
-    DIR* dir = opendir(path.c_str());
-    string indexFound = checkIndexes(loc, rootVar + "/");
-    if (indexFound == "")
-    {
-        if (loc->getInfos("autoindex"))
-        {
-            if (loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
-            {
+    // Check if it's a directory first
+    if (isDirectory(path)) {
+        string indexFound = checkIndexes(loc, path + "/");
+        if (indexFound == "") {
+            // Handle autoindex case
+            if (loc->getInfos("autoindex") && loc->getInfos("autoindex")->at(0) == "on") {
                 std::string body = listDirectory(path, reqPath);
                 std::string response =
                     "HTTP/1.1 200 OK\r\n"
@@ -617,31 +611,36 @@ std::string client::prepareGetResponse(std::map<int, client>& clients, data_requ
                     "Connection: close\r\n"
                     "\r\n" +
                     body;
-                return response; // Retour direct pour autoindex
+                return response; // Return autoindex response
+            } else {
+                throw(403); // Forbidden if autoindex is off
             }
+        } else {
+            path = indexFound; // Use index file
         }
-        else
-            throw(403);
     }
     
     std::cout << "[DEBUG] File path: " << path << std::endl;
     
-    if (!existFile(path, loc, reqPath, locPath, currentFd)) {
+    // Now check if the file exists
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
         std::cout << "[DEBUG] File does not exist: " << path << std::endl;
         throw(404);
     }
 
-     size_t fileSize = getFileSize(path);
+    size_t fileSize = getFileSize(path);
     std::cout << "[DEBUG] File size: " << fileSize << " bytes" << std::endl;
     
-    const size_t CHUNKED_THRESHOLD = 1024 * 1024; // Remettre à 1MB
+    const size_t CHUNKED_THRESHOLD = 1024 * 1024; // 1MB
     
     if (fileSize > CHUNKED_THRESHOLD) {
         std::cout << "[DEBUG] Using chunked transfer for large file" << std::endl;
         
-        this->fileFd = open(path.c_str(), O_RDONLY);
-        if (this->fileFd == -1) {
-            std::cout << "[DEBUG] Failed to open file: " << strerror(errno) << std::endl;
+        // Use ifstream instead of open
+        this->fileStream->open(path.c_str(), std::ios::in | std::ios::binary);
+        if (!this->fileStream->is_open()) {
+            std::cout << "[DEBUG] Failed to open file with ifstream: " << path << std::endl;
             throw(500);
         }
         
@@ -660,10 +659,10 @@ std::string client::prepareGetResponse(std::map<int, client>& clients, data_requ
         headers << "Content-Type: " << mimeType << "\r\n";
         headers << "Content-Length: " << fileSize << "\r\n";
         headers << "Accept-Ranges: bytes\r\n";
-        headers << "Connection: close\r\n\r\n";  // On ferme après le transfert complet
+        headers << "Connection: close\r\n\r\n";
         
         return headers.str();
     }
     
-    return "";
+    return ""; // For small files, use normal handling
 }
