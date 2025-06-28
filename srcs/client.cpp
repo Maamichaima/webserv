@@ -115,14 +115,14 @@ void client::setDataResponse()
 		}
 		return;
 	}
-	this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
+	this->data_rs.headers["Content-Type"] = "text/html";
 	this->data_rs.headers["Content-Length"] = to_string(client::errorPages[this->data_rs.status_code].size());
 	this->data_rs.body = client::errorPages[this->data_rs.status_code];
 }
 
 void client::setStatusCode()
 {
-	if(this->data_rs.status_code < 0 )
+	if(this->data_rs.status_code < 0)
 	{
 		if(this->data_rq.method == "POST")	
 			this->data_rs.status_code = 201; // Created
@@ -134,7 +134,7 @@ void client::setStatusCode()
 void client::handleResponse(int currentFd)
 {
 	setStatusCode();
-	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string(this->data_rs.status_code));
+	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string(this->data_rs.status_code));// ila kanet tehet get 
 	if(it != this->myServer.errorPages.end())
 	{
 		std::string content;
