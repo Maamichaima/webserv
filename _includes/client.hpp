@@ -61,10 +61,10 @@ class client
 
         //////////////////////////////
         std::string fileToSend;
-        int fileFd;
         size_t bytesRemaining;
         bool headersSent;
         size_t fileSize;
+        std::ifstream* fileStream;
         ////////////////////////////
         client();
         client(std::string buff, int fd);
