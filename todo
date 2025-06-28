@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
     default port / ip address
     cgi directives should be together
@@ -22,9 +23,14 @@ check long url
     +cgi m3a post mzl ma3raft kifax ntesteha
     +getMimeType b ila w7da ghankhdmo ?
     +n9ra xwiya bxwiya / cgi xi blan b7al hakak
+=======
+    +cgi xi blan b7al hakak
+    +cgi m3a post
+>>>>>>> origin/sleeper
     +cookies / sessions 
-    + nwli nckecki ila kant xi 7aja khassha tprotecta
-    + / at end begin 
-    + 403f
-    + leaks (getaddrinfo)
+
+    ***********nwli nckecki ila kant xi 7aja khassha tprotecta*********
+    +getMimeType b ila w7da ghankhdmo ?
     + timout
+    + leaks (getaddrinfo)
+    + / at end begin
