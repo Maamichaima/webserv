@@ -12,10 +12,8 @@ int main(int argc,char **argv){
         return(1);
     
     //manager.printAllServerInfo();
-    manager.initializeAll();
-    //exampleUsage();
-
-    manager.RunServer();
+    if(manager.initializeAll())    
+        manager.RunServer();
 }
 
 

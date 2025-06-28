@@ -39,6 +39,7 @@ class Server{
         location &               getLocations(std::string key ) ;
         std::string              getIpAddress();
         std::vector<std::string> getPort();
+        bool                     check_required_params();
         ~Server();
     };
     

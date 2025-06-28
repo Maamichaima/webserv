@@ -46,6 +46,12 @@ bool ServerManager::initializeAll() {
         }
 
     }
+    if(epollFds.empty())
+     {   
+        cout << "no server exist " << endl;
+        return false;
+    }
+    
     routeRequest();
     return true;
 }
