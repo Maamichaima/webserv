@@ -12,15 +12,8 @@ int main(int argc,char **argv){
         return(1);
     
     //manager.printAllServerInfo();
-    manager.initializeAll();
-    //exampleUsage();
-
-    while(1)
-    {
-        
-        manager.handle_cnx();
-          
-    }
+    if(manager.initializeAll())    
+        manager.RunServer();
 }
 
 
