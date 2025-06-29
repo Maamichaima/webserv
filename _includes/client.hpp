@@ -77,12 +77,12 @@ class client
 		std::string buildResponse();
 		void        setDataResponse();
 		// void handleResponse(int currentFd);
-        void        handleResponse(int currentFd, std::map<int, client>& clients);
+        void        handleResponse(int currentFd);
         void        sendFileChunk(int currentFd);
 		void        setDescription();
 		void        setErrorPages();
 		void        setStatusCode();
-        std::string prepareGetResponse(std::map<int, client>& clients, data_request &req, location *loc, const Server &myServer, int currentFd);
+        std::string prepareGetResponse(data_request &req, location *loc);
 };
 
 std::string                         get_line(std::string str);
@@ -90,8 +90,14 @@ std::deque<std::string>             split(const std::string& str, const std::str
 void                                post(const client &client, const Server& server);
 Server                              *chooseServer(std::vector<Server*> &routeServer,std::string host);
 int                                 readFileContent(const std::string& filePath, std::string &content);
-std::string                         headersToOneString(std::map<std::string, std::string> headers);
-template <typename T> std::string   to_string(T value);
+template <typename T>
+std::string to_string_98(T value)
+{
+	std::ostringstream oss;
+	oss << value;
+	return oss.str();
+}
+std::string headersToOneString(std::map<std::string, std::string> headers);
 std::string                         padLeftToThree(const std::string& input);
 int                                 isRedirect(int red);
 

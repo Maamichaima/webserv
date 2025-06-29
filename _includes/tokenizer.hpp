@@ -10,6 +10,10 @@
 #include <unistd.h>
 #include <cstdio>
 #include <stack>
+#include <ctime>
+#include "ServerLogger.hpp"
+
+
 
 class Server;
 struct location;
@@ -33,5 +37,6 @@ class Tokenizer
 };
 
 std::vector<std::string> splitServerConfig(const std::string& input) ;
+
 
 #endif

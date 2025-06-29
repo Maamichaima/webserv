@@ -20,7 +20,7 @@ class Server{
     
     public:
         std::string                       ip_address;
-        size_t                            MaxBodySize;
+        long int                          MaxBodySize;
         std::vector<std::string>          port;
         std::map<std::string,Socket>      comb;
         std::vector<std::string>          serverNames;

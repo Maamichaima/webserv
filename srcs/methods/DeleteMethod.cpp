@@ -66,7 +66,7 @@ std::string getPathToDelete(const client &client)
 	std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("root");
 	if(it == client.data_rq.myCloseLocation->infos.end())
 		throw(403); // Forbiden
-	int pos = new_path.find(client.data_rq.myCloseLocation->path);
+	size_t pos = new_path.find(client.data_rq.myCloseLocation->path);
 	if(pos != std::string::npos)
 		new_path.erase(pos, client.data_rq.myCloseLocation->path.length());
 	new_path = client.data_rq.myCloseLocation->infos["root"][0] + "/" + new_path;

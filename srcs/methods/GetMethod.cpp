@@ -131,7 +131,7 @@ std::string cleanPath(const std::string& input, const std::string& prefix) {
 /// @param S_ISREG is a macro for check file is regular or not (wax file ou la directory ou xi 3jab akhur) n9adro ndirouha ta b access !
 /// @param stat functin kay jib linformations 3la file (kay9lb 3lih ou sf)
 /// @return 0 for success -1 for error
-bool existFile(string &path, location *loc, string reqPath, string locPath, int currentFd)
+bool existFile(string &path, location *loc)
 {
     struct stat st;
     int check_st = stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode);
@@ -316,7 +316,7 @@ std::string getCgiInterpreter(const std::string &scriptPath, location *loc) {
 //                 }
 //             }
             
-//             envStrings.push_back("CONTENT_LENGTH=" + std::to_string(bodyContent.size()));
+//             envStrings.push_back("CONTENT_LENGTH=" + to_string_98(bodyContent.size()));
             
 //             // Set Content-Type from headers if available
 //             std::map<std::string, std::string>::const_iterator contentTypeIt = req.headers.find("content-type");
@@ -466,9 +466,9 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
 std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body) {
     std::string response;
 
-    response = "HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage + "\r\n";
+    response = "HTTP/1.1 " + to_string_98(statusCode) + " " + statusMessage + "\r\n";
     response += "Content-Type: text/html\r\n";
-    response += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+    response += "Content-Length: " + to_string_98(body.size()) + "\r\n";
     response += "Connection: close\r\n";
     response += "\r\n";
     response += body;
@@ -484,10 +484,11 @@ string checkIndexes(location* loc, const string path) {
         return "";
 
     for (size_t i = 0; i < indexes->size(); ++i) {
-        ifstream file(path + indexes->at(i).c_str());
+        std::string fullPath = path + indexes->at(i);
+        std::ifstream file(fullPath.c_str());
         if (file.is_open()) {
             file.close();
-            return path + indexes->at(i).c_str();
+            return fullPath;
         }
     }
     return "";
@@ -593,7 +594,7 @@ void client::sendFileChunk(int currentFd) {
 }
 /////////////////////////////////////////////////////////////////////////////////////
 
-string handleGetRequest(std::map<int, client>& clients, data_request &req, location *loc, const Server &myServer, int currentFd)
+string handleGetRequest(data_request &req, location *loc, int currentFd)
 {
     string locPath = normalizePath(loc->path);
     string reqPath = normalizePath(req.path);
@@ -617,7 +618,7 @@ string handleGetRequest(std::map<int, client>& clients, data_request &req, locat
                 std::string response =
                     "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
-                    "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                    "Content-Length: " + to_string_98(body.size()) + "\r\n"
                     "Connection: close\r\n"
                     "\r\n" +
                     body;
@@ -630,7 +631,7 @@ string handleGetRequest(std::map<int, client>& clients, data_request &req, locat
     
     //////////////////////////////////////////////////
 
-    if (!existFile(path, loc, reqPath, locPath, currentFd)) 
+    if (!existFile(path, loc)) 
     throw(404);
 
 
@@ -664,7 +665,7 @@ string handleGetRequest(std::map<int, client>& clients, data_request &req, locat
 }
 
 
-std::string client::prepareGetResponse(std::map<int, client>& clients, data_request &req, location *loc, const Server &myServer, int currentFd)
+std::string client::prepareGetResponse(data_request &req, location *loc)
 {
     string locPath = normalizePath(loc->path);
     string reqPath = normalizePath(req.path);
@@ -686,7 +687,7 @@ std::string client::prepareGetResponse(std::map<int, client>& clients, data_requ
                 std::string response =
                     "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/html\r\n"
-                    "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                    "Content-Length: " + to_string_98(body.size()) + "\r\n"
                     "Connection: close\r\n"
                     "\r\n" +
                     body;

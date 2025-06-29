@@ -52,7 +52,7 @@ void print(std::deque<RegEx> dq)
 	}
 }
 
-void parce_plus(std::deque<RegEx> &dq, char c)
+void parce_plus(std::deque<RegEx> &dq)
 {
 	if(dq.empty())
 	{
@@ -98,12 +98,11 @@ void escapedCharacter(std::deque<RegEx>& C, char escapedChar) {
     }
 }
 
-void parce_(std::deque<RegEx>& dq, std::string str, int &i)
+void parce_(std::deque<RegEx>& dq, std::string str, size_t &i)
 {
-	int j = 0;
 	std::string s;
 	i++;
-	int pos = str.find(']', i);
+	size_t pos = str.find(']', i);
 	if(pos == std::string::npos)
 	{
 		std::cout << "Error: expretion" << std::endl;
@@ -116,7 +115,7 @@ void parce_(std::deque<RegEx>& dq, std::string str, int &i)
 
 std::deque<RegEx> parce_expretion(std::string str)//p.**
 {
-	int i = 0;
+	size_t i = 0;
 	std::deque<RegEx> dq;
 
 	while(str[i])
@@ -146,7 +145,7 @@ std::deque<RegEx> parce_expretion(std::string str)//p.**
 			i++;
 			continue;
 		case '+':
-			parce_plus(dq, str[i]);
+			parce_plus(dq);
 			i++;
 			continue;
 		case '[':
@@ -205,7 +204,7 @@ int inRange(std::string str, char c)
 	}
 	else
 	{
-		int pos = str.find(c);
+		size_t pos = str.find(c);
 		if(pos == std::string::npos)
 		return 0;
 	}
@@ -215,7 +214,6 @@ int inRange(std::string str, char c)
 bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 {
     size_t i = 0;
-    size_t tmp = 0;
     std::deque<RegEx>::iterator it = dq.begin();
 	std::stack<BacktrackElement> backtrackStack;
 

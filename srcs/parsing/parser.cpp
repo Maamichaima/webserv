@@ -15,6 +15,7 @@ parser::parser(const parser &obj)
 
 parser &parser::operator=(const parser &obj)
 {
+	(void) obj;
     return *this;
 }
 
