@@ -160,7 +160,6 @@ string readFile(const string &path)
 {
     std::ifstream file(path.c_str(), ios::in | ios::binary);
     if (!file) return "";
-    else cout << "opning file !!\n" ;
     std::ostringstream fileContent;
     fileContent << file.rdbuf();
     return fileContent.str();
