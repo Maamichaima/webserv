@@ -25,10 +25,12 @@ class ServerManager{
         Server*                 findServerByFd(int fd) ;
         void                    printAllServerInfo() ;
         bool                    Add_new_event(int fd_socket);
-        void                    handle_cnx();
+        void                    RunServer();
         Socket*                 findSocketByFd(int fd);
         void                    routeRequest();
         void                    checkTimeOut();
+        void                    ClientDisconnected(int currentFd);
+        std::string             findPort(int currentFd);
 };
 
 

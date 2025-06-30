@@ -27,6 +27,7 @@ struct data_request
     int                                 flag_chunked;
     int                                 is_chunked;
     int                                 flag_error;
+    int                                 isCgi;
 }typedef data_request;
 
 struct data_response
@@ -56,6 +57,14 @@ class client
 		data_response                       data_rs;
         time_t                              lastActivityTime;
 
+
+        //////////////////////////////
+        std::string fileToSend;
+        size_t bytesRemaining;
+        bool headersSent;
+        size_t fileSize;
+        std::ifstream* fileStream;
+        ////////////////////////////
         client();
         client(std::string buff, int fd);
         client &operator=(const client &obj);
@@ -67,10 +76,13 @@ class client
         void        parseRequest();
 		std::string buildResponse();
 		void        setDataResponse();
-		void        handleResponse(int currentFd);
+		// void handleResponse(int currentFd);
+        void        handleResponse(int currentFd);
+        void        sendFileChunk(int currentFd);
 		void        setDescription();
 		void        setErrorPages();
 		void        setStatusCode();
+        std::string prepareGetResponse(data_request &req, location *loc);
 };
 
 std::string                         get_line(std::string str);
@@ -78,9 +90,16 @@ std::deque<std::string>             split(const std::string& str, const std::str
 void                                post(const client &client, const Server& server);
 Server                              *chooseServer(std::vector<Server*> &routeServer,std::string host);
 int                                 readFileContent(const std::string& filePath, std::string &content);
-std::string                         headersToOneString(std::map<std::string, std::string> headers);
-template <typename T> std::string   to_string(T value);
+template <typename T>
+std::string to_string_98(T value)
+{
+	std::ostringstream oss;
+	oss << value;
+	return oss.str();
+}
+std::string headersToOneString(std::map<std::string, std::string> headers);
 std::string                         padLeftToThree(const std::string& input);
 int                                 isRedirect(int red);
+
 
 extern std::map<int ,std::vector<Server*> >  SocketToServers;

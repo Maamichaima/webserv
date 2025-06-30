@@ -15,6 +15,7 @@ parser::parser(const parser &obj)
 
 parser &parser::operator=(const parser &obj)
 {
+	(void) obj;
     return *this;
 }
 
@@ -161,6 +162,10 @@ void parser::setDateToStruct(client &client, std::string &buffer)//const ??
 				client.data_rs.flaIsRedirect = 1;
 				throw(std::atoi(client.data_rq.myCloseLocation->infos["redirect"][0].c_str()));
 			}
+			std::map<std::string, std::vector<std::string> >::iterator itEx = client.data_rq.myCloseLocation->infos.find("cgi_extension");
+			std::map<std::string, std::vector<std::string> >::iterator itPath = client.data_rq.myCloseLocation->infos.find("cgi_path");
+			if(itEx != client.data_rq.myCloseLocation->infos.end() && itPath != client.data_rq.myCloseLocation->infos.end())
+				client.data_rq.isCgi = 1;
 		}
     }
     if(client.flagProgress == 2)

@@ -23,6 +23,6 @@ std::string get_line(std::string str);
 std::string trim(const std::string& str);
 void        checkKeyValueContent(std::string key, std::string value);
 void        toLower(std::string &str);
-std::string get_line_size(std::string str, int size);
+std::string get_line_size(std::string str, size_t size);
 #include    "client.hpp"
 

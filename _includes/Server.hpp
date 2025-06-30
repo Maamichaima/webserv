@@ -1,7 +1,7 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 #include "Socket.hpp"
-#include "tokenizer.hpp"
+#include "Tokenizer.hpp"
 
 
 class ServerManager;
@@ -20,7 +20,7 @@ class Server{
     
     public:
         std::string                       ip_address;
-        size_t                            MaxBodySize;
+        long int                          MaxBodySize;
         std::vector<std::string>          port;
         std::map<std::string,Socket>      comb;
         std::vector<std::string>          serverNames;
@@ -39,6 +39,7 @@ class Server{
         location &               getLocations(std::string key ) ;
         std::string              getIpAddress();
         std::vector<std::string> getPort();
+        bool                     check_required_params();
         ~Server();
     };
     

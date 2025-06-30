@@ -4,4 +4,4 @@
 #include "../../_includes/Server.hpp"
 
 void post(client &client, std::string buffer);
-std::string RandomString(int len);
+std::string RandomString(size_t len);
