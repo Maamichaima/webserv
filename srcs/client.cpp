@@ -220,6 +220,7 @@ void client::handleResponse(int currentFd, std::map<int, client>& clients)
 						string cgiOutput;
 						if (executeCgi(cgiPath, data_rq, cgiOutput)) {
 							send(currentFd, buildHttpResponse(200, "OK", cgiOutput).c_str(), buildHttpResponse(200, "OK", cgiOutput).size(), MSG_NOSIGNAL); 
+							this->closeConnection = true;
 							return;
 						}
 						throw(500);

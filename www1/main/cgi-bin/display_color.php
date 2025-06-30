@@ -1,9 +1,19 @@
 #!/usr/bin/env php
 <?php
 
+// $raw = file_get_contents('php://stdin');
 
-// Récupérer la couleur sélectionnée par l'utilisateur
-$color = isset($_POST['color']) ? $_POST['color'] : 'white'; 
+// echo $raw;
+
+// echo $_POST['color'];
+// / Read and parse POST data into $_POST superglobal
+$raw_post_data = file_get_contents('php://stdin');
+if (!empty($raw_post_data)) {
+    parse_str($raw_post_data, $_POST);
+}
+
+// Now $_POST works normally
+$color = isset($_POST['color']) ? $_POST['color'] : 'white';
 
 // Assurez-vous que la couleur est une des options autorisées pour éviter tout code malveillant
 $valid_colors = ['red', 'blue', 'green', 'yellow', 'purple'];

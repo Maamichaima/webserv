@@ -408,57 +408,157 @@ std::string getCgiInterpreter(const std::string &scriptPath, location *loc) {
 
 
 bool executeCgi(const std::string &scriptPath, const data_request &req, std::string &output) {
-
-
-    // string storeLocation = req.myCloseLocation->getInfos("upload_store")->at(0);
-    // std::string pathBody = storeLocation + "/" + req.bodyNameFile + getExtention(req);
-    // cout << "pathBody: " << pathBody << endl;
-    //content type in headers
-    string tmp;
+    string storeLocation = req.myCloseLocation->getInfos("upload_store")->at(0);
+    std::string pathBody = storeLocation + "/" + req.bodyNameFile + getExtention(req);
+    cout << "pathBody: " << pathBody << endl;
+    
     int pipefd[2];
+    int inputPipe[2];
+    
     if (pipe(pipefd) == -1)
         return false;
-    pid_t pid = fork();
-    if (pid < 0)
+    
+    // Create input pipe for POST data
+    bool needInputPipe = (req.method == "POST" && !pathBody.empty());
+    if (needInputPipe && pipe(inputPipe) == -1) {
+        close(pipefd[0]);
+        close(pipefd[1]);
         return false;
+    }
+    
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        if (needInputPipe) {
+            close(inputPipe[0]);
+            close(inputPipe[1]);
+        }
+        return false;
+    }
 
-    if (pid == 0) {
+    if (pid == 0) { // Child process
+        // Redirect stdout to pipe
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[0]);
+        close(pipefd[1]);
+        
+        // For POST, redirect stdin from input pipe
+        if (needInputPipe) {
+            cerr << "*******************" << endl;
+            dup2(inputPipe[0], STDIN_FILENO);
+            close(inputPipe[0]);
+            close(inputPipe[1]);
+        }
 
         std::string cgiPath = getCgiInterpreter(scriptPath, req.myCloseLocation);
-		if (cgiPath.empty())
-			exit(1);
+        if (cgiPath.empty())
+            exit(1);
 
-        string query = req.queryContent;
         char *argv[] = {
             (char*)cgiPath.c_str(),     
             (char*)scriptPath.c_str(),  
             NULL
         };
 
-        string reqMethod = "REQUEST_METHOD=" + req.method;
-        char *envp[] = {
-            (char*)"GATEWAY_INTERFACE=CGI/1.1",
-            (char*)reqMethod.c_str(),
-            (char*)query.c_str(),
-            NULL
-        };
-
-        execve(cgiPath.c_str(), argv, envp);
+        // Prepare environment variables
+        std::vector<std::string> envStrings;
+        std::vector<char*> envp;
+        
+        // Basic CGI environment
+        envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
+        envStrings.push_back("REQUEST_METHOD=" + req.method);
+        envStrings.push_back("SCRIPT_NAME=" + scriptPath);
+        envStrings.push_back("SERVER_PROTOCOL=HTTP/1.1");
+        envStrings.push_back("REDIRECT_STATUS=200");
+        
+        // Method-specific environment variables
+        if (req.method == "GET") {
+            envStrings.push_back("QUERY_STRING=" + req.queryContent);
+        }
+        else if (req.method == "POST") {
+            // Get file size for Content-Length
+            struct stat st;
+            size_t contentLength = 0;
+            if (stat(pathBody.c_str(), &st) == 0) {
+                contentLength = st.st_size;
+            }
+            
+            envStrings.push_back("CONTENT_LENGTH=" + std::to_string(contentLength));
+            
+            // Set Content-Type from headers if available
+            std::map<std::string, std::string>::const_iterator contentTypeIt = req.headers.find("content-type");
+            if (contentTypeIt != req.headers.end()) {
+                envStrings.push_back("CONTENT_TYPE=" + contentTypeIt->second);
+            } else {
+                envStrings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
+            }
+            
+            // Also include query string for POST if it exists
+            envStrings.push_back("QUERY_STRING=" + req.queryContent);
+        }
+        
+        // Add HTTP headers as environment variables
+        for (std::map<std::string, std::string>::const_iterator it = req.headers.begin(); 
+            it != req.headers.end(); ++it) {
+            std::string headerName = "HTTP_" + it->first;
+            // Convert to uppercase and replace - with _
+            for (size_t i = 0; i < headerName.length(); ++i) {
+                headerName[i] = std::toupper(headerName[i]);
+                if (headerName[i] == '-') headerName[i] = '_';
+            }
+            envStrings.push_back(headerName + "=" + it->second);
+        }
+        
+        // Convert strings to char* array
+        for (size_t i = 0; i < envStrings.size(); ++i) {
+            envp.push_back(const_cast<char*>(envStrings[i].c_str()));
+        }
+        envp.push_back(NULL);
+        execve(cgiPath.c_str(), argv, &envp[0]);
         exit(1);
-    } else {
+    } 
+    else { // Parent process
         close(pipefd[1]);
+        
+        if (needInputPipe) {
+            close(inputPipe[0]);
+            
+            // Read and write POST data from file to CGI script's stdin
+            std::ifstream bodyFile(pathBody.c_str(), std::ios::binary);
+            if (bodyFile.is_open()) {
+                char buffer[4096];
+                while (bodyFile.read(buffer, sizeof(buffer)) || bodyFile.gcount() > 0) {
+                    std::streamsize bytesRead = bodyFile.gcount();
+                    buffer[bytesRead] = '\0';
+                    ssize_t written = write(inputPipe[1], buffer, bytesRead);
+                    std::cout << "==================: " << buffer <<"|" <<  std::endl;
+                    if (written != bytesRead) {
+                        cout << "Warning: Not all POST data was written to CGI" << endl;
+                        break;
+                    }
+                }
+                bodyFile.close();
+            }
+            close(inputPipe[1]);
+        }
+        
+        // Read CGI output
         char buffer[4096];
         ssize_t bytesRead;
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
             output.append(buffer, bytesRead);
+        }
         close(pipefd[0]);
+
         int status;
         waitpid(pid, &status, 0);
 
-        if (status != 0)
+        if (WEXITSTATUS(status) != 0) {
+            cout << "CGI script exited with status: " << WEXITSTATUS(status) << endl;
             throw(500);
+        }
+        
         return true;
     }
 }

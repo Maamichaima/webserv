@@ -1,6 +1,6 @@
 CXX = c++
 
-CXXFLAGS = 
+CXXFLAGS = -fsanitize=address -g3
 # -fsanitize=address -g3  -std=c++98 -Wall -Wextra -Werror 
 
 CPPFILES =  main.cpp srcs/Socket.cpp srcs/ServerManager.cpp srcs/Server.cpp srcs/parsing/Tokenizer.cpp \
