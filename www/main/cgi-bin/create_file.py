@@ -13,12 +13,12 @@ filename = form.getvalue("filename")
 content = form.getvalue("content")
 
 # Chemin où le fichier sera créé
-directory = "./www1/main/cgi-bin/uploads/"
+directory = "./www/main/cgi-bin/uploads/"
 filepath = os.path.join(directory, filename)
 
 file = Path(filepath)
 
-print("Content-Type: text/html; charset=utf-8\r\n\r\n")  # En-tête HTTP
+# print("Content-Type: text/html; charset=utf-8\r\n\r\n")  # En-tête HTTP
 
 # si le fichier n'existe pas
 if (file.exists()):

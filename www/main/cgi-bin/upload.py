@@ -4,6 +4,10 @@ import cgi
 import os
 import cgitb
 
+# ------WebKitFormBoundaryF1ier7rpAskdYvLt
+# Content-Disposition: form-data; name="file"; filename="webserv.conf"
+# Content-Type: application/octet-stream
+
 cgitb.enable()
 
 upload_dir = "./www/main/cgi-bin/uploads/"

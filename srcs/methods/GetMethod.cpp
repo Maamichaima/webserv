@@ -408,8 +408,7 @@ std::string getCgiInterpreter(const std::string &scriptPath, location *loc) {
 
 
 bool executeCgi(const std::string &scriptPath, const data_request &req, std::string &output) {
-    string storeLocation = req.myCloseLocation->getInfos("upload_store")->at(0);
-    std::string pathBody = storeLocation + "/" + req.bodyNameFile + getExtention(req);
+    std::string pathBody =  req.bodyNameFile;
     cout << "pathBody: " << pathBody << endl;
     
     int pipefd[2];
@@ -530,9 +529,9 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
                 char buffer[4096];
                 while (bodyFile.read(buffer, sizeof(buffer)) || bodyFile.gcount() > 0) {
                     std::streamsize bytesRead = bodyFile.gcount();
-                    buffer[bytesRead] = '\0';
+                    buffer[bytesRead - 1] = '\0';
                     ssize_t written = write(inputPipe[1], buffer, bytesRead);
-                    std::cout << "==================: " << buffer <<"|" <<  std::endl;
+                    // std::cout << "==================: " << buffer <<"|" <<  std::endl;
                     if (written != bytesRead) {
                         cout << "Warning: Not all POST data was written to CGI" << endl;
                         break;
@@ -705,6 +704,7 @@ string handleGetRequest(data_request &req, location *loc, int currentFd)
         throw(404);
     rootVar = loc->getInfos("root")->at(0) + "/";
     string path = switchLocation(locPath, reqPath, rootVar);
+
 
     DIR* dir = opendir(path.c_str());
     string indexFound = checkIndexes(loc, rootVar + "/");

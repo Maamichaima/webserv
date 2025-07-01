@@ -60,7 +60,6 @@ int parser::parse(client &client)
 			client.check_http_body_rules();
 			client.flagProgress = 2;
 			client.buffer.erase(0, header.size());
-            client.data_rq.bodyNameFile = RandomString(5);
 			std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("allowed_methods");
 			if(it != client.data_rq.myCloseLocation->infos.end() && std::find(it->second.begin(), it->second.end(), client.data_rq.method) == it->second.end())
 				throw (405); // Method Not Allowed

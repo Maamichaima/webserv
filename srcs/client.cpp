@@ -143,21 +143,6 @@ void client::setStatusCode()
 void client::handleResponse(int currentFd)
 {
 	setStatusCode();
-	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string_98(this->data_rs.status_code));// ila kanet tehet get 
-	if(it != this->myServer.errorPages.end())
-	{
-		std::string content;
-		if(readFileContent(it->second, content))
-		{
-			this->data_rs.startLine = "HTTP/1.1 " + to_string_98(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
-			this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
-			this->data_rs.headers["Content-Length"] = to_string_98(content.size());
-			this->data_rs.body = content;
-			std::string response = buildResponse();
-			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-			return ;
-		}
-	}
 	if(this->data_rs.status_code < 0 || this->data_rq.isCgi)
 	{
 		try
@@ -277,10 +262,26 @@ void client::handleResponse(int currentFd)
 			this->data_rs.status_code = statusCode;
 		}
 	}
-	
+	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string_98(this->data_rs.status_code));// ila kanet tehet get 
+	if(it != this->myServer.errorPages.end())
+	{
+		std::string content;
+		if(readFileContent(it->second, content))
+		{
+			this->data_rs.startLine = "HTTP/1.1 " + to_string_98(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
+			this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
+			this->data_rs.headers["Content-Length"] = to_string_98(content.size());
+			this->data_rs.body = content;
+			std::string response = buildResponse();
+			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+			this->closeConnection = true;
+			return ;
+		}
+	}
     setDataResponse();
     std::string response = buildResponse();
     send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+	this->closeConnection = true;
 }
 
 void client::check_http_body_rules()
@@ -310,5 +311,12 @@ void client::check_http_body_rules()
 			throw(411);//Length Required
 		if(it_cType == this->data_rq.headers.end() && this->data_rq.size_body > 0)
 			throw(400); //Bad Request
+		std::map<std::string, std::vector<std::string> >::iterator it = this->data_rq.myCloseLocation->infos.find("upload_store");
+		if(it == this->data_rq.myCloseLocation->infos.end())
+			throw(404);
+		if(this->data_rq.isCgi == 0)
+			this->data_rq.bodyNameFile = this->data_rq.myCloseLocation->infos["upload_store"][0] + "/" + RandomString(5) + getExtension(this->data_rq);
+		else
+			this->data_rq.bodyNameFile = "/tmp/" + RandomString(5);//check protect 
 	}
 }
