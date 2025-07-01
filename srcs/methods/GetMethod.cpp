@@ -410,7 +410,7 @@ std::string getCgiInterpreter(const std::string &scriptPath, location *loc) {
 bool executeCgi(const std::string &scriptPath, const data_request &req, std::string &output)
 {
     // string storeLocation = req.myCloseLocation->getInfos("upload_store")->at(0);
-    // std::string pathBody = storeLocation + "/" + req.bodyNameFile + getExtention(req);
+    // std::string pathBody = storeLocation + "/" + req.bodyNameFile + getExtension(req);
     // cout << "pathBody: " << pathBody << endl;
     //content type in headers
     string tmp;

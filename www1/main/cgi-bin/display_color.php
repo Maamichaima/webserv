@@ -1,7 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-
 // Récupérer la couleur sélectionnée par l'utilisateur
 $color = isset($_POST['color']) ? $_POST['color'] : 'white'; 
 

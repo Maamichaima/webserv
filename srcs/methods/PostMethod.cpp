@@ -115,7 +115,7 @@ std::string RandomString(size_t len)
 	return newstr;
 }
 
-std::string getExtention(data_request data)
+std::string getExtension(data_request data)
 {
     std::string tex;
 	std::map<std::string, std::string> mimeMap = createMimeTypeMap();
@@ -125,35 +125,26 @@ std::string getExtention(data_request data)
         return (mimeMap[data.headers["content-type"]]);
     }
     return "";
-    return "";
 }
 
 void post(client &client, std::string buffer)
 {
-    std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("upload_store");// check if mylocation not null 
-    if(client.data_rq.myCloseLocation && it != client.data_rq.myCloseLocation->infos.end())
-    {
-        std::string name_file = client.data_rq.myCloseLocation->infos["upload_store"][0] + "/" + "/" + client.data_rq.bodyNameFile + getExtention(client.data_rq);
-		std::ofstream file(name_file.c_str(), std::ios::app);
-		// std::cout << name_file << "==========" << file.is_open() << "\n";
-		if (!file.is_open())
-		{
-			std::cout << name_file << " not open \n";
-			throw(500);
-		}
-		struct stat stat_buff;// chunked 
-		if(stat(name_file.c_str(), &stat_buff) == 0)
-		{
-			// std::cout << "size of our file " << stat_buff.st_size << " octets \n";
-			// std::cout << "max body size " << client.myServer.MaxBodySize << " octets \n";
-			if(stat_buff.st_size > client.myServer.MaxBodySize)
-				throw(413); // Payload Too Larg
-		}
-		file << buffer;
-		file.close();
-    }
-    else
+	std::string name_file = client.data_rq.bodyNameFile;// + getExtension(client.data_rq);
+	std::ofstream file(name_file.c_str(), std::ios::app);
+	std::cout << name_file << "========== " << file.is_open() << "\n";
+	if (!file.is_open())
 	{
-		throw(404);
-	} 
+		std::cout << name_file << " not open \n";
+		throw(500);
+	}
+	struct stat stat_buff;// chunked 
+	if(stat(name_file.c_str(), &stat_buff) == 0)
+	{
+		// std::cout << "size of our file " << stat_buff.st_size << " octets \n";
+		// std::cout << "max body size " << client.myServer.MaxBodySize << " octets \n";
+		if(stat_buff.st_size > client.myServer.MaxBodySize)
+			throw(413); // Payload Too Larg
+	}
+	file << buffer;
+	file.close();
 }

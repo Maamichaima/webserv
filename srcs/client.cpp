@@ -310,5 +310,12 @@ void client::check_http_body_rules()
 			throw(411);//Length Required
 		if(it_cType == this->data_rq.headers.end() && this->data_rq.size_body > 0)
 			throw(400); //Bad Request
+		std::map<std::string, std::vector<std::string> >::iterator it = this->data_rq.myCloseLocation->infos.find("upload_store");
+		if(it == this->data_rq.myCloseLocation->infos.end())
+			throw(404);
+		if(this->data_rq.isCgi == 0)
+			this->data_rq.bodyNameFile = this->data_rq.myCloseLocation->infos["upload_store"][0] + "/" + RandomString(5) + getExtension(this->data_rq);
+		else
+			this->data_rq.bodyNameFile = "/tmp/" + RandomString(5);//check protect 
 	}
 }

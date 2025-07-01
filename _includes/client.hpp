@@ -97,9 +97,9 @@ std::string to_string_98(T value)
 	oss << value;
 	return oss.str();
 }
-std::string headersToOneString(std::map<std::string, std::string> headers);
+std::string 						headersToOneString(std::map<std::string, std::string> headers);
 std::string                         padLeftToThree(const std::string& input);
 int                                 isRedirect(int red);
-
-
+std::string 						RandomString(size_t len);
+std::string 						getExtension(data_request data);
 extern std::map<int ,std::vector<Server*> >  SocketToServers;
