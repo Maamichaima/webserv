@@ -137,6 +137,8 @@ void post(client &client, std::string buffer)
 		std::cout << name_file << " not open \n";
 		throw(500);
 	}
+	file << buffer;
+	file.close();
 	struct stat stat_buff;// chunked 
 	if(stat(name_file.c_str(), &stat_buff) == 0)
 	{
@@ -145,6 +147,4 @@ void post(client &client, std::string buffer)
 		if(stat_buff.st_size > client.myServer.MaxBodySize)
 			throw(413); // Payload Too Larg
 	}
-	file << buffer;
-	file.close();
 }
