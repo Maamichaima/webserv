@@ -47,7 +47,7 @@ client::~client()
 		if (fileStream->is_open()) {
 			fileStream->close();
 		}
-		delete fileStream;
+		// delete fileStream;
 		fileStream = NULL;
 	}
 	// close (server_fd);
@@ -108,7 +108,7 @@ std::string client::buildResponse()
 
 void client::setDataResponse()
 {
-	this->data_rs.startLine = "HTTP/1.1 " + padLeftToThree(to_string(this->data_rs.status_code)) + " " + client::description[this->data_rs.status_code] + "\r\n";
+	this->data_rs.startLine = "HTTP/1.1 " + padLeftToThree(to_string_98(this->data_rs.status_code)) + " " + client::description[this->data_rs.status_code] + "\r\n";
 	
 	if(this->data_rs.flaIsRedirect)
 	{
@@ -120,12 +120,12 @@ void client::setDataResponse()
 		{
 			this->data_rs.body = this->data_rq.myCloseLocation->infos["redirect"][1];
 			this->data_rs.headers["Content-Type"] = "text/txt;";
-			this->data_rs.headers["Content-Length"] = to_string(this->data_rs.body.size());
+			this->data_rs.headers["Content-Length"] = to_string_98(this->data_rs.body.size());
 		}
 		return;
 	}
 	this->data_rs.headers["Content-Type"] = "text/html";
-	this->data_rs.headers["Content-Length"] = to_string(client::errorPages[this->data_rs.status_code].size());
+	this->data_rs.headers["Content-Length"] = to_string_98(client::errorPages[this->data_rs.status_code].size());
 	this->data_rs.body = client::errorPages[this->data_rs.status_code];
 }
 
@@ -140,18 +140,18 @@ void client::setStatusCode()
 	}
 }
 
-void client::handleResponse(int currentFd, std::map<int, client>& clients)
+void client::handleResponse(int currentFd)
 {
 	setStatusCode();
-	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string(this->data_rs.status_code));// ila kanet tehet get 
+	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string_98(this->data_rs.status_code));// ila kanet tehet get 
 	if(it != this->myServer.errorPages.end())
 	{
 		std::string content;
 		if(readFileContent(it->second, content))
 		{
-			this->data_rs.startLine = "HTTP/1.1 " + to_string(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
+			this->data_rs.startLine = "HTTP/1.1 " + to_string_98(this->data_rs.status_code) + " " + client::description[this->data_rs.status_code] + "\r\n";
 			this->data_rs.headers["Content-Type"] = "text/html; charset=UTF-8";
-			this->data_rs.headers["Content-Length"] = to_string(content.size());
+			this->data_rs.headers["Content-Length"] = to_string_98(content.size());
 			this->data_rs.body = content;
 			std::string response = buildResponse();
 			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
@@ -164,7 +164,7 @@ void client::handleResponse(int currentFd, std::map<int, client>& clients)
 		{
 			// location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
 			//////////////ReSend if not "/" in the end////////////////
-			if (data_rq.path.back() != '/' && this->data_rq.myCloseLocation)
+			if (data_rq.path[data_rq.path.size() - 1] != '/' && this->data_rq.myCloseLocation)
 			{
 				string locPath = normalizePath(this->data_rq.myCloseLocation->path);
 				string reqPath = normalizePath(data_rq.path);
@@ -242,7 +242,7 @@ void client::handleResponse(int currentFd, std::map<int, client>& clients)
 				}
 
 				if (!this->headersSent && !this->fileStream->is_open()) {
-					std::string headers = this->prepareGetResponse(clients, this->data_rq, loc, this->myServer, currentFd);
+					std::string headers = this->prepareGetResponse(this->data_rq, loc);
 					if (!headers.empty()) {
 						ssize_t sent = send(currentFd, headers.c_str(), headers.size(), MSG_NOSIGNAL);
 						if (sent > 0) {
@@ -254,7 +254,7 @@ void client::handleResponse(int currentFd, std::map<int, client>& clients)
 						}
 						return;
 					} else {
-						std::string response = handleGetRequest(clients, this->data_rq, loc, this->myServer, currentFd);
+						std::string response = handleGetRequest(this->data_rq, loc, currentFd);
 						send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 						return;
 					}

@@ -29,13 +29,13 @@ std::string headersToOneString(std::map<std::string, std::string> headers)
 	return head;
 }
 
-template <typename T>
-std::string to_string(T value)
-{
-	std::ostringstream oss;
-	oss << value;
-	return oss.str();
-}
+// template <typename T>
+// std::string to_string_98(T value)
+// {
+// 	std::ostringstream oss;
+// 	oss << value;
+// 	return oss.str();
+// }
 
 std::string padLeftToThree(const std::string& input)
 {
@@ -77,11 +77,11 @@ void checkKeyValueContent(std::string key, std::string value)
 }
 
 std::string trim(const std::string& str) {
-    int start = 0;
+    size_t start = 0;
     while (start < str.size() && std::isspace(str[start]))
         ++start;
 
-    int end = str.size();
+    size_t end = str.size();
     while (end > start && std::isspace(str[end - 1]))
         --end;
 
@@ -123,7 +123,7 @@ std::deque<std::string> split(const std::string& str, const std::string& delimit
     return result;
 }
 
-std::string get_line_size(std::string str, int size)
+std::string get_line_size(std::string str, size_t size)
 {
 	std::string sub;
 

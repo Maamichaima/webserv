@@ -4,7 +4,7 @@ import cgi
 import time
 
 # En-têtes HTTP requis
-print("Content-Type: text/html\r\n\r\n")
+# print("Content-Type: text/html\r\n\r\n")
 # time.sleep(100)
 # Récupérer les données du formulaire
 form = cgi.FieldStorage()

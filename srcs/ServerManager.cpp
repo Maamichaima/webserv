@@ -180,7 +180,7 @@ void    ServerManager::RunServer()
                 clients[currentFd].parseRequest();
             else if (events[i].events & EPOLLOUT) 
             {
-                clients[currentFd].handleResponse(currentFd, clients);
+                clients[currentFd].handleResponse(currentFd);
                 if(clients[currentFd].closeConnection)
                     ClientDisconnected(currentFd);
             }

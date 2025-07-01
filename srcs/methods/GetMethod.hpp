@@ -22,7 +22,7 @@ void print_data(data_request& req);
 bool existFile(const string &fullPath, location *loc);
 string readFile(const string &fullPath);
 std::string getMimeType(const std::string& path);
-string handleGetRequest(std::map<int, client>& clients, data_request &req, location *loc, const Server &myServer, int currentFd);
+string handleGetRequest(data_request &req, location *loc, int currentFd);
 // string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd);
 string checkIndexes(location* loc, const string path);
 

@@ -101,7 +101,7 @@ std::map<std::string, std::string> createMimeTypeMap() {
     return inverseMimeMap;
 }
 
-std::string RandomString(int len)
+std::string RandomString(size_t len)
 {
 	srand(static_cast<unsigned int>(time(0)));
 	std::string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -130,11 +130,11 @@ std::string getExtention(data_request data)
 
 void post(client &client, std::string buffer)
 {
-    std::map<std::string, std::vector<std::string>>::iterator it = client.data_rq.myCloseLocation->infos.find("upload_store");// check if mylocation not null 
+    std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("upload_store");// check if mylocation not null 
     if(client.data_rq.myCloseLocation && it != client.data_rq.myCloseLocation->infos.end())
     {
         std::string name_file = client.data_rq.myCloseLocation->infos["upload_store"][0] + "/" + "/" + client.data_rq.bodyNameFile + getExtention(client.data_rq);
-		std::ofstream file(name_file, std::ios::app);
+		std::ofstream file(name_file.c_str(), std::ios::app);
 		// std::cout << name_file << "==========" << file.is_open() << "\n";
 		if (!file.is_open())
 		{
