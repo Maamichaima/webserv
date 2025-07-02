@@ -16,14 +16,14 @@ form = cgi.FieldStorage()
 
 file_item = form['file']
 
-print("Content-Type: text/html; charset=utf-8\r\n", end = "")
-print("\r\n", end = "")
+# print("Content-Type: text/html; charset=utf-8\r\n", end = "")
+# print("\r\n", end = "")
 if file_item.filename:
     filename = os.path.basename(file_item.filename)
     filepath = os.path.join(upload_dir, filename)
-
+    # print("hadaaa--> " + filepath)
     try:
-        with open(filepath, 'wb') as output_file:
+        with open(filepath, 'w') as output_file:
             while True:
                 if not chunk:
                     break

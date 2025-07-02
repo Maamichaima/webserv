@@ -147,7 +147,7 @@ bool    param_Syntaxe(std::string key, std::vector<std::string> values, Server &
         return(check_server_names(values,server));
     else if( key == "error_page")
         return(check_error_page(values,server));
-    else if(key =="client_max_body_size" && server.MaxBodySize == 0 )
+    else if(key =="client_max_body_size" && server.MaxBodySize == -1)
         return(check_client_max_body_size(values,server));
     else 
         return false;

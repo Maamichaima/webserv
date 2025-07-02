@@ -240,6 +240,8 @@ void client::handleResponse(int currentFd)
 						return;
 					} else {
 						std::string response = handleGetRequest(this->data_rq, loc, currentFd);
+						// std::cout << "***************\n\n " << response << "*************\n";
+						// exit(0);
 						send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 						return;
 					}
