@@ -40,4 +40,6 @@ std::string getExtensions(const std::string &path);
 std::string getCgiInterpreter(const std::string &scriptPath, location &loc);
 bool executeCgi(const std::string &scriptPath, const data_request &req, std::string &output);
 std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body);
+std::string parseCgiOutput(const std::string &cgiOutput, bool &hasHeaders);
+std::string buildCgiHttpResponse(const std::string &cgiOutput);
 std::string getExtention(data_request data);

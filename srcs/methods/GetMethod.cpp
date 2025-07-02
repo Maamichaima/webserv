@@ -527,9 +527,9 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
             std::ifstream bodyFile(pathBody.c_str(), std::ios::binary);
             if (bodyFile.is_open()) {
                 char buffer[4096];
-                while (bodyFile.read(buffer, sizeof(buffer)) || bodyFile.gcount() > 0) {
+                while (bodyFile.read(buffer, sizeof(buffer)- 1) || bodyFile.gcount() > 0) {
                     std::streamsize bytesRead = bodyFile.gcount();
-                    buffer[bytesRead - 1] = '\0';
+                    buffer[bytesRead] = '\0';
                     ssize_t written = write(inputPipe[1], buffer, bytesRead);
                     // std::cout << "==================: " << buffer <<"|" <<  std::endl;
                     if (written != bytesRead) {
@@ -840,3 +840,63 @@ std::string client::prepareGetResponse(data_request &req, location *loc)
     
     return ""; // For small files, use normal handling
 }
+
+//////////////////////////////////////////CGI RESPONSE PARSING////////////////////////////////////////////
+
+std::string parseCgiOutput(const std::string &cgiOutput, bool &hasHeaders) {
+    hasHeaders = false;
+    
+    // Look for the double CRLF that separates headers from body
+    size_t headerEnd = cgiOutput.find("\r\n\r\n");
+    if (headerEnd == std::string::npos) {
+        headerEnd = cgiOutput.find("\n\n");
+        if (headerEnd == std::string::npos) {
+            // No headers found, return as is
+            return cgiOutput;
+        }
+    }
+    
+    // Check if the first part looks like HTTP headers
+    std::string headerPart = cgiOutput.substr(0, headerEnd);
+    
+    // Simple check: look for common header patterns
+    if (headerPart.find("Content-Type:") != std::string::npos ||
+        headerPart.find("Location:") != std::string::npos ||
+        headerPart.find("Set-Cookie:") != std::string::npos ||
+        headerPart.find("Status:") != std::string::npos ||
+        headerPart.find(":") != std::string::npos) {
+        hasHeaders = true;
+        return cgiOutput; // Return with headers intact
+    }
+    
+    // No valid headers found
+    return cgiOutput;
+}
+
+std::string buildCgiHttpResponse(const std::string &cgiOutput) {
+    bool hasHeaders = false;
+    std::string processedOutput = parseCgiOutput(cgiOutput, hasHeaders);
+    
+    if (hasHeaders) {
+        // CGI script provided headers, check if it has HTTP status line
+        if (processedOutput.find("HTTP/1.1") == 0 || processedOutput.find("HTTP/1.0") == 0) {
+            // Script provided complete HTTP response
+            return processedOutput;
+        } else {
+            // Script provided headers but no status line, add HTTP/1.1 200 OK
+            return "HTTP/1.1 200 OK\r\n" + processedOutput;
+        }
+    } else {
+        // No headers provided by script, create basic HTTP response
+        std::string response;
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: text/html\r\n";
+        response += "Content-Length: " + to_string_98(processedOutput.size()) + "\r\n";
+        response += "Connection: close\r\n";
+        response += "\r\n";
+        response += processedOutput;
+        return response;
+    }
+}
+
+//////////////////////////////////////////CGI////////////////////////////////////////////
