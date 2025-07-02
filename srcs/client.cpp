@@ -154,7 +154,10 @@ void client::handleResponse(int currentFd)
 			this->data_rs.headers["Content-Length"] = to_string_98(content.size());
 			this->data_rs.body = content;
 			std::string response = buildResponse();
+			// exit(0);
 			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+			std::cout << response << "\n";
+			this->closeConnection = true;
 			return ;
 		}
 	}
@@ -280,6 +283,7 @@ void client::handleResponse(int currentFd)
     setDataResponse();
     std::string response = buildResponse();
     send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+	this->closeConnection = true;
 }
 
 void client::check_http_body_rules()

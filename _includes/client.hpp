@@ -11,7 +11,7 @@
 #include "parser.hpp"
 #include "Server.hpp"
 
-#define    TIMEOUT 180
+#define    TIMEOUT 60
 
 struct data_request
 {
