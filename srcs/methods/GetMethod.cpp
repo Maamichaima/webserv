@@ -527,9 +527,9 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
             std::ifstream bodyFile(pathBody.c_str(), std::ios::binary);
             if (bodyFile.is_open()) {
                 char buffer[4096];
-                while (bodyFile.read(buffer, sizeof(buffer)) || bodyFile.gcount() > 0) {
+                while (bodyFile.read(buffer, sizeof(buffer) - 1) || bodyFile.gcount() > 0) {
                     std::streamsize bytesRead = bodyFile.gcount();
-                    buffer[bytesRead - 1] = '\0';
+                    buffer[bytesRead] = '\0';
                     ssize_t written = write(inputPipe[1], buffer, bytesRead);
                     // std::cout << "==================: " << buffer <<"|" <<  std::endl;
                     if (written != bytesRead) {
