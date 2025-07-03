@@ -60,7 +60,7 @@ std::vector<std::string> peekValues(Tokenizer& tokenizer,bool &foundSemicolon) {
         tokenizer.advance();
     }
     if (tokenizer.hasMore() && tokenizer.peek() == ";") {
-        foundSemicolon = true;
+         foundSemicolon = true;
         tokenizer.advance(); 
     }
     return vec;
@@ -81,11 +81,12 @@ bool location::validParameter(Tokenizer& tokenizer) {
     bool foundSemicolon = false;
     while (tokenizer.hasMore() && tokenizer.peek() != "}") {
         key = tokenizer.peek();
+        foundSemicolon = false;
         if (infos.find(key) != infos.end()) 
             return false;
         tokenizer.advance();
         std::vector<std::string> newValues = peekValues(tokenizer,foundSemicolon);
-        if(newValues.empty() || !foundSemicolon )
+        if( !foundSemicolon || newValues.empty() )
             return false;
         if(!check_locations_key(key,newValues))
             return false;
@@ -185,6 +186,7 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
         std::string currentPort = port[i];
 
         Socket* existingSocket = findExistingSocket(allServers, currentPort, currentIndex);
+        Socket  *socket = &comb[port[i]];
         if(existingSocket != NULL)
         {
             comb[currentPort] = *existingSocket;
@@ -194,7 +196,6 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
             << BOLD << YELLOW  << ":" << port[i] << RESET << std::endl;
         }
         else{
-            Socket  *socket = &comb[port[i]];
             if (!socket->initialize(port[i],getIpAddress()) || !socket->create_Socket())
             {
                 std::cout << " <getaddrinfo> error " << BOLD << RED << "✗ Failed to bind port " << port[i] << RESET << std::endl;
@@ -211,6 +212,11 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
             ServerLogger::serverCreated(port[i]);
            
         }
+
+        // if (socket->host_info != NULL) {
+        //     freeaddrinfo(socket->host_info);
+        //     socket->host_info = NULL;
+        // }
     }
     return true;
 }

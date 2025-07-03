@@ -125,7 +125,7 @@ void ServerManager::checkTimeOut() {
             cl.setDataResponse();
             std::string response = cl.buildResponse();
             if( send(clientFd, response.c_str(), response.size(), MSG_NOSIGNAL) == -1)
-                perror("send failed" );
+                //perror("send failed" );
                // std::cerr << "send failed" << std::endl;
             ClientDisconnected(clientFd);
         }
@@ -184,16 +184,11 @@ void    ServerManager::RunServer()
             else if (events[i].events & EPOLLOUT) 
             {
                 clients[currentFd].handleResponse(currentFd);
-               // clients[currentFd].closeConnection = true;
                 // if(clients[currentFd].closeConnection)
                 //     ClientDisconnected(currentFd);
             }
             if(clients[currentFd].closeConnection)
-            {
-                std::cout <<  "hello ooooooo" << std::endl;
                 ClientDisconnected(currentFd);
-
-            }
                
         }
     }
