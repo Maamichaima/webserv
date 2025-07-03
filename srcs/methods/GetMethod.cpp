@@ -3,6 +3,11 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <unistd.h>
+#include <iostream>
 
 using std::cout;
 
@@ -29,48 +34,32 @@ std::string normalizePath(const std::string &path) {
   return result;
 }
 
-
 location *getClosestLocation(const Server &server, const std::string &requestPath) {
-  location *bestMatch = NULL;
-  size_t bestLength = 0;
+    location *bestMatch = NULL;
+    size_t bestLength = 0;
 
-  std::string normRequest = normalizePath(requestPath);
+    std::string normRequest = normalizePath(requestPath);
 
-  for (std::map<std::string, location>::const_iterator it = server.locations.begin();
-       it != server.locations.end(); ++it)
-  {
-    std::string normLocPath = normalizePath(it->first);
+    for (std::map<std::string, location>::const_iterator it = server.locations.begin();
+        it != server.locations.end(); ++it)
+    {
+        std::string normLocPath = normalizePath(it->first);
 
-    if (normRequest.find(normLocPath) == 0 &&
-        (normRequest.size() == normLocPath.size() ||
-         normRequest[normLocPath.size()] == '/' || normLocPath == "/")) {
+        if (normRequest.find(normLocPath) == 0 &&
+            (normRequest.size() == normLocPath.size() ||
+                normRequest[normLocPath.size()] == '/' || normLocPath == "/")) {
 
-      if (normLocPath.size() > bestLength) {
-        bestLength = normLocPath.size();
-        bestMatch = const_cast<location *>(&it->second);
-      }
+            if (normLocPath.size() > bestLength) {
+            bestLength = normLocPath.size();
+            bestMatch = const_cast<location *>(&it->second);
+            }
+        }
     }
-  }
 
-  return bestMatch;
+    return bestMatch;
 }
-
-
-
-void print_data(data_request& req) 
-{
-    std::cout << "===== HEADERS RECEIVED =====" << std::endl;   
-    
-    for (std::map<std::string, std::string>::const_iterator it = req.headers.begin(); it != req.headers.end(); ++it)
-        std::cout << it->first << ": " << it->second << std::endl;
-}
-
-#include <iostream>
-#include <string>
-#include <dirent.h>
 
 std::string listDirectory(const std::string& path, string reqPath) {
-    // cout << "path in listDirect: " << path << endl;
     DIR* dir = opendir(path.c_str());
     std::string html = "<html><body>\n";
     html += "<h1>Index of " + path + "</h1>\n";
@@ -100,33 +89,6 @@ int isDirectory(const std::string &fullPath) {
     return S_ISDIR(info.st_mode);
 }
 
-string removeLocation(string& input, const string& prefix) {
-    size_t pos = 0;
-
-    while (pos < input.size() && input[pos] == '/')
-        pos++;
-    input = string("/") + input;
-    if (input.substr(pos, prefix.size()) == prefix)
-        pos += prefix.size();
-
-    return input.substr(pos);
-}
-
-std::string cleanPath(const std::string& input, const std::string& prefix) {
-    size_t start = input.find_first_not_of('/');
-    if (start == std::string::npos)
-        return "";
-
-    std::string cleaned = input.substr(start);
-    cout << "cleaned: " << cleaned << endl;
-    if (cleaned.compare(0, prefix.size(), prefix) == 0) {
-        cout << "is here !!" << endl;
-        return cleaned.substr(prefix.size());
-    }
-
-    return cleaned;
-}
-
 /// @brief existFiles function check fullPath is file and path is correct
 /// @param S_ISREG is a macro for check file is regular or not (wax file ou la directory ou xi 3jab akhur) n9adro ndirouha ta b access !
 /// @param stat functin kay jib linformations 3la file (kay9lb 3lih ou sf)
@@ -141,15 +103,12 @@ bool existFile(string &path, location *loc)
         {
             string checkIndex = checkIndexes(loc, path + "/");
             if (checkIndex == "")
-            {
-                // Don't send response here, just return false
-                // The calling function will handle autoindex
                 return false;
-            }
             else
                 path = checkIndex;
         }
     }
+
     return(stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode));
 }
         
@@ -180,6 +139,7 @@ std::string getMimeType(const std::string& path) {
 //////////////////////////////////////////CGI////////////////////////////////////////////
 bool endsWith(const std::string& str, const std::string& suffix) {
     if (str.length() < suffix.length()) return false;
+
     return str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0;
 }
 
@@ -189,10 +149,9 @@ bool checkExtension(const std::string& url, const std::vector<std::string>& cgiE
             return true;
         }
     }
-    // std::cout << "No matching extension." << std::endl;
+
     return false;
 }
-
 
 bool isCgiConfigured(location* loc) {
     if (!loc)
@@ -208,14 +167,12 @@ bool isCgiConfigured(location* loc) {
 
     return true;
 }
-#include <string>
-#include <vector>
-#include <iostream>
 
 std::string getExtensions(const std::string &path) {
     size_t dot = path.find_last_of('.');
     if (dot == std::string::npos)
         return ""; // No extension
+
     return path.substr(dot);
 }
 
@@ -224,7 +181,6 @@ std::string getCgiInterpreter(const std::string &scriptPath, location *loc) {
     std::vector<std::string>* interpreters = loc->getInfos("cgi_path");
 
     if (!extensions || !interpreters) {
-        std::cerr << "Missing cgi_extension or cgi_path config" << std::endl;
         return "";
     }
 
@@ -234,182 +190,11 @@ std::string getCgiInterpreter(const std::string &scriptPath, location *loc) {
             return (*interpreters)[i];
     }
 
-    std::cerr << "No CGI interpreter found for extension: " << ext << std::endl;
     return "";
 }
 
-// bool executeCgi(const std::string &scriptPath, const data_request &req, location &loc, std::string &output) {
-//     cout << "in executeCgi for method: " << req.method << endl;
-    
-//     int pipefd[2];
-//     int inputPipe[2];
-    
-//     if (pipe(pipefd) == -1)
-//         return false;
-    
-//     // Create input pipe for POST data
-//     bool needInputPipe = (req.method == "POST" && !req.bodyNameFile.empty());
-//     if (needInputPipe && pipe(inputPipe) == -1) {
-//         close(pipefd[0]);
-//         close(pipefd[1]);
-//         return false;
-//     }
-    
-//     pid_t pid = fork();
-//     if (pid < 0) {
-//         close(pipefd[0]);
-//         close(pipefd[1]);
-//         if (needInputPipe) {
-//             close(inputPipe[0]);
-//             close(inputPipe[1]);
-//         }
-//         return false;
-//     }
-
-//     if (pid == 0) { // Child process
-//         // Redirect stdout to pipe
-//         dup2(pipefd[1], STDOUT_FILENO);
-//         close(pipefd[0]);
-//         close(pipefd[1]);
-        
-//         // For POST, redirect stdin from input pipe
-//         if (needInputPipe) {
-//             dup2(inputPipe[0], STDIN_FILENO);
-//             close(inputPipe[0]);
-//             close(inputPipe[1]);
-//         }
-
-//         std::string cgiPath = getCgiInterpreter(scriptPath, loc);
-//         if (cgiPath.empty())
-//             exit(1);
-
-//         char *argv[] = {
-//             (char*)cgiPath.c_str(),     
-//             (char*)scriptPath.c_str(),  
-//             NULL
-//         };
-
-//         // Prepare environment variables
-//         std::vector<std::string> envStrings;
-//         std::vector<char*> envp;
-        
-//         // Basic CGI environment
-//         envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
-//         envStrings.push_back("REQUEST_METHOD=" + req.method);
-//         envStrings.push_back("SCRIPT_NAME=" + scriptPath);
-//         envStrings.push_back("SERVER_PROTOCOL=HTTP/1.1");
-        
-//         // Method-specific environment variables
-//         if (req.method == "GET") {
-//             envStrings.push_back("QUERY_STRING=" + req.queryContent);
-//         }
-//         else if (req.method == "POST") {
-//             std::string bodyContent;
-//             if (!req.bodyNameFile.empty()) {
-//                 std::ifstream bodyFile(req.bodyNameFile.c_str());
-//                 if (bodyFile.is_open()) {
-//                     std::string line;
-//                     while (std::getline(bodyFile, line)) {
-//                         bodyContent += line + "\n";
-//                     }
-//                     bodyFile.close();
-//                 }
-//             }
-            
-//             envStrings.push_back("CONTENT_LENGTH=" + to_string_98(bodyContent.size()));
-            
-//             // Set Content-Type from headers if available
-//             std::map<std::string, std::string>::const_iterator contentTypeIt = req.headers.find("content-type");
-//             if (contentTypeIt != req.headers.end()) {
-//                 envStrings.push_back("CONTENT_TYPE=" + contentTypeIt->second);
-//             } else {
-//                 envStrings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
-//             }
-            
-//             // Also include query string for POST if it exists
-//             if (!req.queryContent.empty()) {
-//                 envStrings.push_back("QUERY_STRING=" + req.queryContent);
-//             } else {
-//                 envStrings.push_back("QUERY_STRING=");
-//             }
-            
-//             // Store bodyContent for writing to stdin later
-//             // We'll need to modify the parent process part too
-//         }
-        
-//         // Add HTTP headers as environment variables
-//         for (std::map<std::string, std::string>::const_iterator it = req.headers.begin(); 
-//              it != req.headers.end(); ++it) {
-//             std::string headerName = "HTTP_" + it->first;
-//             // Convert to uppercase and replace - with _
-//             for (size_t i = 0; i < headerName.length(); ++i) {
-//                 headerName[i] = std::toupper(headerName[i]);
-//                 if (headerName[i] == '-') headerName[i] = '_';
-//             }
-//             envStrings.push_back(headerName + "=" + it->second);
-//         }
-        
-//         // Convert strings to char* array
-//         for (size_t i = 0; i < envStrings.size(); ++i) {
-//             envp.push_back(const_cast<char*>(envStrings[i].c_str()));
-//         }
-//         envp.push_back(NULL);
-
-//         execve(cgiPath.c_str(), argv, &envp[0]);
-//         exit(1);
-//     } 
-//     else { // Parent process
-//         close(pipefd[1]);
-        
-//         if (needInputPipe) {
-//             close(inputPipe[0]);
-            
-//             // Read and write POST data to CGI script's stdin
-//             if (!req.bodyNameFile.empty()) {
-//                 std::string bodyContent;
-//                 std::ifstream bodyFile(req.bodyNameFile.c_str());
-//                 if (bodyFile.is_open()) {
-//                     std::string line;
-//                     while (std::getline(bodyFile, line)) {
-//                         bodyContent += line + "\n";
-//                     }
-//                     bodyFile.close();
-                    
-//                     if (!bodyContent.empty()) {
-//                         ssize_t written = write(inputPipe[1], bodyContent.c_str(), bodyContent.size());
-//                         if (written != static_cast<ssize_t>(bodyContent.size())) {
-//                             cout << "Warning: Not all POST data was written to CGI" << endl;
-//                         }
-//                     }
-//                 }
-//             }
-//             close(inputPipe[1]);
-//         }
-        
-//         // Read CGI output
-//         char buffer[4096];
-//         ssize_t bytesRead;
-//         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
-//             output.append(buffer, bytesRead);
-//         }
-//         close(pipefd[0]);
-
-//         int status;
-//         waitpid(pid, &status, 0);
-
-//         if (WEXITSTATUS(status) != 0) {
-//             cout << "CGI script exited with status: " << WEXITSTATUS(status) << endl;
-//             throw(500);
-//         }
-        
-//         return true;
-//     }
-// }
-
-
 bool executeCgi(const std::string &scriptPath, const data_request &req, std::string &output) {
     std::string pathBody =  req.bodyNameFile;
-    cout << "pathBody: " << pathBody << endl;
     
     int pipefd[2];
     int inputPipe[2];
@@ -436,7 +221,7 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
         return false;
     }
 
-    if (pid == 0) { // Child process
+    if (pid == 0) {
         // Redirect stdout to pipe
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[0]);
@@ -444,7 +229,6 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
         
         // For POST, redirect stdin from input pipe
         if (needInputPipe) {
-            cerr << "*******************" << endl;
             dup2(inputPipe[0], STDIN_FILENO);
             close(inputPipe[0]);
             close(inputPipe[1]);
@@ -452,7 +236,7 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
 
         std::string cgiPath = getCgiInterpreter(scriptPath, req.myCloseLocation);
         if (cgiPath.empty())
-            exit(1);
+            std::exit(1);
 
         char *argv[] = {
             (char*)cgiPath.c_str(),     
@@ -460,82 +244,27 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
             NULL
         };
 
-        // Prepare environment variables
         std::vector<std::string> envStrings;
-        std::vector<char*> envp;
+        std::vector<char*> envp = setupCgiEnvironment(scriptPath, req, pathBody, envStrings);
         
-        // Basic CGI environment
-        envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
-        envStrings.push_back("REQUEST_METHOD=" + req.method);
-        envStrings.push_back("SCRIPT_NAME=" + scriptPath);
-        envStrings.push_back("SERVER_PROTOCOL=HTTP/1.1");
-        envStrings.push_back("REDIRECT_STATUS=200");
-        
-        // Method-specific environment variables
-        if (req.method == "GET") {
-            envStrings.push_back("QUERY_STRING=" + req.queryContent);
-        }
-        else if (req.method == "POST") {
-            // Get file size for Content-Length
-            struct stat st;
-            size_t contentLength = 0;
-            if (stat(pathBody.c_str(), &st) == 0) {
-                contentLength = st.st_size;
-            }
-            
-            envStrings.push_back("CONTENT_LENGTH=" + to_string_98(contentLength));
-            
-            // Set Content-Type from headers if available
-            std::map<std::string, std::string>::const_iterator contentTypeIt = req.headers.find("content-type");
-            if (contentTypeIt != req.headers.end()) {
-                envStrings.push_back("CONTENT_TYPE=" + contentTypeIt->second);
-            } else {
-                envStrings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
-            }
-            
-            // Also include query string for POST if it exists
-            envStrings.push_back("QUERY_STRING=" + req.queryContent);
-        }
-        
-        // Add HTTP headers as environment variables
-        for (std::map<std::string, std::string>::const_iterator it = req.headers.begin(); 
-            it != req.headers.end(); ++it) {
-            std::string headerName = "HTTP_" + it->first;
-            // Convert to uppercase and replace - with _
-            for (size_t i = 0; i < headerName.length(); ++i) {
-                headerName[i] = std::toupper(headerName[i]);
-                if (headerName[i] == '-') headerName[i] = '_';
-            }
-            envStrings.push_back(headerName + "=" + it->second);
-        }
-        
-        // Convert strings to char* array
-        for (size_t i = 0; i < envStrings.size(); ++i) {
-            envp.push_back(const_cast<char*>(envStrings[i].c_str()));
-        }
-        envp.push_back(NULL);
         execve(cgiPath.c_str(), argv, &envp[0]);
-        exit(1);
+        std::exit(1);
     } 
-    else { // Parent process
+    else {
         close(pipefd[1]);
         
         if (needInputPipe) {
             close(inputPipe[0]);
             
-            // Read and write POST data from file to CGI script's stdin
             std::ifstream bodyFile(pathBody.c_str(), std::ios::binary);
             if (bodyFile.is_open()) {
                 char buffer[4096];
-                while (bodyFile.read(buffer, sizeof(buffer)- 1) || bodyFile.gcount() > 0) {
+                while (bodyFile.read(buffer, sizeof(buffer) - 1) || bodyFile.gcount() > 0) {
                     std::streamsize bytesRead = bodyFile.gcount();
                     buffer[bytesRead] = '\0';
                     ssize_t written = write(inputPipe[1], buffer, bytesRead);
-                    // std::cout << "==================: " << buffer <<"|" <<  std::endl;
-                    if (written != bytesRead) {
-                        cout << "Warning: Not all POST data was written to CGI" << endl;
+                    if (written != bytesRead)
                         break;
-                    }
                 }
                 bodyFile.close();
             }
@@ -553,10 +282,8 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
         int status;
         waitpid(pid, &status, 0);
 
-        if (WEXITSTATUS(status) != 0) {
-            cout << "CGI script exited with status: " << WEXITSTATUS(status) << endl;
+        if (WEXITSTATUS(status) != 0)
             throw(500);
-        }
         
         return true;
     }
@@ -580,7 +307,10 @@ std::string buildHttpResponse(int statusCode, const std::string &statusMessage, 
 string checkIndexes(location* loc, const string path) {
     std::vector<std::string>* indexes = loc->getInfos("index");
     if (!indexes)
+    {
+        cerr << "Error: No index files defined for location " << loc->path << endl;
         return "";
+    }
 
     for (size_t i = 0; i < indexes->size(); ++i) {
         std::string fullPath = path + indexes->at(i);
@@ -591,15 +321,6 @@ string checkIndexes(location* loc, const string path) {
         }
     }
     return "";
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-string removeLeadingSlashes(const string& input) {
-    size_t firstNonSlash = input.find_first_not_of('/');
-    if (firstNonSlash == string::npos)
-        return "";
-    return input.substr(firstNonSlash);
 }
 
 string switchLocation(const string &locPath, const string &reqPath, const string &rootVar) {
@@ -615,23 +336,8 @@ string switchLocation(const string &locPath, const string &reqPath, const string
     return reqPath;
 }
 
-//////////////////////////////////////HELP CGI///////////////////////////////////////
-bool isCgiRequest(location *loc, const std::string &path) {
-    std::vector<std::string>* cgi_exts = loc->getInfos("cgi_extension");
 
-    if (!cgi_exts)
-        return false;
-    for (size_t i = 0; i < cgi_exts->size(); ++i) {
-        const std::string &ext = (*cgi_exts)[i];
 
-        if (path.size() >= ext.size())
-            if (path.compare(path.size() - ext.size(), ext.size(), ext) == 0)
-                return true;
-    }
-    return false;
-}
-
-///////////////////////////////////////////////////////////////////
 size_t getFileSize(const std::string& path) {
     struct stat st;
     if (stat(path.c_str(), &st) == 0) {
@@ -691,9 +397,8 @@ void client::sendFileChunk(int currentFd) {
         this->closeConnection = true;
     }
 }
-/////////////////////////////////////////////////////////////////////////////////////
 
-string handleGetRequest(data_request &req, location *loc, int currentFd)
+string handleGetRequest(data_request &req, location *loc, client* clientObj = NULL)
 {
     string locPath = normalizePath(loc->path);
     string reqPath = normalizePath(req.path);
@@ -705,15 +410,11 @@ string handleGetRequest(data_request &req, location *loc, int currentFd)
     rootVar = loc->getInfos("root")->at(0) + "/";
     string path = switchLocation(locPath, reqPath, rootVar);
 
-
-    DIR* dir = opendir(path.c_str());
-    string indexFound = checkIndexes(loc, rootVar + "/");
-    if (indexFound == "")
-    {
-        if (loc->getInfos("autoindex"))
-        {
-            if (loc->getInfos("autoindex")->at(0) == "on" && dir != NULL)
-            {
+    // Handle directory cases
+    if (isDirectory(path)) {
+        string indexFound = checkIndexes(loc, path + "/");
+        if (indexFound == "") {
+            if (loc->getInfos("autoindex") && loc->getInfos("autoindex")->at(0) == "on") {
                 std::string body = listDirectory(path, reqPath);
                 std::string response =
                     "HTTP/1.1 200 OK\r\n"
@@ -722,48 +423,61 @@ string handleGetRequest(data_request &req, location *loc, int currentFd)
                     "Connection: close\r\n"
                     "\r\n" +
                     body;
-                send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-            }
+                return response;
+            } 
+            else
+                throw(403);
+        } else {
+            path = indexFound;
         }
-        else
-            throw(403);
+    }
+
+    // Check if file exists
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
+        throw(404);
+    }
+
+    size_t fileSize = getFileSize(path);
+    const size_t CHUNKED_THRESHOLD = 1024 * 1024; // 1MB threshold
+    
+    // Handle large files with chunked transfer
+    if (fileSize > CHUNKED_THRESHOLD && clientObj != NULL) {
+        clientObj->fileStream->open(path.c_str(), std::ios::in | std::ios::binary);
+        if (!clientObj->fileStream->is_open())
+            throw(500);
+        
+        clientObj->bytesRemaining = fileSize;
+        clientObj->fileSize = fileSize;
+        clientObj->fileToSend = path;
+        clientObj->closeConnection = false;
+        
+        std::string mimeType = getMimeType(path);
+        
+        std::ostringstream headers;
+        headers << "HTTP/1.1 200 OK\r\n";
+        headers << "Content-Type: " << mimeType << "\r\n";
+        headers << "Content-Length: " << fileSize << "\r\n";
+        headers << "Accept-Ranges: bytes\r\n";
+        headers << "Connection: close\r\n\r\n";
+        
+        return headers.str();
     }
     
-    //////////////////////////////////////////////////
-
-    if (!existFile(path, loc)) 
-    throw(404);
-
-
-    // std::ostringstream headers;
-    // headers << "HTTP/1.1 200 OK\r\n";
-    // headers << "Content-Type: " << getMimeType(path) << "\r\n";
-    // headers << "Content-Length: " << getFileSize(path) << "\r\n";
-    // headers << "Connection: close\r\n\r\n";
+    // Handle small files - load entirely into memory
+    std::string body = readFile(path);
+    if (body == "")
+        throw(500);
+            
+    std::ostringstream response;
+    response << "HTTP/1.1 200 OK\r\n";
+    response << "Content-Type: " << getMimeType(path) << "\r\n";
+    response << "Content-Length: " << body.size() << "\r\n";
+    response << "Connection: close\r\n\r\n";
+    response << body;
     
-    // // Stocker les informations pour l'envoi par chunks
-    // clients[currentFd].fileToSend = path;
-    // clients[currentFd].headersSent = false;
-    // clients[currentFd].fileFd = open(path.c_str(), O_RDONLY);
-    // clients[currentFd].bytesRemaining = getFileSize(path);
-    
-    // return headers.str();
-
-        std::string body = readFile(path);
-        if (body == "")
-            throw(500);
-                
-        //////////////////////////////////////////
-        std::ostringstream ait_response;
-        
-        ait_response << "HTTP/1.1 200 OK\r\n";
-        ait_response << "Content-Type: " << getMimeType(path) << "\r\n";
-        ait_response << "Content-Length: " << body.size() << "\r\n";
-        ait_response << "Connection: close\r\n\r\n";
-        ait_response << body << endl;
-        return ait_response.str();    
+    return response.str();    
 }
-
 
 std::string client::prepareGetResponse(data_request &req, location *loc)
 {
@@ -777,11 +491,9 @@ std::string client::prepareGetResponse(data_request &req, location *loc)
     rootVar = loc->getInfos("root")->at(0) + "/";
     string path = switchLocation(locPath, reqPath, rootVar);
 
-    // Check if it's a directory first
     if (isDirectory(path)) {
         string indexFound = checkIndexes(loc, path + "/");
         if (indexFound == "") {
-            // Handle autoindex case
             if (loc->getInfos("autoindex") && loc->getInfos("autoindex")->at(0) == "on") {
                 std::string body = listDirectory(path, reqPath);
                 std::string response =
@@ -791,17 +503,15 @@ std::string client::prepareGetResponse(data_request &req, location *loc)
                     "Connection: close\r\n"
                     "\r\n" +
                     body;
-                return response; // Return autoindex response
-            } else {
-                throw(403); // Forbidden if autoindex is off
-            }
+                return response;
+            } 
+            else
+                throw(403);
         } else {
-            path = indexFound; // Use index file
+            path = indexFound;
         }
     }
     
-    
-    // Now check if the file exists
     struct stat st;
     if (stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
         throw(404);
@@ -809,21 +519,17 @@ std::string client::prepareGetResponse(data_request &req, location *loc)
 
     size_t fileSize = getFileSize(path);
     
-    const size_t CHUNKED_THRESHOLD = 1024 * 1024; // 1MB
+    const size_t CHUNKED_THRESHOLD = 1024 * 1024;
     
     if (fileSize > CHUNKED_THRESHOLD) {
         
-        // Use ifstream instead of open
         this->fileStream->open(path.c_str(), std::ios::in | std::ios::binary);
-        if (!this->fileStream->is_open()) {
+        if (!this->fileStream->is_open())
             throw(500);
-        }
         
         this->bytesRemaining = fileSize;
         this->fileSize = fileSize;
         this->fileToSend = path;
-        
-        // IMPORTANT: Ne pas fermer la connexion pour les gros fichiers
         this->closeConnection = false;
         
         std::string mimeType = getMimeType(path);
@@ -838,10 +544,8 @@ std::string client::prepareGetResponse(data_request &req, location *loc)
         return headers.str();
     }
     
-    return ""; // For small files, use normal handling
+    return "";
 }
-
-//////////////////////////////////////////CGI RESPONSE PARSING////////////////////////////////////////////
 
 std::string parseCgiOutput(const std::string &cgiOutput, bool &hasHeaders) {
     hasHeaders = false;
@@ -856,20 +560,17 @@ std::string parseCgiOutput(const std::string &cgiOutput, bool &hasHeaders) {
         }
     }
     
-    // Check if the first part looks like HTTP headers
     std::string headerPart = cgiOutput.substr(0, headerEnd);
     
-    // Simple check: look for common header patterns
     if (headerPart.find("Content-Type:") != std::string::npos ||
         headerPart.find("Location:") != std::string::npos ||
         headerPart.find("Set-Cookie:") != std::string::npos ||
         headerPart.find("Status:") != std::string::npos ||
         headerPart.find(":") != std::string::npos) {
         hasHeaders = true;
-        return cgiOutput; // Return with headers intact
+        return cgiOutput;
     }
     
-    // No valid headers found
     return cgiOutput;
 }
 
@@ -878,16 +579,12 @@ std::string buildCgiHttpResponse(const std::string &cgiOutput) {
     std::string processedOutput = parseCgiOutput(cgiOutput, hasHeaders);
     
     if (hasHeaders) {
-        // CGI script provided headers, check if it has HTTP status line
-        if (processedOutput.find("HTTP/1.1") == 0 || processedOutput.find("HTTP/1.0") == 0) {
-            // Script provided complete HTTP response
+        if (processedOutput.find("HTTP/1.1") == 0) {
             return processedOutput;
         } else {
-            // Script provided headers but no status line, add HTTP/1.1 200 OK
             return "HTTP/1.1 200 OK\r\n" + processedOutput;
         }
     } else {
-        // No headers provided by script, create basic HTTP response
         std::string response;
         response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: text/html\r\n";
@@ -900,3 +597,66 @@ std::string buildCgiHttpResponse(const std::string &cgiOutput) {
 }
 
 //////////////////////////////////////////CGI////////////////////////////////////////////
+
+std::vector<char*> setupCgiEnvironment(const std::string &scriptPath, const data_request &req, const std::string &pathBody, std::vector<std::string> &envStrings) {
+    envStrings.clear();
+    
+    // Basic CGI environment
+    envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
+    envStrings.push_back("REQUEST_METHOD=" + req.method);
+    envStrings.push_back("SCRIPT_NAME=" + scriptPath);
+    envStrings.push_back("PATH_INFO=" + req.path);
+    envStrings.push_back("SERVER_PROTOCOL=HTTP/1.1");
+    envStrings.push_back("REDIRECT_STATUS=200");
+    
+    // Method-specific environment variables
+    if (req.method == "GET") {
+        envStrings.push_back("QUERY_STRING=" + req.queryContent);
+    }
+    else if (req.method == "POST") {
+        struct stat st;
+        size_t contentLength = 0;
+        if (stat(pathBody.c_str(), &st) == 0)
+            contentLength = st.st_size;
+        
+        envStrings.push_back("CONTENT_LENGTH=" + to_string_98(contentLength));
+        
+        // Set Content-Type from headers if available
+        std::map<std::string, std::string>::const_iterator contentTypeIt = req.headers.find("content-type");
+        if (contentTypeIt != req.headers.end())
+            envStrings.push_back("CONTENT_TYPE=" + contentTypeIt->second);
+        else
+            envStrings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
+        
+        // Also include query string for POST if it exists
+        envStrings.push_back("QUERY_STRING=" + req.queryContent);
+    }
+    
+    // Add cookies to environment if present
+    std::map<std::string, std::string>::const_iterator cookieIt = req.headers.find("cookie");
+    if (cookieIt != req.headers.end())
+        envStrings.push_back("HTTP_COOKIE=" + cookieIt->second);
+    
+    // Add HTTP headers as environment variables
+    for (std::map<std::string, std::string>::const_iterator it = req.headers.begin(); 
+        it != req.headers.end(); ++it) {
+        std::string headerName = "HTTP_" + it->first;
+        // Convert to uppercase and replace - with _
+        for (size_t i = 0; i < headerName.length(); ++i) {
+            headerName[i] = std::toupper(headerName[i]);
+            if (headerName[i] == '-') headerName[i] = '_';
+        }
+        // Skip cookie header since we already handled it specifically above
+        if (it->first != "cookie")
+            envStrings.push_back(headerName + "=" + it->second);
+    }
+    
+    // Convert strings to char* array
+    std::vector<char*> envp;
+    for (size_t i = 0; i < envStrings.size(); ++i) {
+        envp.push_back(const_cast<char*>(envStrings[i].c_str()));
+    }
+    envp.push_back(NULL);
+    
+    return envp;
+}

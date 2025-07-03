@@ -186,12 +186,9 @@ void    ServerManager::RunServer()
             }
             if(clients[currentFd].closeConnection)
                 ClientDisconnected(currentFd);
-               
         }
     }
 }
-
-
 
 Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
 {
