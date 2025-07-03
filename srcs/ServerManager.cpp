@@ -137,7 +137,7 @@ void ServerManager::checkTimeOut() {
 
 void    ServerManager::RunServer()
 {
-    while(1)
+    while(1)//flag bool
     {
         char buffer[BUFFER_SIZE];
         int client_fd;
@@ -186,7 +186,6 @@ void    ServerManager::RunServer()
             }
             if(clients[currentFd].closeConnection)
                 ClientDisconnected(currentFd);
-               
         }
     }
 }

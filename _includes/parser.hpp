@@ -15,7 +15,7 @@ class   parser
         parser &operator=(const parser &obj);
         ~parser();
         int parse(client &client);
-        void setDateToStruct(client &clien, std::string &buffer);
+        void setDateToStruct(client &clien, const std::string &buffer);
 };
 int         parse_header(std::string str);
 int         parse_startligne(std::string str);
