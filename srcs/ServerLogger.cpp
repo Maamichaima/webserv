@@ -12,7 +12,7 @@ std::string ServerLogger::getCurrentTime() {
 
  void ServerLogger::serverStarted() {
     std::cout << BOLD << CYAN << "╭─────────────────────────────────────╮" << RESET << std::endl;
-    std::cout << BOLD << CYAN << "│" << RESET << "         " << BOLD << GREEN << "Server Started" << RESET << "         " << BOLD << CYAN << "│" << RESET << std::endl;
+    std::cout << BOLD << CYAN << "│" << RESET << "         " << BOLD << GREEN << "Server Started" << RESET << "              " << BOLD << CYAN << "│" << RESET << std::endl;
     std::cout << BOLD << CYAN << "╰─────────────────────────────────────╯" << RESET << std::endl;
     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
               << " " << BOLD << CYAN << "[WebServ]" << RESET 
@@ -28,7 +28,7 @@ void ServerLogger::serverCreated( std::string port) {
 
 void ServerLogger::configSyntaxError(std::string msg) {
     std::cout << BOLD << RED << "╭─────────────────────────────────────╮" << RESET << std::endl;
-    std::cout << BOLD << RED << "│" << RESET << "       " << BOLD << BG_RED << WHITE << " CONFIG ERROR " << RESET << "        " << BOLD << RED << "│" << RESET << std::endl;
+    std::cout << BOLD << RED << "│" << RESET << "       " << BOLD << BG_RED << WHITE << " CONFIG ERROR " << RESET << "                " << BOLD << RED << "│" << RESET << std::endl;
     std::cout << BOLD << RED << "╰─────────────────────────────────────╯" << RESET << std::endl;
     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
               << " " << BOLD << CYAN << "[WebServ]" << RESET 
@@ -42,7 +42,7 @@ void ServerLogger::configSyntaxError(std::string msg) {
 
 void ServerLogger::serverError(const std::string& details = "") {
     std::cout << BOLD << RED << "╭─────────────────────────────────────╮" << RESET << std::endl;
-    std::cout << BOLD << RED << "│" << RESET << "           " << BOLD << BG_RED << WHITE << " ERROR " << RESET << "            " << BOLD << RED << "│" << RESET << std::endl;
+    std::cout << BOLD << RED << "│" << RESET << "           " << BOLD << BG_RED << WHITE << " ERROR " << RESET << "                   " << BOLD << RED << "│" << RESET << std::endl;
     std::cout << BOLD << RED << "╰─────────────────────────────────────╯" << RESET << std::endl;
     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
               << " " << BOLD << CYAN << "[WebServ]" << RESET << std::endl;

@@ -28,7 +28,10 @@ bool check_listen( std::vector<std::string> values,Server &server)
         if (!valide_port(value))
             return false;
         if (std::find(server.port.begin(), server.port.end(), value) != server.port.end()) {
-            std::cerr << "Error: Duplicate port " << value << std::endl;
+        
+           std::cout << std::endl;
+           std::cerr <<  " " << BOLD << CYAN << "[WebServ]" << RESET 
+           << " " << BOLD << RED << "Error: Duplicate port " << RESET << std::endl;
             return false;
         }
         server.set_Port(value);
@@ -57,7 +60,9 @@ bool check_server_names(std::vector<std::string> values, Server &server)
         if (name.empty())
             return false;
         if (std::find(server.serverNames.begin(), server.serverNames.end(), name) != server.serverNames.end()) {
-            std::cerr << "Error: Duplicate server name " << name << std::endl;
+            std::cout << std::endl;
+            std::cerr <<  " " << BOLD << CYAN << "[WebServ]" << RESET 
+            << " " << BOLD << RED << "Error: Duplicate server name " << RESET << std::endl;
             return false;
         }
         server.serverNames.push_back(name);

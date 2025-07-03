@@ -121,9 +121,16 @@ bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
     
     Tokenizer tokenizer; 
     while (std::getline(inputFile, line)) {
-        if (line.empty()) {
+
+        size_t commentPos = line.find('#');
+        if (commentPos != std::string::npos) {
+            line = line.substr(0, commentPos);
+        }
+        
+        if (line.empty() || line.find_first_not_of(" \t") == std::string::npos) {
             continue;
         }
+
         tokenizer.tokenizeString(line);
     }
     tokenizer.initialize();

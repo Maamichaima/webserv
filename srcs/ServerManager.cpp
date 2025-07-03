@@ -125,7 +125,8 @@ void ServerManager::checkTimeOut() {
             cl.setDataResponse();
             std::string response = cl.buildResponse();
             if( send(clientFd, response.c_str(), response.size(), MSG_NOSIGNAL) == -1)
-                std::cerr << "send failed" << std::endl;
+                //perror("send failed" );
+               // std::cerr << "send failed" << std::endl;
             ClientDisconnected(clientFd);
         }
     }
@@ -139,10 +140,10 @@ void    ServerManager::RunServer()
 {
     while(1)//flag bool
     {
+        checkTimeOut();
         char buffer[BUFFER_SIZE];
         int client_fd;
         std::vector<int> fds = getAllSocketFds();
-        checkTimeOut();
         int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
         if(numEvents < 0){
             ServerLogger::serverError("epoll_wait failed");
@@ -172,7 +173,9 @@ void    ServerManager::RunServer()
                     clients[currentFd].closeConnection = true;
                 }
                 else {
+                    
                     clients[currentFd].buffer.append(buffer, bytesRead);
+
                     std::memset(buffer, 0, BUFFER_SIZE);   
                 }
             } 

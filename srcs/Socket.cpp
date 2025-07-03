@@ -1,4 +1,5 @@
 #include "../_includes/Socket.hpp"
+#include <cstddef>
 
 Socket::Socket() :fd_socket(-1) {
     host_info = NULL;
@@ -6,6 +7,7 @@ Socket::Socket() :fd_socket(-1) {
 }
 
 Socket::~Socket() {
+    
 }
 
 int Socket::getSocketFd() {
@@ -41,11 +43,13 @@ bool Socket::create_Socket(){
 }
 
 bool   Socket::bind_Socket(){
-       
+    
     if (bind(fd_socket, host_info->ai_addr, host_info->ai_addrlen) < 0) {
         close(fd_socket);
+        freeaddrinfo(host_info);
         return false;
     }
+    freeaddrinfo(host_info);
     return true;
 }
 
