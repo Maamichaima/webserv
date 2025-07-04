@@ -1,7 +1,7 @@
 #pragma once 
 
-# include "../../_includes/client.hpp"
-# include "../../_includes/Server.hpp"
+# include "client.hpp"
+# include "Server.hpp"
 #include <map>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -12,6 +12,18 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <dirent.h>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <unistd.h>
+#include <iostream>
+
+using std::cout;
+using std::string;
+using std::cerr;
 
 #include <sys/wait.h>
 #include <dirent.h>
@@ -33,12 +45,7 @@ bool executeCgiScript(const data_request &req, const std::string &scriptPath, lo
 string switchLocation(const string &locPath, const string &reqPath, const string &rootVar);
 std::string normalizePath(const std::string &path);
 
-bool endsWith(const std::string& str, const std::string& suffix);
-bool checkExtension(const std::string& url, const std::vector<std::string>& cgiExtensions);
-bool isCgiConfigured(location* loc);
 std::string getExtensions(const std::string &path);
-std::string getCgiInterpreter(const std::string &scriptPath, location &loc);
-bool executeCgi(const std::string &scriptPath, const data_request &req, std::string &output);
 std::string buildHttpResponse(int statusCode, const std::string &statusMessage, const std::string &body);
 std::string parseCgiOutput(const std::string &cgiOutput, bool &hasHeaders);
 std::string buildCgiHttpResponse(const std::string &cgiOutput);
