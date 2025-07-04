@@ -320,5 +320,6 @@ void client::check_http_body_rules()
 			this->data_rq.bodyNameFile = this->data_rq.myCloseLocation->infos["upload_store"][0] + "/" + RandomString(5) + getExtension(this->data_rq);
 		else
 			this->data_rq.bodyNameFile = "/tmp/" + RandomString(5);//check protect 
+		std::cout << this->data_rq.bodyNameFile << "\n";
 	}
 }

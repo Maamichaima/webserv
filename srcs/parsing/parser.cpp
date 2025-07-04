@@ -147,6 +147,9 @@ void parser::setDateToStruct(client &client, const std::string &buffer)
 		std::string value = str.substr(pos + 2, size - pos - 2);
 		checkKeyValueContent(key, value);
 		toLower(key);
+		std::map<std::string, std::string>::iterator it = client.data_rq.headers.find(key);
+		if(it != client.data_rq.headers.end())
+			throw(400); //Bad request
         client.data_rq.headers[key] = value;
 		if(key == "host")
 		{

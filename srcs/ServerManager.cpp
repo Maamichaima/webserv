@@ -166,6 +166,7 @@ void    ServerManager::RunServer()
             }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
+				// std::cout << "==== " << buffer << " ====\n";
                 clients[currentFd].lastActivityTime = time(NULL);
                 
                 if(bytesRead <= 0)
