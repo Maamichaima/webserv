@@ -1,5 +1,5 @@
 #include <fstream>
-#include "GetMethod.hpp"
+# include "../../_includes/executeCgi.hpp"
 #include "../../_includes/client.hpp"
 
 

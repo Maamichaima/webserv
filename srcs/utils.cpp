@@ -1,5 +1,5 @@
 #include "../_includes/client.hpp"
-#include "methods/GetMethod.hpp"
+# include "../_includes/executeCgi.hpp"
 #include "methods/DeleteMethod.hpp"
 
 int readFileContent(const std::string& filePath, std::string &content)

@@ -1,7 +1,7 @@
 #include "../../_includes/client.hpp"
 #include "../../_includes/parser.hpp"
 #include "../methods/PostMethod.hpp"
-#include "../methods/GetMethod.hpp"
+#include "../../_includes/GetMethod.hpp"
 #include "../methods/DeleteMethod.hpp"
 
 parser::parser()

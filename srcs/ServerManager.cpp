@@ -1,5 +1,5 @@
 #include "../_includes/ServerManager.hpp"
-# include "methods/GetMethod.hpp"
+# include "../_includes/GetMethod.hpp"
 #include <cstddef>
 #include <ostream>
 
@@ -192,8 +192,6 @@ void    ServerManager::RunServer()
         }
     }
 }
-
-
 
 Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
 {
