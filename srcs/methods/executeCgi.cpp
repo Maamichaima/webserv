@@ -1,4 +1,6 @@
 #include "../../_includes/executeCgi.hpp"
+#include <fcntl.h>
+#include <signal.h>
 
 bool endsWith(const std::string& str, const std::string& suffix) {
     if (str.length() < suffix.length()) return false;
@@ -135,18 +137,53 @@ bool executeCgi(const std::string &scriptPath, const data_request &req, std::str
             close(inputPipe[1]);
         }
         
-        // Read CGI output
-        char buffer[4096];
-        ssize_t bytesRead;
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
-            output.append(buffer, bytesRead);
+        // Set pipe to non-blocking
+        int flags = fcntl(pipefd[0], F_GETFL, 0);
+        fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);
+
+        // Wait for CGI output with timeout (e.g., 5 seconds)
+        fd_set readfds;
+        struct timeval timeout;
+        int status = 0;
+        bool killed = false;
+        output.clear();
+        const int MAX_CGI_TIME = 5; // seconds
+
+        time_t start = time(NULL);
+        while (true) {
+            FD_ZERO(&readfds);
+            FD_SET(pipefd[0], &readfds);
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
+
+            int ret = select(pipefd[0] + 1, &readfds, NULL, NULL, &timeout);
+            if (ret > 0 && FD_ISSET(pipefd[0], &readfds)) {
+                char buffer[4096];
+                ssize_t bytesRead = read(pipefd[0], buffer, sizeof(buffer));
+                if (bytesRead > 0) {
+                    output.append(buffer, bytesRead);
+                } else if (bytesRead == 0) {
+                    // EOF
+                    break;
+                }
+            }
+            // Check if child exited
+            pid_t w = waitpid(pid, &status, WNOHANG);
+            if (w == pid) {
+                break;
+            }
+            // Timeout
+            if (time(NULL) - start > MAX_CGI_TIME) {
+                kill(pid, SIGKILL);
+                killed = true;
+                break;
+            }
         }
         close(pipefd[0]);
-
-        int status;
+        // Ensure child is reaped
         waitpid(pid, &status, 0);
 
-        if (WEXITSTATUS(status) != 0)
+        if (killed || WEXITSTATUS(status) != 0)
             throw(500);
         
         return true;
@@ -251,3 +288,5 @@ std::vector<char*> setupCgiEnvironment(const std::string &scriptPath, const data
     
     return envp;
 }
+
+//

@@ -16,6 +16,11 @@ client::client() : bytesRemaining(0), headersSent(false), fileSize(0), fileStrea
 	this->data_rs.status_code 	= -1;
 	this->data_rq.isCgi			= 0;
 	lastActivityTime = time(NULL);
+	cgi_pid = -1;
+	cgi_fd = -1;
+	cgi_running = false;
+	cgi_start_time = 0;
+	cgi_epoll_added = false; // <--- Add this line
 
     setErrorPages();
     setDescription();
@@ -51,6 +56,16 @@ client::~client()
 		fileStream = NULL;
 	}
 	// close (server_fd);
+	if (cgi_fd != -1) {
+        close(cgi_fd);
+        cgi_fd = -1;
+    }
+    if (cgi_running && cgi_pid > 0) {
+        kill(cgi_pid, SIGKILL);
+        waitpid(cgi_pid, NULL, 0);
+        cgi_pid = -1;
+    }
+    cgi_epoll_added = false; // <--- Add this line
 }
 
 void client::printClient()
@@ -142,12 +157,12 @@ void client::setStatusCode()
 
 void client::handleResponse(int currentFd)
 {
-	setStatusCode();
-	if(this->data_rs.status_code < 0 || this->data_rq.isCgi)
-	{
-		try
-		{
-			//////////////ReSend if not "/" in the end////////////////
+    setStatusCode();
+    if(this->data_rs.status_code < 0 || this->data_rq.isCgi)
+    {
+        try
+        {
+            //////////////ReSend if not "/" in the end////////////////
 			if (data_rq.path[data_rq.path.size() - 1] != '/' && this->data_rq.myCloseLocation)
 			{
 				string locPath = normalizePath(this->data_rq.myCloseLocation->path);
@@ -201,18 +216,82 @@ void client::handleResponse(int currentFd)
 						cgiPath = checkIndexes(this->data_rq.myCloseLocation, cgiPath+ "/");
 					if (checkExtension(cgiPath, *exts))
 					{
-						string cgiOutput;
-						if (executeCgi(cgiPath, data_rq, cgiOutput)) {
-							string response = buildCgiHttpResponse(cgiOutput);
-							send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-							this->closeConnection = true;
-				// cout << "inCGI************************************************" << endl;
-							return;
-						}
-						throw(500);
-					}
-				}
-			}
+						// --- Start CGI asynchronously ---
+						if (!cgi_running) {
+							int pipefd[2];
+							int inputPipe[2];
+							bool needInputPipe = (data_rq.method == "POST" && !data_rq.bodyNameFile.empty());
+							if (pipe(pipefd) != 0) {
+								throw(500);
+							}
+							if (needInputPipe && pipe(inputPipe) != 0) {
+								close(pipefd[0]);
+								close(pipefd[1]);
+								throw(500);
+							}
+							cgi_pid = fork();
+							if (cgi_pid == 0) {
+								// Child
+                                dup2(pipefd[1], STDOUT_FILENO);
+                                close(pipefd[0]);
+                                close(pipefd[1]);
+                                // For POST, redirect stdin from input pipe
+                                if (needInputPipe) {
+                                    dup2(inputPipe[0], STDIN_FILENO);
+                                    close(inputPipe[0]);
+                                    close(inputPipe[1]);
+                                }
+                                std::string cgiInterp = getCgiInterpreter(cgiPath, data_rq.myCloseLocation);
+                                if (cgiInterp.empty())
+                                    _exit(1);
+                                char *argv[] = {
+                                    (char*)cgiInterp.c_str(),
+                                    (char*)cgiPath.c_str(),
+                                    NULL
+                                };
+                                std::vector<std::string> envStrings;
+                                std::vector<char*> envp = setupCgiEnvironment(cgiPath, data_rq, data_rq.bodyNameFile, envStrings);
+                                execve(cgiInterp.c_str(), argv, &envp[0]);
+                                _exit(1);
+                            } else if (cgi_pid > 0) {
+                                // Parent
+                                close(pipefd[1]);
+                                if (needInputPipe) {
+                                    close(inputPipe[0]);
+                                    // Write POST body to CGI stdin
+                                    std::ifstream bodyFile(data_rq.bodyNameFile.c_str(), std::ios::binary);
+                                    if (bodyFile.is_open()) {
+                                        char buffer[4096];
+                                        while (bodyFile.read(buffer, sizeof(buffer)) || bodyFile.gcount() > 0) {
+                                            ssize_t bytesRead = bodyFile.gcount();
+                                            if (write(inputPipe[1], buffer, bytesRead) != bytesRead)
+                                                break;
+                                        }
+                                        bodyFile.close();
+                                    }
+                                    close(inputPipe[1]);
+                                }
+                                cgi_fd = pipefd[0];
+                                cgi_running = true;
+                                cgi_start_time = time(NULL);
+                                // Do not send response yet, return to event loop
+                                return;
+                            } else {
+                                // fork failed
+                                if (needInputPipe) {
+                                    close(inputPipe[0]);
+                                    close(inputPipe[1]);
+                                }
+                                close(pipefd[0]);
+                                close(pipefd[1]);
+                                throw(500);
+                            }
+                        }
+                        // If already running, do nothing here (handled in main loop)
+                        return;
+                    }
+                }
+            }
 			
 		/////////////////////////GET with CHUNKED TRANSFER///////////////////////
 			if(this->data_rq.method == "GET" && this->data_rs.status_code < 0)
@@ -320,13 +399,13 @@ void client::handleGetRequestWithChunking(int currentFd)
             throw(statusCode);
         }
     }
-    
+
     // Continue sending file chunks if we're in the middle of a transfer
     if (this->headersSent && this->fileStream->is_open() && this->bytesRemaining > 0) {
         this->sendFileChunk(currentFd);
         return;
     }
-    
+
     // File transfer complete
     if (this->fileStream->is_open() && this->bytesRemaining == 0) {
         this->fileStream->close();
