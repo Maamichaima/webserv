@@ -18,7 +18,7 @@ filepath = os.path.join(directory, filename)
 
 file = Path(filepath)
 
-# print("Content-Type: text/html; charset=utf-8\r\n\r\n")  # En-tête HTTP
+print("Content-Type: text/html; charset=utf-8\r\n\r\n")  # En-tête HTTP
 
 # si le fichier n'existe pas
 if (file.exists()):

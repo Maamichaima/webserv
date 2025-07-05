@@ -1,5 +1,5 @@
 #include "../_includes/ServerManager.hpp"
-# include "methods/GetMethod.hpp"
+# include "../_includes/GetMethod.hpp"
 #include <cstddef>
 #include <ostream>
 
@@ -166,7 +166,7 @@ void    ServerManager::RunServer()
             }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
-				// std::cout << "==== " << buffer << " ====\n";
+				std::cout << "==== " << buffer << " ====\n";
                 clients[currentFd].lastActivityTime = time(NULL);
                 
                 if(bytesRead <= 0)
@@ -193,8 +193,6 @@ void    ServerManager::RunServer()
         }
     }
 }
-
-
 
 Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
 {

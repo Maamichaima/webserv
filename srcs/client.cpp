@@ -1,5 +1,5 @@
 #include "../_includes/client.hpp"
-#include "methods/GetMethod.hpp"
+# include "../_includes/executeCgi.hpp"
 #include "methods/DeleteMethod.hpp"
 
 
@@ -90,8 +90,8 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		if(checkRequestProgress())
-			this->printClient();
+		if(checkRequestProgress()) {}
+			// this->printClient();
 	}
 	catch(const int status_code)
 	{
@@ -143,11 +143,10 @@ void client::setStatusCode()
 void client::handleResponse(int currentFd)
 {
 	setStatusCode();
-	if(this->data_rs.status_code < 0 || this->data_rq.isCgi)
+	if(this->data_rs.status_code < 0 || (this->data_rq.isCgi && this->data_rs.status_code == 201))
 	{
 		try
 		{
-			// location *cgiLoc = getClosestLocation(this->myServer, data_rq.path);
 			//////////////ReSend if not "/" in the end////////////////
 			if (data_rq.path[data_rq.path.size() - 1] != '/' && this->data_rq.myCloseLocation)
 			{
@@ -156,13 +155,12 @@ void client::handleResponse(int currentFd)
 				string root;
 				std::map<std::string, std::vector<std::string> >::iterator itRoot = this->data_rq.myCloseLocation->infos.find("root");
 				if(itRoot == this->data_rq.myCloseLocation->infos.end()) 
-					throw(404);
-	
-				root  = this->data_rq.myCloseLocation->getInfos("root")->at(0) + "/";          
-				string resendPath = switchLocation(locPath, reqPath, root);
-	
-				if (isDirectory(resendPath) && checkIndexes(this->data_rq.myCloseLocation, resendPath + "/") != "" && 
-						!resendPath.empty()) {
+				throw(404);
+			
+			root  = this->data_rq.myCloseLocation->getInfos("root")->at(0) + "/";          
+			string resendPath = switchLocation(locPath, reqPath, root);
+			string indexFound = checkIndexes(this->data_rq.myCloseLocation, resendPath + "/");
+			if (isDirectory(resendPath) && indexFound != "") {
 				
 				std::string newLocation = data_rq.path + "/";
 				std::string response = 
@@ -173,6 +171,7 @@ void client::handleResponse(int currentFd)
 					"\r\n";
 	
 				send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+				// closeConnection = true;
 				return;
 				}
 			}
@@ -204,8 +203,10 @@ void client::handleResponse(int currentFd)
 					{
 						string cgiOutput;
 						if (executeCgi(cgiPath, data_rq, cgiOutput)) {
-							send(currentFd, buildHttpResponse(200, "OK", cgiOutput).c_str(), buildHttpResponse(200, "OK", cgiOutput).size(), MSG_NOSIGNAL); 
+							string response = buildCgiHttpResponse(cgiOutput);
+							send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 							this->closeConnection = true;
+				// cout << "inCGI************************************************" << endl;
 							return;
 						}
 						throw(500);
@@ -216,47 +217,10 @@ void client::handleResponse(int currentFd)
 		/////////////////////////GET with CHUNKED TRANSFER///////////////////////
 			if(this->data_rq.method == "GET" && this->data_rs.status_code < 0)
 			{
-				location* loc = getClosestLocation(this->myServer, data_rq.path);
-				if (!loc) {
-					throw(404);
-				}
-
-				if (this->fileStream->is_open() && this->bytesRemaining > 0) {
-					this->sendFileChunk(currentFd);
-					return;
-				}
-
-				if (!this->headersSent && !this->fileStream->is_open()) {
-					std::string headers = this->prepareGetResponse(this->data_rq, loc);
-					if (!headers.empty()) {
-						ssize_t sent = send(currentFd, headers.c_str(), headers.size(), MSG_NOSIGNAL);
-						if (sent > 0) {
-							this->headersSent = true;
-							if (this->fileStream->is_open() && this->bytesRemaining > 0) {
-								this->sendFileChunk(currentFd);
-								return;
-							}
-						}
-						return;
-					} else {
-						std::string response = handleGetRequest(this->data_rq, loc, currentFd);
-						// std::cout << "***************\n\n " << response << "*************\n";
-						// exit(0);
-						send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-						return;
-					}
-				}
-				
-				if (this->headersSent && this->fileStream->is_open() && this->bytesRemaining > 0) {
-					this->sendFileChunk(currentFd);
-					return;
-				}
-				
-				if (this->fileStream->is_open() && this->bytesRemaining == 0) {
-					this->fileStream->close();
-					this->closeConnection = true;
-					return;
-				}
+				handleGetRequestWithChunking(currentFd);
+				// cout << "inGET************************************************" << endl;
+				// closeConnection = true;
+				return;
 			}
 		}
 		catch(const int &statusCode)
@@ -322,4 +286,52 @@ void client::check_http_body_rules()
 			this->data_rq.bodyNameFile = "/tmp/" + RandomString(5);//check protect 
 		std::cout << this->data_rq.bodyNameFile << "\n";
 	}
+}
+
+void client::handleGetRequestWithChunking(int currentFd)
+{
+    location* loc = getClosestLocation(this->myServer, data_rq.path);
+    if (!loc)
+        throw(404);
+
+    // If we're already sending a file in chunks
+    if (this->fileStream->is_open() && this->bytesRemaining > 0) {
+        this->sendFileChunk(currentFd);
+        return;
+    }
+
+    // If headers not sent yet, prepare and send the response
+    if (!this->headersSent && !this->fileStream->is_open()) {
+        try {
+            std::string response = handleGetRequest(this->data_rq, loc, this);
+            ssize_t sent = send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+            if (sent > 0) {
+                // If this was a chunked response (large file), headers are sent
+                if (this->fileStream->is_open() && this->bytesRemaining > 0) {
+                    this->headersSent = true;
+                    this->sendFileChunk(currentFd);
+                    return;
+                } else {
+                    // Small file or directory listing - response complete
+                    this->closeConnection = true;
+                    return;
+                }
+            }
+        } catch(const int &statusCode) {
+            throw(statusCode);
+        }
+    }
+    
+    // Continue sending file chunks if we're in the middle of a transfer
+    if (this->headersSent && this->fileStream->is_open() && this->bytesRemaining > 0) {
+        this->sendFileChunk(currentFd);
+        return;
+    }
+    
+    // File transfer complete
+    if (this->fileStream->is_open() && this->bytesRemaining == 0) {
+        this->fileStream->close();
+        this->closeConnection = true;
+        return;
+    }
 }

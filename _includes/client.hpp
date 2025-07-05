@@ -83,6 +83,7 @@ class client
 		void        setErrorPages();
 		void        setStatusCode();
         std::string prepareGetResponse(data_request &req, location *loc);
+        void        handleGetRequestWithChunking(int currentFd);
 };
 
 std::string                         get_line(std::string str);
