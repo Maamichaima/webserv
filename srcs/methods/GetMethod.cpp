@@ -89,6 +89,7 @@ bool existFile(string &path, location *loc)
     {
         if (isDirectory(path))
         {
+            cerr << "1\n";
             string checkIndex = checkIndexes(loc, path + "/");
             if (checkIndex == "")
                 return false;
@@ -235,17 +236,34 @@ std::string buildHttpResponse(int statusCode, const std::string &statusMessage, 
     return response;
 }
 
-string checkIndexes(location* loc, const string path) {
+// string checkIndexes(location* loc, const string &path) {
+//     std::vector<std::string>* indexes = loc->getInfos("index");
+//     if (!indexes)
+//         return "";
+//     for (size_t i = 0; i < indexes->size(); ++i) {
+//         std::string fullPath = path + indexes->at(i);
+//         cout << "Trying index file: " << fullPath << std::endl;
+//         std::ifstream file(fullPath.c_str());
+//         if (file.is_open()) {
+//             file.close();
+//             return fullPath;
+//         }
+//     }
+//     return "";
+// }
+
+string checkIndexes(location* loc, const std::string& path) {
     std::vector<std::string>* indexes = loc->getInfos("index");
     if (!indexes)
         return "";
-
     for (size_t i = 0; i < indexes->size(); ++i) {
         std::string fullPath = path + indexes->at(i);
-        std::ifstream file(fullPath.c_str());
-        if (file.is_open()) {
-            file.close();
-            return fullPath;
+
+        struct stat st;
+        if (stat(fullPath.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+            if (access(fullPath.c_str(), R_OK) == 0) {
+                return fullPath;
+            }
         }
     }
     return "";
@@ -334,7 +352,6 @@ string handleGetRequest(data_request &req, location *loc, client* clientObj = NU
         throw(404);
     rootVar = loc->getInfos("root")->at(0) + "/";
     string path = switchLocation(locPath, reqPath, rootVar);
-
     if (isDirectory(path)) {
         string indexFound = checkIndexes(loc, path + "/");
         if (indexFound == "") {
@@ -398,72 +415,4 @@ string handleGetRequest(data_request &req, location *loc, client* clientObj = NU
     response << body;
     
     return response.str();
-}
-
-std::string client::prepareGetResponse(data_request &req, location *loc)
-{
-    string locPath = normalizePath(loc->path);
-    string reqPath = normalizePath(req.path);
-    string rootVar;
-
-    std::map<std::string, std::vector<std::string> >::iterator itRoot = loc->infos.find("root");
-    if(itRoot == loc->infos.end())
-        throw(404);
-    rootVar = loc->getInfos("root")->at(0) + "/";
-    string path = switchLocation(locPath, reqPath, rootVar);
-
-    if (isDirectory(path)) {
-        string indexFound = checkIndexes(loc, path + "/");
-        if (indexFound == "") {
-            if (loc->getInfos("autoindex") && loc->getInfos("autoindex")->at(0) == "on") {
-                std::string body = listDirectory(path, reqPath);
-                std::string response =
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html\r\n"
-                    "Content-Length: " + to_string_98(body.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" +
-                    body;
-                return response;
-            } 
-            else
-                throw(403);
-        } else {
-            path = indexFound;
-        }
-    }
-    
-    struct stat st;
-    if (stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
-        throw(404);
-    }
-
-    size_t fileSize = getFileSize(path);
-    
-    const size_t CHUNKED_THRESHOLD = 1024 * 1024;
-    
-    if (fileSize > CHUNKED_THRESHOLD) {
-        
-        this->fileStream->open(path.c_str(), std::ios::in | std::ios::binary);
-        if (!this->fileStream->is_open())
-            throw(500);
-        
-        this->bytesRemaining = fileSize;
-        this->fileSize = fileSize;
-        this->fileToSend = path;
-        this->closeConnection = false;
-        
-        std::string mimeType = getMimeType(getExtensions(path));
-        
-        std::ostringstream headers;
-        headers << "HTTP/1.1 200 OK\r\n";
-        headers << "Content-Type: " << mimeType << "\r\n";
-        headers << "Content-Length: " << fileSize << "\r\n";
-        headers << "Accept-Ranges: bytes\r\n";
-        headers << "Connection: close\r\n\r\n";
-        
-        return headers.str();
-    }
-    
-    return "";
 }

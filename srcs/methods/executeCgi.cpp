@@ -289,4 +289,155 @@ std::vector<char*> setupCgiEnvironment(const std::string &scriptPath, const data
     return envp;
 }
 
-//
+void client::handleCgiRequest(int currentFd)
+{
+    if (this->data_rq.method == "DELETE" || !this->data_rq.myCloseLocation)
+        return;
+        
+    if (!isCgiConfigured(this->data_rq.myCloseLocation))
+        return;
+        
+    string locPath = normalizePath(this->data_rq.myCloseLocation->path);
+    string reqPath = normalizePath(data_rq.path);
+    string root;
+    vector<string>* exts;
+
+    std::map<std::string, std::vector<std::string> >::iterator itRoot = this->data_rq.myCloseLocation->infos.find("root");
+    if(itRoot == this->data_rq.myCloseLocation->infos.end()) 
+        throw(404);
+    
+    root = this->data_rq.myCloseLocation->getInfos("root")->at(0);
+    if (root[root.size() - 1] != '/') {
+        root += "/";
+    }
+    
+    string cgiPath = switchLocation(locPath, reqPath, root);
+    std::map<std::string, std::vector<std::string> >::iterator itCgi = this->data_rq.myCloseLocation->infos.find("cgi_extension");
+    if(itCgi == this->data_rq.myCloseLocation->infos.end()) 
+        throw(404);
+    exts = this->data_rq.myCloseLocation->getInfos("cgi_extension");
+    
+    if (isDirectory(cgiPath) && checkIndexes(this->data_rq.myCloseLocation, cgiPath + "/") != "")
+        cgiPath = checkIndexes(this->data_rq.myCloseLocation, cgiPath+ "/");					
+    
+    if (!checkExtension(cgiPath, *exts))
+        return;
+        
+    if (access(cgiPath.c_str(), F_OK) != 0)
+        throw(404);
+    
+    if (access(cgiPath.c_str(), R_OK) != 0)
+        throw(403);
+    
+    // --- Start CGI asynchronously ---
+    if (!cgi_running) {
+        int pipefd[2];
+        int inputPipe[2];
+        bool needInputPipe = (data_rq.method == "POST" && !data_rq.bodyNameFile.empty());
+        
+        if (pipe(pipefd) != 0)
+            throw(500);
+        if (needInputPipe && pipe(inputPipe) != 0) {
+            close(pipefd[0]);
+            close(pipefd[1]);
+            throw(500);
+        }
+        cgi_pid = fork();
+        if (cgi_pid == 0) {
+            // Additional debug in child process
+            if (access(cgiPath.c_str(), F_OK) != 0)
+                std::exit(1);
+
+            if (access(cgiPath.c_str(), R_OK) != 0)
+                std::exit(1);
+            
+            std::string cgiInterp = getCgiInterpreter(cgiPath, data_rq.myCloseLocation);
+            if (cgiInterp.empty())
+                std::exit(1);
+            
+            dup2(pipefd[1], STDOUT_FILENO);
+            close(pipefd[0]);
+            close(pipefd[1]);
+            // For POST, redirect stdin from input pipe
+            if (needInputPipe) {
+                dup2(inputPipe[0], STDIN_FILENO);
+                close(inputPipe[0]);
+                close(inputPipe[1]);
+            }
+            char *argv[] = {
+                (char*)cgiInterp.c_str(),
+                (char*)cgiPath.c_str(),
+                NULL
+            };
+            std::vector<std::string> envStrings;
+            std::vector<char*> envp = setupCgiEnvironment(cgiPath, data_rq, data_rq.bodyNameFile, envStrings);
+            
+            execve(cgiInterp.c_str(), argv, &envp[0]);
+            std::exit(1);
+        } else if (cgi_pid > 0) {
+            close(pipefd[1]);
+            if (needInputPipe) {
+                close(inputPipe[0]);
+                // Write POST body to CGI stdin
+                std::ifstream bodyFile(data_rq.bodyNameFile.c_str(), std::ios::binary);
+                if (bodyFile.is_open()) {
+                    char buffer[4096];
+                    while (bodyFile.read(buffer, sizeof(buffer)) || bodyFile.gcount() > 0) {
+                        ssize_t bytesRead = bodyFile.gcount();
+                        if (write(inputPipe[1], buffer, bytesRead) != bytesRead)
+                            break;
+                    }
+                    bodyFile.close();
+                }
+                close(inputPipe[1]);
+            }
+            cgi_fd = pipefd[0];
+            cgi_running = true;
+            cgi_start_time = std::time(NULL);
+    
+            throw(0);
+        } else {
+            // fork failed
+            if (needInputPipe) {
+                close(inputPipe[0]);
+                close(inputPipe[1]);
+            }
+            close(pipefd[0]);
+            close(pipefd[1]);
+            throw(500);
+        }
+    }
+    throw(0);
+}
+
+void client::handleDirectoryRedirect(int currentFd)
+{
+    if (data_rq.path[data_rq.path.size() - 1] == '/' || !this->data_rq.myCloseLocation)
+        return;
+        
+    string locPath = normalizePath(this->data_rq.myCloseLocation->path);
+    string reqPath = normalizePath(data_rq.path);
+    string root;
+    
+    std::map<std::string, std::vector<std::string> >::iterator itRoot = this->data_rq.myCloseLocation->infos.find("root");
+    if(itRoot == this->data_rq.myCloseLocation->infos.end()) 
+        throw(404);
+
+    root = this->data_rq.myCloseLocation->getInfos("root")->at(0) + "/";          
+    string resendPath = switchLocation(locPath, reqPath, root);
+    string indexFound = checkIndexes(this->data_rq.myCloseLocation, resendPath + "/");
+    
+    if (isDirectory(resendPath) && indexFound != "") {
+        std::string newLocation = data_rq.path + "/";
+        std::string response = 
+            "HTTP/1.1 301 Moved Permanently\r\n"
+            "Location: " + newLocation + "\r\n"
+            "Content-Length: 0\r\n"
+            "Connection: close\r\n"
+            "\r\n";
+        // cout << "inResend************************************************" << endl;
+        send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+        // closeConnection = true;
+        throw(0); 
+    }
+}

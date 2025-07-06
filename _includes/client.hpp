@@ -92,6 +92,8 @@ class client
 		void        setStatusCode();
         std::string prepareGetResponse(data_request &req, location *loc);
         void        handleGetRequestWithChunking(int currentFd);
+        void handleCgiRequest(int currentFd);
+        void handleDirectoryRedirect(int currentFd);
 };
 
 std::string                         get_line(std::string str);
