@@ -21,7 +21,7 @@ location* getClosestLocation(const Server& server, const std::string& requestPat
 void print_data(data_request& req);
 bool existFile(const string &fullPath, location *loc);
 string readFile(const string &fullPath);
-std::string getMimeType(const std::string& path);
+std::string getMimeType(const std::string &extension);
 string handleGetRequest(data_request &req, location *loc, int currentFd);
 // string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd);
 string checkIndexes(location* loc, const string path);

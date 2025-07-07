@@ -166,17 +166,125 @@ string readFile(const string &path)
 }
 
 // diro map 
-std::string getMimeType(const std::string& path) {
-    if (path.length() >= 5 && path.substr(path.length() - 5) == ".html") return "text/html";
-    if (path.length() >= 4 && path.substr(path.length() - 4) == ".css") return "text/css";
-    if (path.length() >= 4 && path.substr(path.length() - 4) == ".php") return "text/php";
-    if (path.length() >= 3 && path.substr(path.length() - 3) == ".js") return "application/javascript";
-    if (path.length() >= 4 && path.substr(path.length() - 4) == ".png") return "image/png";
-    if (path.length() >= 4 && path.substr(path.length() - 4) == ".jpg") return "image/jpeg";
-    if (path.length() >= 5 && path.substr(path.length() - 4) == ".mp4") return "video/mp4";
-    return "text/plain";
+// std::string getMimeType(const std::string& path) {
+//     if (path.length() >= 5 && path.substr(path.length() - 5) == ".html") return "text/html";
+//     if (path.length() >= 4 && path.substr(path.length() - 4) == ".css") return "text/css";
+//     if (path.length() >= 4 && path.substr(path.length() - 4) == ".php") return "text/php";
+//     if (path.length() >= 3 && path.substr(path.length() - 3) == ".js") return "application/javascript";
+//     if (path.length() >= 4 && path.substr(path.length() - 4) == ".png") return "image/png";
+//     if (path.length() >= 4 && path.substr(path.length() - 4) == ".jpg") return "image/jpeg";
+//     if (path.length() >= 5 && path.substr(path.length() - 4) == ".mp4") return "video/mp4";
+//     return "text/plain";
+// }
+
+std::map<std::string, std::string> createExtensionToMimeMap() {
+    std::map<std::string, std::string> mimeMap;
+
+    // Text
+    mimeMap[".html"] = "text/html";
+    mimeMap[".css"] = "text/css";
+    mimeMap[".xml"] = "text/xml";
+    mimeMap[".txt"] = "text/plain";
+    mimeMap[".mml"] = "text/mathml";
+    mimeMap[".jad"] = "text/vnd.sun.j2me.app-descriptor";
+    mimeMap[".wml"] = "text/vnd.wap.wml";
+    mimeMap[".htc"] = "text/x-component";
+
+    // Images
+    mimeMap[".gif"] = "image/gif";
+    mimeMap[".jpg"] = "image/jpeg";
+    mimeMap[".png"] = "image/png";
+    mimeMap[".svg"] = "image/svg+xml";
+    mimeMap[".tiff"] = "image/tiff";
+    mimeMap[".wbmp"] = "image/vnd.wap.wbmp";
+    mimeMap[".webp"] = "image/webp";
+    mimeMap[".ico"] = "image/x-icon";
+    mimeMap[".jng"] = "image/x-jng";
+    mimeMap[".bmp"] = "image/x-ms-bmp";
+    mimeMap[".avif"] = "image/avif";
+
+    // Fonts
+    mimeMap[".woff"] = "font/woff";
+    mimeMap[".woff2"] = "font/woff2";
+
+    // Application
+    mimeMap[".js"] = "application/javascript";
+    mimeMap[".json"] = "application/json";
+    mimeMap[".jar"] = "application/java-archive";
+    mimeMap[".hqx"] = "application/mac-binhex40";
+    mimeMap[".doc"] = "application/msword";
+    mimeMap[".pdf"] = "application/pdf";
+    mimeMap[".ps"] = "application/postscript";
+    mimeMap[".rtf"] = "application/rtf";
+    mimeMap[".m3u8"] = "application/vnd.apple.mpegurl";
+    mimeMap[".kml"] = "application/vnd.google-earth.kml+xml";
+    mimeMap[".kmz"] = "application/vnd.google-earth.kmz";
+    mimeMap[".xls"] = "application/vnd.ms-excel";
+    mimeMap[".eot"] = "application/vnd.ms-fontobject";
+    mimeMap[".ppt"] = "application/vnd.ms-powerpoint";
+    mimeMap[".odg"] = "application/vnd.oasis.opendocument.graphics";
+    mimeMap[".odp"] = "application/vnd.oasis.opendocument.presentation";
+    mimeMap[".ods"] = "application/vnd.oasis.opendocument.spreadsheet";
+    mimeMap[".odt"] = "application/vnd.oasis.opendocument.text";
+    mimeMap[".pptx"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    mimeMap[".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    mimeMap[".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    mimeMap[".wmlc"] = "application/vnd.wap.wmlc";
+    mimeMap[".wasm"] = "application/wasm";
+    mimeMap[".7z"] = "application/x-7z-compressed";
+    mimeMap[".cco"] = "application/x-cocoa";
+    mimeMap[".jardiff"] = "application/x-java-archive-diff";
+    mimeMap[".jnlp"] = "application/x-java-jnlp-file";
+    mimeMap[".run"] = "application/x-makeself";
+    mimeMap[".pl"] = "application/x-perl";
+    mimeMap[".prc"] = "application/x-pilot";
+    mimeMap[".rar"] = "application/x-rar-compressed";
+    mimeMap[".rpm"] = "application/x-redhat-package-manager";
+    mimeMap[".sea"] = "application/x-sea";
+    mimeMap[".swf"] = "application/x-shockwave-flash";
+    mimeMap[".tcl"] = "application/x-tcl";
+    mimeMap[".der"] = "application/x-x509-ca-cert";
+    mimeMap[".xpi"] = "application/x-xpinstall";
+    mimeMap[".xhtml"] = "application/xhtml+xml";
+    mimeMap[".xspf"] = "application/xspf+xml";
+    mimeMap[".zip"] = "application/zip";
+    mimeMap[".urlencoded"] = "application/x-www-form-urlencoded";
+    mimeMap[".bin"] = "application/octet-stream";
+
+    // Audio
+    mimeMap[".mid"] = "audio/midi";
+    mimeMap[".mp3"] = "audio/mpeg";
+    mimeMap[".ogg"] = "audio/ogg";
+    mimeMap[".m4a"] = "audio/x-m4a";
+    mimeMap[".ra"] = "audio/x-realaudio";
+
+    // Video
+    mimeMap[".3gp"] = "video/3gpp";
+    mimeMap[".ts"] = "video/mp2t";
+    mimeMap[".mp4"] = "video/mp4";
+    mimeMap[".mpeg"] = "video/mpeg";
+    mimeMap[".mov"] = "video/quicktime";
+    mimeMap[".webm"] = "video/webm";
+    mimeMap[".flv"] = "video/x-flv";
+    mimeMap[".m4v"] = "video/x-m4v";
+    mimeMap[".mng"] = "video/x-mng";
+    mimeMap[".asf"] = "video/x-ms-asf";
+    mimeMap[".wmv"] = "video/x-ms-wmv";
+    mimeMap[".avi"] = "video/x-msvideo";
+
+    return mimeMap;
 }
 
+std::string getMimeType(const std::string &extension)
+{
+    std::map<std::string, std::string> mimeMap = createExtensionToMimeMap();
+    std::map<std::string, std::string>::iterator it = mimeMap.find(extension);
+    if(it != mimeMap.end())
+    {
+        return mimeMap[extension];
+    }
+    return "text/plain";
+}
 //////////////////////////////////////////CGI////////////////////////////////////////////
 bool endsWith(const std::string& str, const std::string& suffix) {
     if (str.length() < suffix.length()) return false;
@@ -737,7 +845,7 @@ string handleGetRequest(data_request &req, location *loc, int currentFd)
 
     // std::ostringstream headers;
     // headers << "HTTP/1.1 200 OK\r\n";
-    // headers << "Content-Type: " << getMimeType(path) << "\r\n";
+    // headers << "Content-Type: " << getMimeType(getExtensions(path)) << "\r\n";
     // headers << "Content-Length: " << getFileSize(path) << "\r\n";
     // headers << "Connection: close\r\n\r\n";
     
@@ -757,7 +865,7 @@ string handleGetRequest(data_request &req, location *loc, int currentFd)
         std::ostringstream ait_response;
         
         ait_response << "HTTP/1.1 200 OK\r\n";
-        ait_response << "Content-Type: " << getMimeType(path) << "\r\n";
+        ait_response << "Content-Type: " << getMimeType(getExtensions(path)) << "\r\n";
         ait_response << "Content-Length: " << body.size() << "\r\n";
         ait_response << "Connection: close\r\n\r\n";
         ait_response << body << endl;
@@ -826,7 +934,7 @@ std::string client::prepareGetResponse(data_request &req, location *loc)
         // IMPORTANT: Ne pas fermer la connexion pour les gros fichiers
         this->closeConnection = false;
         
-        std::string mimeType = getMimeType(path);
+        std::string mimeType = getMimeType(getExtensions(path));
         
         std::ostringstream headers;
         headers << "HTTP/1.1 200 OK\r\n";

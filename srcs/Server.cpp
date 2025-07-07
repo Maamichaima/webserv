@@ -3,7 +3,7 @@
 
 Server::Server() {
     ip_address = "";
-    MaxBodySize = 0;
+    MaxBodySize = -1;
     for (std::vector<std::string>::iterator it = port.begin(); it != port.end(); ++it) {
         comb[*it] = Socket();
     }

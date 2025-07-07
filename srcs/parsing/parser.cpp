@@ -35,7 +35,7 @@ int parser::parse(client &client)
 			this->setDateToStruct(client, start_line);
 			client.flagProgress = 1;
 			client.buffer.erase(0, start_line.size());
-			if(client.data_rq.version != "HTTP/1.1")
+			if(client.data_rq.version != "HTTP/1.1" && client.data_rq.version != "HTTP/1.0")
 				throw (505); //HTTP Version Not Supported
 		}
 		else
@@ -119,7 +119,7 @@ int parser::parse(client &client)
 	return -1;
 }
 
-void parser::setDateToStruct(client &client, std::string &buffer)//const ??
+void parser::setDateToStruct(client &client, const std::string &buffer)
 {
     if(client.flagProgress == 0)
     {
@@ -127,7 +127,7 @@ void parser::setDateToStruct(client &client, std::string &buffer)//const ??
         std::deque<std::string> startLine = split(str, " ");
         client.data_rq.method = startLine[0];
 		size_t pos = startLine[1].find("?");
-		if(startLine[1].size() >= 8000)// khedmi b start line kolha 
+		if(str.size() >= 8192)
 			throw (414);// URI Too Long
 		if(pos != std::string::npos)
 		{
