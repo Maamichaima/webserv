@@ -147,11 +147,15 @@ void parser::setDateToStruct(client &client, const std::string &buffer)
 		std::string value = str.substr(pos + 2, size - pos - 2);
 		checkKeyValueContent(key, value);
 		toLower(key);
+		std::map<std::string, std::string>::iterator it = client.data_rq.headers.find(key);
+		if(it != client.data_rq.headers.end())
+			throw(400); //Bad request
         client.data_rq.headers[key] = value;
 		if(key == "host")
 		{
 			client.myServer = *chooseServer(SocketToServers[client.server_fd],client.data_rq.headers["host"]);
 			client.data_rq.myCloseLocation = getClosestLocation(client.myServer, client.data_rq.path);
+			std::cout << "our location" << client.data_rq.myCloseLocation->getPath() << "\n";
 			if(client.data_rq.myCloseLocation == NULL)
 				throw(404); //Not Found
 			std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("redirect");

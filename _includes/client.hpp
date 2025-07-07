@@ -56,7 +56,7 @@ class client
         static std::map<int, std::string>   description;
 		data_response                       data_rs;
         time_t                              lastActivityTime;
-
+		size_t								sizeBody;
 
         //////////////////////////////
         std::string fileToSend;

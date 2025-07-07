@@ -129,9 +129,11 @@ std::string getExtension(data_request data)
 
 void post(client &client, std::string buffer)
 {
-	std::string name_file = client.data_rq.bodyNameFile;// + getExtension(client.data_rq);
+	client.sizeBody += buffer.size();
+	if(client.myServer.MaxBodySize >= 0 && buffer.size() > client.myServer.MaxBodySize)
+		throw(413);
+	std::string name_file = client.data_rq.bodyNameFile;
 	std::ofstream file(name_file.c_str(), std::ios::app);
-	// std::cout << name_file << "========== " << file.is_open() << "\n";
 	if (!file.is_open())
 	{
 		std::cout << name_file << " not open \n";
@@ -139,11 +141,4 @@ void post(client &client, std::string buffer)
 	}
 	file << buffer;
 	file.close();
-
-	struct stat stat_buff;
-	if(stat(name_file.c_str(), &stat_buff) == 0)
-	{
-		if(client.myServer.MaxBodySize >= 0 && stat_buff.st_size > client.myServer.MaxBodySize)
-			throw(413); // Payload Too Larg
-	}
 }

@@ -133,12 +133,16 @@ void ServerManager::checkTimeOut() {
     
 }
 
-
-
+bool ctrC = true;
+void handler(int sig) {
+    ctrC = false;
+}
 
 void    ServerManager::RunServer()
 {
-    while(1)//flag bool
+	signal(SIGINT, handler);
+
+    while(ctrC)//flag bool
     {
         checkTimeOut();
         char buffer[BUFFER_SIZE];
@@ -166,6 +170,7 @@ void    ServerManager::RunServer()
             }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
+				std::cout << "==== " << buffer << " ====\n";
                 clients[currentFd].lastActivityTime = time(NULL);
                 
                 if(bytesRead <= 0)
