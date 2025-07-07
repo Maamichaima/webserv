@@ -36,7 +36,7 @@ string readFile(const string &fullPath);
 std::string getMimeType(const std::string& extension);
 string handleGetRequest(data_request &req, location *loc, client* clientObj);
 // string handleGetRequest(data_request &req, location *loc, const Server &myServer, int currentFd);
-string checkIndexes(location* loc, const string path);
+string checkIndexes(location* loc, const string &path);
 
 int isDirectory(const std::string &fullPath);
 

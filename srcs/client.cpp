@@ -17,6 +17,12 @@ client::client() : bytesRemaining(0), headersSent(false), fileSize(0), fileStrea
 	this->data_rq.isCgi			= 0;
 	this->sizeBody				= 0;
 	lastActivityTime = time(NULL);
+	cgi_pid = -1;
+	cgi_fd = -1;
+	cgi_running = false;
+	cgi_start_time = 0;
+	cgi_epoll_added = false; // <--- Add this line
+
     setErrorPages();
     setDescription();
 }
@@ -51,6 +57,16 @@ client::~client()
 		fileStream = NULL;
 	}
 	// close (server_fd);
+	if (cgi_fd != -1) {
+        close(cgi_fd);
+        cgi_fd = -1;
+    }
+    if (cgi_running && cgi_pid > 0) {
+        kill(cgi_pid, SIGKILL);
+        waitpid(cgi_pid, NULL, 0);
+        cgi_pid = -1;
+    }
+    cgi_epoll_added = false; // <--- Add this line
 }
 
 void client::printClient()
@@ -142,84 +158,36 @@ void client::setStatusCode()
 
 void client::handleResponse(int currentFd)
 {
-	setStatusCode();
-	if(this->data_rs.status_code < 0 || (this->data_rq.isCgi))// && this->data_rs.status_code == 201))
-	{
-		try
-		{
-			//////////////ReSend if not "/" in the end////////////////
-			if (data_rq.path[data_rq.path.size() - 1] != '/' && this->data_rq.myCloseLocation)
+    setStatusCode();
+    if(this->data_rs.status_code < 0 || this->data_rq.isCgi)
+    {
+        try
+        {
+            try {
+                handleDirectoryRedirect(currentFd);
+            } 
+			catch(const int &redirectStatus) 
 			{
-				string locPath = normalizePath(this->data_rq.myCloseLocation->path);
-				string reqPath = normalizePath(data_rq.path);
-				string root;
-				std::map<std::string, std::vector<std::string> >::iterator itRoot = this->data_rq.myCloseLocation->infos.find("root");
-				if(itRoot == this->data_rq.myCloseLocation->infos.end()) 
-				throw(404);
-			
-			root  = this->data_rq.myCloseLocation->getInfos("root")->at(0) + "/";          
-			string resendPath = switchLocation(locPath, reqPath, root);
-			string indexFound = checkIndexes(this->data_rq.myCloseLocation, resendPath + "/");
-			if (isDirectory(resendPath) && indexFound != "") {
-				
-				std::string newLocation = data_rq.path + "/";
-				std::string response = 
-					"HTTP/1.1 301 Moved Permanently\r\n"
-					"Location: " + newLocation + "\r\n"
-					"Content-Length: 0\r\n"
-					"Connection: close\r\n"
-					"\r\n";
-	
-				send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-				// closeConnection = true;
-				return;
-				}
-			}
+                if (redirectStatus == 0)
+                    return;
+                else
+                    throw(redirectStatus);
+            }
 
-			/////////////////// CGI /////////////////////////
-			if (this->data_rq.method != "DELETE" && this->data_rq.myCloseLocation)
+			try {
+				handleCgiRequest(currentFd);
+			} 
+			catch(const int &cgiStatus)
 			{
-				if (isCgiConfigured(this->data_rq.myCloseLocation))
-				{
-					string locPath = normalizePath(this->data_rq.myCloseLocation->path);
-					string reqPath = normalizePath(data_rq.path);
-					string root;
-					vector<string>* exts;
-	
-					std::map<std::string, std::vector<std::string> >::iterator itRoot = this->data_rq.myCloseLocation->infos.find("root");
-					if(itRoot == this->data_rq.myCloseLocation->infos.end()) 
-						throw(404);
-					root  = this->data_rq.myCloseLocation->getInfos("root")->at(0) + "/";    
-					
-					string cgiPath = switchLocation(locPath, reqPath, root);
-					std::map<std::string, std::vector<std::string> >::iterator itCgi = this->data_rq.myCloseLocation->infos.find("cgi_extension");
-					if(itCgi == this->data_rq.myCloseLocation->infos.end()) 
-						throw(404);
-					exts = this->data_rq.myCloseLocation->getInfos("cgi_extension");
-					
-					if (isDirectory(cgiPath) && checkIndexes(this->data_rq.myCloseLocation, cgiPath + "/") != "")
-						cgiPath = checkIndexes(this->data_rq.myCloseLocation, cgiPath+ "/");
-					if (checkExtension(cgiPath, *exts))
-					{
-						string cgiOutput;
-						if (executeCgi(cgiPath, data_rq, cgiOutput)) {
-							string response = buildCgiHttpResponse(cgiOutput);
-							send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-							this->closeConnection = true;
-				// cout << "inCGI************************************************" << endl;
-							return;
-						}
-						throw(500);
-					}
-				}
+				if (cgiStatus == 0)
+					return;
+				else
+					throw(cgiStatus);
+				
 			}
-			
-		/////////////////////////GET with CHUNKED TRANSFER///////////////////////
 			if(this->data_rq.method == "GET" && this->data_rs.status_code < 0)
 			{
 				handleGetRequestWithChunking(currentFd);
-				// cout << "inGET************************************************" << endl;
-				// closeConnection = true;
 				return;
 			}
 		}
@@ -321,13 +289,13 @@ void client::handleGetRequestWithChunking(int currentFd)
             throw(statusCode);
         }
     }
-    
+
     // Continue sending file chunks if we're in the middle of a transfer
     if (this->headersSent && this->fileStream->is_open() && this->bytesRemaining > 0) {
         this->sendFileChunk(currentFd);
         return;
     }
-    
+
     // File transfer complete
     if (this->fileStream->is_open() && this->bytesRemaining == 0) {
         this->fileStream->close();

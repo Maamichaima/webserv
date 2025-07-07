@@ -65,6 +65,14 @@ class client
         size_t fileSize;
         std::ifstream* fileStream;
         ////////////////////////////
+        // --- Add for async CGI ---
+        int cgi_pid;           // PID of CGI child process
+        int cgi_fd;            // FD to read CGI output
+        std::string cgi_buffer;// Buffer for CGI output
+        bool cgi_running;      // Is CGI running?
+        time_t cgi_start_time; // When CGI started
+        bool cgi_epoll_added;  // <--- Add this line
+        ////////////////////////////
         client();
         client(std::string buff, int fd);
         client &operator=(const client &obj);
@@ -84,6 +92,8 @@ class client
 		void        setStatusCode();
         std::string prepareGetResponse(data_request &req, location *loc);
         void        handleGetRequestWithChunking(int currentFd);
+        void handleCgiRequest(int currentFd);
+        void handleDirectoryRedirect(int currentFd);
 };
 
 std::string                         get_line(std::string str);

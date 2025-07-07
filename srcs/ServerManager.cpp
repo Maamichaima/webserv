@@ -155,6 +155,44 @@ void    ServerManager::RunServer()
        
         for(int i = 0; i < numEvents; i++){
             int currentFd = events[i].data.fd; 
+            // --- Check if this is a CGI fd for any client ---
+            bool isCgiFd = false;
+            for (std::map<int, client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+                if (it->second.cgi_running && it->second.cgi_fd == currentFd) {
+                    isCgiFd = true;
+                    // Read CGI output
+                    char cgiBuf[4096];
+                    ssize_t n = read(currentFd, cgiBuf, sizeof(cgiBuf));
+                    if (n > 0) {
+                        it->second.cgi_buffer.append(cgiBuf, n);
+                    } else if (n == 0) {
+                    } else {
+                    }
+                    // Check if CGI finished (EOF or timeout)
+                    int status = 0;
+                    if (n == 0 || (time(NULL) - it->second.cgi_start_time > 5)) {
+                        // Timeout or EOF
+                        if (n != 0) {
+                            kill(it->second.cgi_pid, SIGKILL);
+                        }
+                        waitpid(it->second.cgi_pid, &status, 0);
+                        // Remove cgi_fd from epoll
+                        epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
+                        close(it->second.cgi_fd);
+                        it->second.cgi_running = false;
+                        it->second.cgi_fd = -1;
+                        it->second.cgi_pid = -1;
+                        it->second.cgi_epoll_added = false;
+                        // Build and send response
+                        std::string response = buildCgiHttpResponse(it->second.cgi_buffer);
+                        send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
+                        it->second.closeConnection = true;
+                    }
+                    break;
+                }
+            }
+            if (isCgiFd)
+                continue;
             if(find(fds.begin(),fds.end(),currentFd) != fds.end()){ 
                 client_fd = accept(currentFd,NULL,NULL);
                 if (client_fd < 0) 
@@ -189,6 +227,14 @@ void    ServerManager::RunServer()
             else if (events[i].events & EPOLLOUT) 
             {
                 clients[currentFd].handleResponse(currentFd);
+                // If a CGI was just started, add its fd to epoll (only once)
+                if (clients[currentFd].cgi_running && clients[currentFd].cgi_fd != -1 && !clients[currentFd].cgi_epoll_added) {
+                    struct epoll_event ev;
+                    ev.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP;
+                    ev.data.fd = clients[currentFd].cgi_fd;
+                    int ret = epoll_ctl(epollFd, EPOLL_CTL_ADD, clients[currentFd].cgi_fd, &ev);
+                    clients[currentFd].cgi_epoll_added = true; // <--- Set the flag
+                }
                 // if(clients[currentFd].closeConnection)
                 //     ClientDisconnected(currentFd);
             }
