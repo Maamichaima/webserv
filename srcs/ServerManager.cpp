@@ -133,12 +133,16 @@ void ServerManager::checkTimeOut() {
     
 }
 
-
-
+bool ctrC = true;
+void handler(int sig) {
+    ctrC = false;
+}
 
 void    ServerManager::RunServer()
 {
-    while(1)//flag bool
+	signal(SIGINT, handler);
+
+    while(ctrC)//flag bool
     {
         checkTimeOut();
         char buffer[BUFFER_SIZE];

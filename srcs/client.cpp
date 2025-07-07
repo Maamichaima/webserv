@@ -15,8 +15,8 @@ client::client() : bytesRemaining(0), headersSent(false), fileSize(0), fileStrea
 	this->data_rs.flaIsRedirect = 0;
 	this->data_rs.status_code 	= -1;
 	this->data_rq.isCgi			= 0;
+	this->sizeBody				= 0;
 	lastActivityTime = time(NULL);
-
     setErrorPages();
     setDescription();
 }
@@ -143,7 +143,7 @@ void client::setStatusCode()
 void client::handleResponse(int currentFd)
 {
 	setStatusCode();
-	if(this->data_rs.status_code < 0 || (this->data_rq.isCgi && this->data_rs.status_code == 201))
+	if(this->data_rs.status_code < 0 || (this->data_rq.isCgi))// && this->data_rs.status_code == 201))
 	{
 		try
 		{
@@ -253,7 +253,7 @@ void client::handleResponse(int currentFd)
 void client::check_http_body_rules()
 {
 	if(this->data_rq.method != "GET" && this->data_rq.method != "POST" && this->data_rq.method != "DELETE")
-		throw(501);// Not Implemented
+		throw(501); // Not Implemented
 	
 	std::map<std::string, std::string>::iterator it_cLenght   = this->data_rq.headers.find("content-length");
 	std::map<std::string, std::string>::iterator it_cType     = this->data_rq.headers.find("content-type");
