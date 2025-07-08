@@ -47,7 +47,7 @@ client::~client()
 		if (fileStream->is_open()) {
 			fileStream->close();
 		}
-		//delete fileStream;
+		delete fileStream;
 		fileStream = NULL;
 	}
 	// close (server_fd);
@@ -90,8 +90,9 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		if(checkRequestProgress()) {}
-			// this->printClient();
+		// if(checkRequestProgress())
+		// 	std::cout << "in parse request client " << this->server_fd << " requested " << data_rq.path << std::endl;
+
 	}
 	catch(const int status_code)
 	{
@@ -240,6 +241,7 @@ void client::handleResponse(int currentFd)
 			this->data_rs.body = content;
 			std::string response = buildResponse();
 			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+			// close(currentFd);
 			this->closeConnection = true;
 			return ;
 		}
@@ -247,6 +249,7 @@ void client::handleResponse(int currentFd)
     setDataResponse();
     std::string response = buildResponse();
     send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+	// close(currentFd);
 	this->closeConnection = true;
 }
 

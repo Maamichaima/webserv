@@ -8,7 +8,7 @@ std::map<int, std::vector<Server *> > SocketToServers;
 ServerManager::ServerManager(){
     epollFd = epoll_create(1024);
 }
-std::vector<Server>  ServerManager::get_servers(){
+std::vector<Server>  &ServerManager::get_servers(){
     return(servers);
 }
 std::map<int,client>  ServerManager::get_clients(){
@@ -87,8 +87,26 @@ std::string ServerManager::findPort(int currentFd)
     return "";
 }
 
-bool ServerManager::Add_new_event(int fd_socket){
-    struct epoll_event event;
+ServerManager::~ServerManager()
+{
+	close(epollFd);
+	std::vector<int> fds = getAllSocketFds();
+	for (size_t i = 0; i < fds.size(); i++)
+	{
+		close(fds[i]);
+	}
+
+	std::map<int,client>::iterator it = clients.begin();
+	while(it != clients.end())
+	{
+		close(it->first);
+		it++;
+	}
+	
+}
+bool ServerManager::Add_new_event(int fd_socket)
+{
+	struct epoll_event event;
     event.events = EPOLLIN | EPOLLOUT |  EPOLLRDHUP | EPOLLHUP;
     event.data.fd = fd_socket;
     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd_socket, &event) < 0) {
@@ -103,8 +121,11 @@ void ServerManager::ClientDisconnected(int currentFd)
 {
 
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, NULL) == -1) {
+		std::cout << "client to be closed " << currentFd << " error string: " << strerror(errno) << "====" << std::endl;
+		std::cout << epollFd << "\n==============\n";
         ServerLogger::serverError("epoll_ctl: EPOLL_CTL_DEL");
     }
+	std::cout << "client closed " << currentFd << std::endl;
     ServerLogger::clientDisconnected();
     clients.erase(currentFd);
     close(currentFd);
@@ -150,13 +171,16 @@ void    ServerManager::RunServer()
         std::vector<int> fds = getAllSocketFds();
         int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
         if(numEvents < 0){
+			perror("error ");
             ServerLogger::serverError("epoll_wait failed");
         }
        
         for(int i = 0; i < numEvents; i++){
-            int currentFd = events[i].data.fd; 
+			int currentFd = events[i].data.fd; 
+			std::cout << currentFd << std::endl;
             if(find(fds.begin(),fds.end(),currentFd) != fds.end()){ 
                 client_fd = accept(currentFd,NULL,NULL);
+				std::cout << "client fd --> " << client_fd << "\n";
                 if (client_fd < 0) 
                     continue;
                 clients[client_fd].server_fd = currentFd;
@@ -170,7 +194,7 @@ void    ServerManager::RunServer()
             }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
-				std::cout << "==== " << buffer << " ====\n";
+				// std::cout << "==== " << buffer << " ====\n";
                 clients[currentFd].lastActivityTime = time(NULL);
                 
                 if(bytesRead <= 0)
@@ -188,12 +212,16 @@ void    ServerManager::RunServer()
                 clients[currentFd].parseRequest();
             else if (events[i].events & EPOLLOUT) 
             {
+				// std::cout << "in eppollout client " << currentFd << " requested " << data_rq.path << std::endl;
                 clients[currentFd].handleResponse(currentFd);
                 // if(clients[currentFd].closeConnection)
                 //     ClientDisconnected(currentFd);
             }
             if(clients[currentFd].closeConnection)
+			{
                 ClientDisconnected(currentFd);
+				// std::cout << "close the file descriptor\n";
+			}
         }
     }
 }

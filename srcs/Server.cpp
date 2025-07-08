@@ -10,6 +10,11 @@ Server::Server() {
 }
     
 Server::~Server(){
+	// std::cout << "=================\n";
+	// for (std::map<std::string, Socket>::iterator it = comb.begin(); 
+    //          it != comb.end(); ++it) {
+	// 			close(it->second.getSocketFd());
+	// }
 }
 
 void Server::set_IpAddress(std::string ip) {

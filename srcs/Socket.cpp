@@ -7,7 +7,8 @@ Socket::Socket() :fd_socket(-1) {
 }
 
 Socket::~Socket() {
-    
+	// std::cout << "========"<< fd_socket << "=========\n";
+    // close(fd_socket);
 }
 
 int Socket::getSocketFd() {
