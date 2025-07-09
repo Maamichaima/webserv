@@ -11,7 +11,6 @@ int main(int argc,char **argv){
     if(!parceConfigFile(argc,argv,manager))
         return(1);
     
-    //manager.printAllServerInfo();
     if(manager.initializeAll())    
         manager.RunServer();
 }
