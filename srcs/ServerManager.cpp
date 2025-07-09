@@ -121,12 +121,12 @@ void ServerManager::ClientDisconnected(int currentFd)
 {
 
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, NULL) == -1) {
-		std::cout << "client to be closed " << currentFd << " error string: " << strerror(errno) << "====" << std::endl;
-		std::cout << epollFd << "\n==============\n";
+		// std::cout << "client to be closed " << currentFd << " error string: " << strerror(errno) << "====" << std::endl;
+		// std::cout << epollFd << "\n==============\n";
         ServerLogger::serverError("epoll_ctl: EPOLL_CTL_DEL");
     }
-	std::cout << "client closed " << currentFd << std::endl;
     ServerLogger::clientDisconnected();
+    // std::cout <<"close fd " << currentFd << "\n==============\n";
     clients.erase(currentFd);
     close(currentFd);
 }
@@ -163,7 +163,7 @@ void    ServerManager::RunServer()
 {
 	signal(SIGINT, handler);
 
-    while(ctrC)//flag bool
+    while(ctrC)
     {
         checkTimeOut();
         char buffer[BUFFER_SIZE];
@@ -171,16 +171,13 @@ void    ServerManager::RunServer()
         std::vector<int> fds = getAllSocketFds();
         int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
         if(numEvents < 0){
-			perror("error ");
             ServerLogger::serverError("epoll_wait failed");
         }
        
         for(int i = 0; i < numEvents; i++){
 			int currentFd = events[i].data.fd; 
-			std::cout << currentFd << std::endl;
             if(find(fds.begin(),fds.end(),currentFd) != fds.end()){ 
                 client_fd = accept(currentFd,NULL,NULL);
-				std::cout << "client fd --> " << client_fd << "\n";
                 if (client_fd < 0) 
                     continue;
                 clients[client_fd].server_fd = currentFd;
@@ -212,7 +209,6 @@ void    ServerManager::RunServer()
                 clients[currentFd].parseRequest();
             else if (events[i].events & EPOLLOUT) 
             {
-				// std::cout << "in eppollout client " << currentFd << " requested " << data_rq.path << std::endl;
                 clients[currentFd].handleResponse(currentFd);
                 // if(clients[currentFd].closeConnection)
                 //     ClientDisconnected(currentFd);
@@ -220,10 +216,11 @@ void    ServerManager::RunServer()
             if(clients[currentFd].closeConnection)
 			{
                 ClientDisconnected(currentFd);
-				// std::cout << "close the file descriptor\n";
 			}
         }
+
     }
+    // #close(epollFd);
 }
 
 Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)

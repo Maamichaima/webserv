@@ -50,8 +50,9 @@ std::string padLeftToThree(const std::string& input)
 
 int isRedirect(int red)
 {
-	if(red == 301 || red == 302 || red == 304 || red == 307 || red == 308)
-		return 1;
+    std::string redirct = to_string_98(red);
+    if(redirct.size() > 1 && redirct[0] == '3')
+        return 1;
 	return 0;
 }
 
