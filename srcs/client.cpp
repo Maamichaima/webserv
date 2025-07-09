@@ -53,7 +53,7 @@ client::~client()
 		if (fileStream->is_open()) {
 			fileStream->close();
 		}
-		//delete fileStream;
+		delete fileStream;
 		fileStream = NULL;
 	}
 	// close (server_fd);
@@ -106,8 +106,9 @@ void client::parseRequest()
 	try
 	{
 		this->data_rs.status_code = parc.parse(*this);
-		if(checkRequestProgress()) {}
-			// this->printClient();
+		// if(checkRequestProgress())
+		// 	std::cout << "in parse request client " << this->server_fd << " requested " << data_rq.path << std::endl;
+
 	}
 	catch(const int status_code)
 	{
@@ -131,9 +132,10 @@ void client::setDataResponse()
 		if(isRedirect(this->data_rs.status_code))//without body
 		{
 			//location deja 3mraat fach kantrowi num of redirect
-		}
-		else// body with location
-		{
+            this->data_rs.headers["Connection"] = "close";
+        }
+        else// body with location
+        {
 			this->data_rs.body = this->data_rq.myCloseLocation->infos["redirect"][1];
 			this->data_rs.headers["Content-Type"] = "text/txt;";
 			this->data_rs.headers["Content-Length"] = to_string_98(this->data_rs.body.size());
@@ -252,7 +254,6 @@ void client::check_http_body_rules()
 			this->data_rq.bodyNameFile = this->data_rq.myCloseLocation->infos["upload_store"][0] + "/" + RandomString(5) + getExtension(this->data_rq);
 		else
 			this->data_rq.bodyNameFile = "/tmp/" + RandomString(5);//check protect 
-		std::cout << this->data_rq.bodyNameFile << "\n";
 	}
 }
 

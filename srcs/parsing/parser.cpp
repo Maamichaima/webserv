@@ -155,7 +155,6 @@ void parser::setDateToStruct(client &client, const std::string &buffer)
 		{
 			client.myServer = *chooseServer(SocketToServers[client.server_fd],client.data_rq.headers["host"]);
 			client.data_rq.myCloseLocation = getClosestLocation(client.myServer, client.data_rq.path);
-			std::cout << "our location" << client.data_rq.myCloseLocation->getPath() << "\n";
 			if(client.data_rq.myCloseLocation == NULL)
 				throw(404); //Not Found
 			std::map<std::string, std::vector<std::string> >::iterator it = client.data_rq.myCloseLocation->infos.find("redirect");

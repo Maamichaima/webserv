@@ -17,7 +17,7 @@ class ServerManager{
         std::map<int,client>    clients;
     public:
         ServerManager();
-        std::vector<Server>     get_servers();
+        std::vector<Server>     &get_servers();
         std::map<int,client>    get_clients();
         void                    addServer(Server& server);
         bool                    initializeAll() ;
@@ -28,6 +28,7 @@ class ServerManager{
         void                    checkTimeOut();
         void                    ClientDisconnected(int currentFd);
         std::string             findPort(int currentFd);
+		~ServerManager(); 
 };
 
 

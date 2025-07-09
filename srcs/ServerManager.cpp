@@ -8,7 +8,7 @@ std::map<int, std::vector<Server *> > SocketToServers;
 ServerManager::ServerManager(){
     epollFd = epoll_create(1024);
 }
-std::vector<Server>  ServerManager::get_servers(){
+std::vector<Server>  &ServerManager::get_servers(){
     return(servers);
 }
 std::map<int,client>  ServerManager::get_clients(){
@@ -87,8 +87,26 @@ std::string ServerManager::findPort(int currentFd)
     return "";
 }
 
-bool ServerManager::Add_new_event(int fd_socket){
-    struct epoll_event event;
+ServerManager::~ServerManager()
+{
+	close(epollFd);
+	std::vector<int> fds = getAllSocketFds();
+	for (size_t i = 0; i < fds.size(); i++)
+	{
+		close(fds[i]);
+	}
+
+	std::map<int,client>::iterator it = clients.begin();
+	while(it != clients.end())
+	{
+		close(it->first);
+		it++;
+	}
+	
+}
+bool ServerManager::Add_new_event(int fd_socket)
+{
+	struct epoll_event event;
     event.events = EPOLLIN | EPOLLOUT |  EPOLLRDHUP | EPOLLHUP;
     event.data.fd = fd_socket;
     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd_socket, &event) < 0) {
@@ -103,8 +121,11 @@ void ServerManager::ClientDisconnected(int currentFd)
 {
 
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, NULL) == -1) {
+		// std::cout << "client to be closed " << currentFd << " error string: " << strerror(errno) << "====" << std::endl;
+		// std::cout << epollFd << "\n==============\n";
         ServerLogger::serverError("epoll_ctl: EPOLL_CTL_DEL");
     }
+    // std::cout <<"close fd " << currentFd << "\n==============\n";
     ServerLogger::clientDisconnected();
     clients.erase(currentFd);
     close(currentFd);
@@ -141,7 +162,7 @@ void    ServerManager::RunServer()
 {
 	signal(SIGINT, handler);
 
-    while(ctrC)//flag bool
+    while(ctrC)
     {
         checkTimeOut();
         char buffer[BUFFER_SIZE];
@@ -166,16 +187,15 @@ void    ServerManager::RunServer()
                         it->second.cgi_buffer.append(cgiBuf, n);
                     }
                     // Check if CGI finished (EOF or timeout)
-                    int status = 0;
                     if (n == 0 || (time(NULL) - it->second.cgi_start_time > 5)) {
                         // Timeout or EOF
                         if (n != 0) {
                             kill(it->second.cgi_pid, SIGKILL);
                         }
-                        waitpid(it->second.cgi_pid, &status, 0);
-                        // Remove cgi_fd from epoll
+                        waitpid(it->second.cgi_pid, NULL, 0);
                         epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
                         close(it->second.cgi_fd);
+                        // Remove cgi_fd from epoll
                         it->second.cgi_running = false;
                         it->second.cgi_fd = -1;
                         it->second.cgi_pid = -1;
@@ -183,7 +203,10 @@ void    ServerManager::RunServer()
                         // Build and send response
                         std::string response = buildCgiHttpResponse(it->second.cgi_buffer);
                         send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
-                        it->second.closeConnection = true;
+                        // *********************************************************
+                        // it->second.closeConnection = true;
+                                        ClientDisconnected(it->first);
+                        // *********************************************************
                     }
                     break;
                 }
@@ -205,7 +228,6 @@ void    ServerManager::RunServer()
             }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
-				// std::cout << "==== " << buffer << " ====\n";
                 clients[currentFd].lastActivityTime = time(NULL);
                 
                 if(bytesRead <= 0)
@@ -232,13 +254,15 @@ void    ServerManager::RunServer()
                     int ret = epoll_ctl(epollFd, EPOLL_CTL_ADD, clients[currentFd].cgi_fd, &ev);
                     clients[currentFd].cgi_epoll_added = true; // <--- Set the flag
                 }
-                // if(clients[currentFd].closeConnection)
-                //     ClientDisconnected(currentFd);
             }
             if(clients[currentFd].closeConnection)
+			{
                 ClientDisconnected(currentFd);
+			}
         }
+
     }
+    // #close(epollFd);
 }
 
 Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
