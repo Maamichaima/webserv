@@ -47,8 +47,8 @@ bool ServerManager::initializeAll() {
 
     }
     if(epollFds.empty())
-     {   
-        cout << "no server exist " << endl;
+    {   
+        ServerLogger::serverError( "No server available " );
         return false;
     }
     
@@ -79,8 +79,8 @@ std::string ServerManager::findPort(int currentFd)
     for (size_t i = 0; i < servers.size(); i++) {
         std::map<std::string, Socket>& server_sockets = servers[i].comb;
         for (std::map<std::string, Socket>::iterator it = server_sockets.begin(); it != server_sockets.end(); ++it) {
-            if (it->second.getSocketFd() == currentFd) {  // Assuming Socket has getFd() method
-                return it->first;  // Return the port (key)
+            if (it->second.getSocketFd() == currentFd) {  
+                return it->first;  
             }
         }   
     }
@@ -124,9 +124,8 @@ void ServerManager::checkTimeOut() {
             cl.data_rs.status_code = 408;
             cl.setDataResponse();
             std::string response = cl.buildResponse();
-            if( send(clientFd, response.c_str(), response.size(), MSG_NOSIGNAL) == -1)
-                //perror("send failed" );
-               // std::cerr << "send failed" << std::endl;
+            if( send(clientFd, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
+                ServerLogger::serverError("Send failed ");
             ClientDisconnected(clientFd);
         }
     }
@@ -149,9 +148,9 @@ void    ServerManager::RunServer()
         int client_fd;
         std::vector<int> fds = getAllSocketFds();
         int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
-        if(numEvents < 0){
-            ServerLogger::serverError("epoll_wait failed");
-        }
+        // if(numEvents < 0){
+        //     ServerLogger::serverError("epoll_wait failed");
+        // }
        
         for(int i = 0; i < numEvents; i++){
             int currentFd = events[i].data.fd; 
@@ -165,8 +164,6 @@ void    ServerManager::RunServer()
                     ssize_t n = read(currentFd, cgiBuf, sizeof(cgiBuf));
                     if (n > 0) {
                         it->second.cgi_buffer.append(cgiBuf, n);
-                    } else if (n == 0) {
-                    } else {
                     }
                     // Check if CGI finished (EOF or timeout)
                     int status = 0;
@@ -208,7 +205,7 @@ void    ServerManager::RunServer()
             }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
-				std::cout << "==== " << buffer << " ====\n";
+				// std::cout << "==== " << buffer << " ====\n";
                 clients[currentFd].lastActivityTime = time(NULL);
                 
                 if(bytesRead <= 0)
@@ -246,11 +243,6 @@ void    ServerManager::RunServer()
 
 Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
 {
-    // if(routeServer.empty())
-    // {
-    //     //std::cerr << "Error: No servers available for routing" << std::endl;
-    //     return NULL;
-    // }
     if(routeServer.size() == 1)
     {
         return routeServer[0];
@@ -265,7 +257,7 @@ Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)
         }
     }
    
-    return(routeServer[0]); // check empty vector 
+    return(routeServer[0]); 
 }
 
 void   ServerManager::routeRequest()
@@ -281,102 +273,8 @@ void   ServerManager::routeRequest()
             SocketToServers[fd].push_back(&(*serverIt));
         }
     }
-    // std::cout << "routeServer contains " << SocketToServers[4].size() << " servers:" << std::endl;
-    // for(size_t i = 0; i < SocketToServers[4].size(); ++i)
-    // {
-    //     std::cout << "Server[" << i << "]: " << SocketToServers[4][i] << std::endl;
-    //     // If Server class has specific members you want to print, access them like:
-    //     // std::cout << "Server[" << i << "] - Name: " << routeServer[i]->name << std::endl;
-    // }
  
 }
 
 
 
-void ServerManager::printAllServerInfo() {
-
-    if(servers.empty()){
-        std::cout << "No servers configured." << std::endl;
-        return;
-    }
-    std::cout << "----- SERVER INFORMATION -----" << std::endl;
-    for (size_t i = 0; i < servers.size(); i++) {
-
-        Server& server = servers[i];
-        std::cout << "\n  SERVER #" << (i + 1) << std::endl;
-        std::cout << "----------------------------------------" << std::endl;
-
-        
-        // IP Address
-        if (!server.ip_address.empty()) {
-            std::cout << "   IP Address: " << server.ip_address << std::endl;
-        } else {
-            std::cout << "   IP Address: Not configured" << std::endl;
-        }
-        if (!server.port.empty()) {
-            std::cout << "   Ports: ";
-            for (size_t j = 0; j < server.port.size(); j++) {
-                std::cout << server.port[j];
-                if (j < server.port.size() - 1) std::cout << ", ";
-            }
-            std::cout << std::endl;
-        } else {
-            std::cout << "   Ports: None configured" << std::endl;
-        }
-
-        if (!server.serverNames.empty()) {
-            std::cout << "   Server Names: ";
-            for (size_t j = 0; j < server.serverNames.size(); j++) {
-                std::cout << server.serverNames[j];
-                if (j < server.serverNames.size() - 1) std::cout << ", ";
-            }
-            std::cout << std::endl;
-        } else {
-            std::cout << "   Server Names: None configured" << std::endl;
-        }
-
-        if (server.MaxBodySize != 0) {
-            std::cout << "   Max Body Size: " << server.MaxBodySize << std::endl;
-        } else {
-            std::cout << "   Max Body Size: Default" << std::endl;
-        }
-
-        if (!server.comb.empty()) {
-            std::cout << "\n SOCKET COMBINATIONS:" << std::endl;
-            for (std::map<std::string, Socket>::const_iterator it = server.comb.begin(); 
-                 it != server.comb.end(); ++it) {
-                std::cout << "   " << it->first << " -> Socket configured" << std::endl;
-            }
-        }
-        if (!server.errorPages.empty()) {
-            std::cout << "\n ERROR PAGES:" << std::endl;
-            for (std::map<std::string, std::string>::const_iterator it = server.errorPages.begin(); 
-                 it != server.errorPages.end(); ++it) {
-                std::cout << "   Error " << it->first << " -> " << it->second << std::endl;
-            }
-        } else {
-            std::cout << "\n ERROR PAGES: None configured" << std::endl;
-        }
-        server.printLocations();  
-        std::cout << std::endl;
-    }
-    std::cout << "----- END SERVER INFORMATION -----" << std::endl;
-}
-
-// khass rihab txouf fin dirha
-void printLocations(const Server& server) {
-    for (std::map<std::string, location>::const_iterator it = server.locations.begin(); it != server.locations.end(); ++it) {
-        std::cout << "Location path: " << it->second.getPath() << std::endl;
-
-        const std::map<std::string, std::vector<std::string> >& infos = it->second.infos;
-        for (std::map<std::string, std::vector<std::string> >::const_iterator info_it = infos.begin(); info_it != infos.end(); ++info_it) {
-            std::cout << "  " << info_it->first << " : ";
-            for (size_t i = 0; i < info_it->second.size(); ++i) {
-                std::cout << info_it->second[i];
-                if (i < info_it->second.size() - 1)
-                    std::cout << ", ";
-            }
-            std::cout << std::endl;
-        }
-    }
-}

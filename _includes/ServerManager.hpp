@@ -22,11 +22,8 @@ class ServerManager{
         void                    addServer(Server& server);
         bool                    initializeAll() ;
         std::vector<int>        getAllSocketFds() ;
-        Server*                 findServerByFd(int fd) ;
-        void                    printAllServerInfo() ;
         bool                    Add_new_event(int fd_socket);
         void                    RunServer();
-        Socket*                 findSocketByFd(int fd);
         void                    routeRequest();
         void                    checkTimeOut();
         void                    ClientDisconnected(int currentFd);
