@@ -53,7 +53,8 @@ int isRedirect(int red)
     std::string redirct = to_string_98(red);
     if(redirct.size() > 1 && redirct[0] == '3')
         return 1;
-	return 0;
+	
+    return 0;
 }
 
 void toLower(std::string &str)

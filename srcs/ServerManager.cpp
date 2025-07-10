@@ -3,6 +3,9 @@
 #include <cstddef>
 #include <ostream>
 
+
+bool ctrC = true;
+
 std::map<int, std::vector<Server *> > SocketToServers;
 
 ServerManager::ServerManager(){
@@ -153,8 +156,9 @@ void ServerManager::checkTimeOut() {
     
 }
 
-bool ctrC = true;
-void handler(int sig) {
+void handler(int sig)
+{
+    (void) sig;
     ctrC = false;
 }
 
@@ -205,7 +209,8 @@ void    ServerManager::RunServer()
                         send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
                         // *********************************************************
                         // it->second.closeConnection = true;
-                                        ClientDisconnected(it->first);
+                        std::cout << "hohohohhohoho" << "\n";
+                        ClientDisconnected(it->first);
                         // *********************************************************
                     }
                     break;
@@ -251,7 +256,7 @@ void    ServerManager::RunServer()
                     struct epoll_event ev;
                     ev.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP;
                     ev.data.fd = clients[currentFd].cgi_fd;
-                    int ret = epoll_ctl(epollFd, EPOLL_CTL_ADD, clients[currentFd].cgi_fd, &ev);
+                    epoll_ctl(epollFd, EPOLL_CTL_ADD, clients[currentFd].cgi_fd, &ev);
                     clients[currentFd].cgi_epoll_added = true; // <--- Set the flag
                 }
             }

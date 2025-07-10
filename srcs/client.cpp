@@ -49,7 +49,7 @@ client &client::operator=(const client &obj)
 
 client::~client()
 {
-	if (fileStream) {
+	if (fileStream != NULL) {
 		if (fileStream->is_open()) {
 			fileStream->close();
 		}
@@ -177,7 +177,7 @@ void client::handleResponse(int currentFd)
             }
 
 			try {
-				handleCgiRequest(currentFd);
+				handleCgiRequest();
 			} 
 			catch(const int &cgiStatus)
 			{

@@ -50,12 +50,10 @@ int deleteDir(const std::string& path)
 	closedir(dir);// hhh/ccc/./
 	if (std::remove(path.c_str()) == 0)
 	{
-		std::cout << "Directory deleted: " << path << "\n";
 		return (204);
 	}
 	else
 	{
-		std::cerr << "Failed to delete directory: " << path << "\n";
 		return (500);// delete fail
 	}
 }
@@ -70,6 +68,7 @@ std::string getPathToDelete(const client &client)
 	if(pos != std::string::npos)
 		new_path.erase(pos, client.data_rq.myCloseLocation->path.length());
 	new_path = client.data_rq.myCloseLocation->infos["root"][0] + "/" + new_path;
+	std::cout << new_path << "\n";
 	return new_path;
 }
 

@@ -157,7 +157,7 @@ std::vector<char*> setupCgiEnvironment(const std::string &scriptPath, const data
     return envp;
 }
 
-void client::handleCgiRequest(int currentFd)
+void client::handleCgiRequest()
 {
     if (this->data_rq.method == "DELETE" || !this->data_rq.myCloseLocation)
         return;
@@ -240,6 +240,7 @@ void client::handleCgiRequest(int currentFd)
             std::vector<char*> envp = setupCgiEnvironment(cgiPath, data_rq, data_rq.bodyNameFile, envStrings);
             
             execve(cgiInterp.c_str(), argv, &envp[0]);
+            // throw(500); /////
             std::exit(1);
         } else if (cgi_pid > 0) {
             close(pipefd[1]);

@@ -130,13 +130,13 @@ std::string getExtension(data_request data)
 void post(client &client, std::string buffer)
 {
 	client.sizeBody += buffer.size();
-	if(client.myServer.MaxBodySize >= 0 && buffer.size() > client.myServer.MaxBodySize)
+	if(client.myServer.MaxBodySize >= 0 && buffer.size() > (size_t)client.myServer.MaxBodySize)
 		throw(413);
 	std::string name_file = client.data_rq.bodyNameFile;
 	std::ofstream file(name_file.c_str(), std::ios::app);
 	if (!file.is_open())
 	{
-		std::cout << name_file << " not open \n";
+		// std::cout << name_file << " not open \n";
 		throw(500);
 	}
 	file << buffer;
