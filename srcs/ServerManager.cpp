@@ -209,7 +209,7 @@ void    ServerManager::RunServer()
                         send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
                         // *********************************************************
                         // it->second.closeConnection = true;
-                        std::cout << "hohohohhohoho" << endl;
+                        // std::cout << "hohohohhohoho" << endl;
                         ClientDisconnected(it->first);
                         // *********************************************************
                     }
@@ -233,7 +233,8 @@ void    ServerManager::RunServer()
             }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
-                clients[currentFd].lastActivityTime = std::time(NULL);
+                // std::cout << "buffer" << buffer << "\n";
+                 clients[currentFd].lastActivityTime = std::time(NULL);
                 
                 if(bytesRead <= 0)
                 {      

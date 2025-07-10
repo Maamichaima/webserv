@@ -298,7 +298,15 @@ void client::handleDirectoryRedirect(int currentFd)
     if (isDirectory(resendPath) && indexFound != "") {
         std::string newLocation = data_rq.path + "/";
         // 301 || 307
-        std::string response =  
+        
+        // this->data_rs.headers["Location"] = newLocation;
+        // if(this->data_rq.method == "GET")
+        // {
+        //     throw(301);
+        // }
+        // else if(this->data_rq.method == "POST")
+        //     throw(307);
+        std::string response =   
             "HTTP/1.1 301 Moved Permanently\r\n"
             "Location: " + newLocation + "\r\n"
             "Content-Length: 0\r\n"

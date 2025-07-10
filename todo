@@ -5,13 +5,17 @@
 
     bdel blaset find ??
 
-    delete file sys
 
     path delete
     
-    ila kan error f file kaytprinta error walakin status code 200 (itbdel )???
+    if execve failed should return 500 but we have a problem
 
     website 2 in webserv.conf nbadlo page html m9ada
 
-    test leaks mzyaaan 
+    test leaks mzyaaan (filestream)
 
+    // 301 || 
+    
+
+//     masrcs/methods/executeCgi.cpp:281:42: error: unused parameter 'currentFd' [-Werror,-Wunused-parameter]
+// void client::handleDirectoryRedirect(int currentFd)
