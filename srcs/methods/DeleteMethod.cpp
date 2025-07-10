@@ -70,7 +70,6 @@ std::string getPathToDelete(const client &client)
 	if(pos != std::string::npos)
 		new_path.erase(pos, client.data_rq.myCloseLocation->path.length());
 	new_path = client.data_rq.myCloseLocation->infos["root"][0] + "/" + new_path;
-	std::cout << new_path << "\n";
 	return new_path;
 }
 
