@@ -199,6 +199,11 @@ void client::handleCgiRequest()
     
     // --- Start CGI asynchronously ---
     if (!cgi_running) {
+        std::string cgiInterp = getCgiInterpreter(cgiPath, data_rq.myCloseLocation);
+        if (cgiInterp.empty() || access(cgiInterp.c_str(), F_OK) != 0) {
+            throw(500);
+        }
+        
         int pipefd[2];
         int inputPipe[2];
         bool needInputPipe = (data_rq.method == "POST" && !data_rq.bodyNameFile.empty());
@@ -216,10 +221,6 @@ void client::handleCgiRequest()
                 std::exit(1);
 
             if (access(cgiPath.c_str(), R_OK) != 0)
-                std::exit(1);
-            
-            std::string cgiInterp = getCgiInterpreter(cgiPath, data_rq.myCloseLocation);
-            if (cgiInterp.empty())
                 std::exit(1);
             
             dup2(pipefd[1], STDOUT_FILENO);
@@ -240,7 +241,6 @@ void client::handleCgiRequest()
             std::vector<char*> envp = setupCgiEnvironment(cgiPath, data_rq, data_rq.bodyNameFile, envStrings);
             
             execve(cgiInterp.c_str(), argv, &envp[0]);
-            // throw(500); /////
             std::exit(1);
         } else if (cgi_pid > 0) {
             close(pipefd[1]);
@@ -297,7 +297,8 @@ void client::handleDirectoryRedirect(int currentFd)
     
     if (isDirectory(resendPath) && indexFound != "") {
         std::string newLocation = data_rq.path + "/";
-        std::string response = 
+        // 301 || 307
+        std::string response =  
             "HTTP/1.1 301 Moved Permanently\r\n"
             "Location: " + newLocation + "\r\n"
             "Content-Length: 0\r\n"
@@ -305,7 +306,6 @@ void client::handleDirectoryRedirect(int currentFd)
             "\r\n";
         // cout << "inResend************************************************" << endl;
         send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
-        // closeConnection = true;
         throw(0); 
     }
 }

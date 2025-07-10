@@ -52,8 +52,8 @@ client::~client()
 	if (fileStream != NULL) {
 		if (fileStream->is_open()) {
 			fileStream->close();
+			delete fileStream;
 		}
-		delete fileStream;
 		fileStream = NULL;
 	}
 	// close (server_fd);

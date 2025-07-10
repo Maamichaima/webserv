@@ -135,7 +135,7 @@ void ServerManager::ClientDisconnected(int currentFd)
 }
 
 void ServerManager::checkTimeOut() {
-    time_t now = time(NULL);
+    time_t now = std::time(NULL);
     std::vector<int> timedOutClients;
     std::map<int, client>::iterator it = clients.begin(); 
     
@@ -191,7 +191,7 @@ void    ServerManager::RunServer()
                         it->second.cgi_buffer.append(cgiBuf, n);
                     }
                     // Check if CGI finished (EOF or timeout)
-                    if (n == 0 || (time(NULL) - it->second.cgi_start_time > 5)) {
+                    if (n == 0 || (std::time(NULL) - it->second.cgi_start_time > 5)) {
                         // Timeout or EOF
                         if (n != 0) {
                             kill(it->second.cgi_pid, SIGKILL);
@@ -209,7 +209,7 @@ void    ServerManager::RunServer()
                         send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
                         // *********************************************************
                         // it->second.closeConnection = true;
-                        std::cout << "hohohohhohoho" << "\n";
+                        std::cout << "hohohohhohoho" << endl;
                         ClientDisconnected(it->first);
                         // *********************************************************
                     }
@@ -233,7 +233,7 @@ void    ServerManager::RunServer()
             }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
-                clients[currentFd].lastActivityTime = time(NULL);
+                clients[currentFd].lastActivityTime = std::time(NULL);
                 
                 if(bytesRead <= 0)
                 {      

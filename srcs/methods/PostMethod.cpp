@@ -103,7 +103,7 @@ std::map<std::string, std::string> createMimeTypeMap() {
 
 std::string RandomString(size_t len)
 {
-	srand(static_cast<unsigned int>(time(0)));
+	srand(static_cast<unsigned int>(std::time(0)));
 	std::string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 	std::string newstr;
 	int pos;
