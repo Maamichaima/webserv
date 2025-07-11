@@ -5,9 +5,8 @@
 
     bdel blaset find ??
 
+    delete redirect ?? 
 
-    path delete
-    
     if execve failed should return 500 but we have a problem
 
     website 2 in webserv.conf nbadlo page html m9ada
