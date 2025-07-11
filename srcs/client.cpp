@@ -185,8 +185,7 @@ void client::parseRequest()
 	{
 		this->data_rs.status_code = parc.parse(*this);
 		// if(checkRequestProgress())
-		// 	std::cout << "in parse request client " << this->server_fd << " requested " << data_rq.path << std::endl;
-
+		// 	this->printClient();
 	}
 	catch(const int status_code)
 	{
@@ -207,12 +206,9 @@ void client::setDataResponse()
 	
 	if(this->data_rs.flaIsRedirect)
 	{
-		if(isRedirect(this->data_rs.status_code))//without body
-		{
-			//location deja 3mraat fach kantrowi num of redirect
+		if(isRedirect(this->data_rs.status_code))
             this->data_rs.headers["Connection"] = "close";
-        }
-        else// body with location
+        else
         {
 			this->data_rs.body = this->data_rq.myCloseLocation->infos["redirect"][1];
 			this->data_rs.headers["Content-Type"] = "text/txt;";
@@ -287,14 +283,16 @@ void client::handleResponse(int currentFd)
 			this->data_rs.headers["Content-Length"] = to_string_98(content.size());
 			this->data_rs.body = content;
 			std::string response = buildResponse();
-			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+			if(send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL) < 0)
+				ServerLogger::serverError("Send failed ");
 			this->closeConnection = true;
 			return ;
 		}
 	}
     setDataResponse();
     std::string response = buildResponse();
-    send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+    if(send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL) < 0)
+		ServerLogger::serverError("Send failed ");
 	this->closeConnection = true;
 }
 

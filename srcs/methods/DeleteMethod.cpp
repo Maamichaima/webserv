@@ -33,10 +33,10 @@ int deleteDir(const std::string& path)
 	if(dir == NULL)
 	{
 		if(access(path.c_str(), W_OK | X_OK) == -1)
-			throw(403);// no permision to delete
+			throw(403);
 		else if(access(path.c_str(), F_OK) == 0)
-			throw(404);//path not found 
-		throw (500);// mathelch directory mzyan
+			throw(404); 
+		throw (500);
 	}
 	struct dirent* entry;
 	while((entry = readdir(dir)) != NULL)
@@ -44,18 +44,35 @@ int deleteDir(const std::string& path)
 		std::string name = entry->d_name;
 		if (name == "." || name == "..")
 			continue;
+		
 		std::string fullPath = path + "/" + name;
-		deleteDir(fullPath);
+		int type = pathType(fullPath);
+
+		if (type == 1) // Directory
+            deleteDir(fullPath);
+        else if (type == 2)  // File
+		{
+            if (std::remove(fullPath.c_str()) != 0)
+			{
+                if (access(fullPath.c_str(), W_OK) != 0)
+				{
+					closedir(dir);
+					throw(403);
+				}
+
+				if (std::remove(fullPath.c_str()) != 0)
+				{
+					closedir(dir);
+					throw(500);
+				}
+            }
+        }
 	}
-	closedir(dir);// hhh/ccc/./
+	closedir(dir);
 	if (std::remove(path.c_str()) == 0)
-	{
 		return (204);
-	}
 	else
-	{
-		return (500);// delete fail
-	}
+		return (500);
 }
 
 std::string getPathToDelete(const client &client)
@@ -75,9 +92,9 @@ std::string getPathToDelete(const client &client)
 void deleteMethode(const client &client)
 {
 	std::string pathtoDelete = getPathToDelete(client);
-	if(pathtoDelete == "/")//add path of our project w
+	if(pathtoDelete == "/")
 		throw(403);
-    if (pathType(pathtoDelete) == 1)//is a dir
+    if (pathType(pathtoDelete) == 1)//is dir
 	{
 		if(!pathtoDelete.empty() && pathtoDelete[pathtoDelete.length() - 1] != '/')// ila kan empty 
 			throw(409);

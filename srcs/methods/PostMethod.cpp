@@ -135,10 +135,7 @@ void post(client &client, std::string buffer)
 	std::string name_file = client.data_rq.bodyNameFile;
 	std::ofstream file(name_file.c_str(), std::ios::app);
 	if (!file.is_open())
-	{
-		// std::cout << name_file << " not open \n";
 		throw(500);
-	}
 	file << buffer;
 	file.close();
 }
