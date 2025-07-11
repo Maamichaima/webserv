@@ -27,7 +27,6 @@ void parce_optional(std::deque<RegEx> &dq)
 	}
 	else if (dq.back().quantifier == EXACTLY_ONE)
 	{
-		// std::cout << "hh\n";
 		dq.back().quantifier = ZERO_OR_ONE;
 	}
 	else
@@ -113,7 +112,7 @@ void parce_(std::deque<RegEx>& dq, std::string str, size_t &i)
 	i = pos;
 }
 
-std::deque<RegEx> parce_expretion(std::string str)//p.**
+std::deque<RegEx> parce_expretion(std::string str)
 {
 	size_t i = 0;
 	std::deque<RegEx> dq;
@@ -236,7 +235,6 @@ bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
             }
             else if (it->quantifier == ZERO_OR_MORE)
             {
-		// std::cout << c <<std::endl;
 				int j = 0;
 				while (str[i] && str[i] == it->content)
 				{
@@ -501,29 +499,21 @@ bool isMatch(std::string ex, std::string testStr)
 {
 	std::deque<RegEx> dq = parce_expretion(ex);
 	if (test(testStr, dq))
-	{
-        // std::cout << "Matched!" << std::endl;
 		return true;
-	}
     else
-	{
-        // std::cout << "Not matched!" << std::endl;
 		return false;
-	}
 }
 
 // int main()
 // {
-//     std::string ex = "\\S+: .+\r\n";//*+
+//     std::string ex = "\\d+.\\d+\r\n";
 //     std::deque<RegEx> dq = parce_expretion(ex);
 
 // 	// print(dq);
-//     // std::string testStr = "hhhh:dg\r\n";
-//     // if (test(testStr, dq))
-//     //     std::cout << "Matched!" << std::endl;
-//     // else
-//     //     std::cout << "Not matched!" << std::endl;
-// 	// print_stack(backtrackStack);
-// 	// isMatch("[A-Z]*", "HFFKJV");
+//     std::string testStr = "8.5\r\n";
+//     if (isMatch(ex, testStr))
+//         std::cout << "Matched!" << std::endl;
+//     else
+//         std::cout << "Not matched!" << std::endl;
 //     return 0;
 // }

@@ -37,7 +37,6 @@ class RegEx
 		Quantifier quantifier;
 		char content;
 		std::string cc;
-		// RegEx();
 		RegEx(char content, TokenType type);
 		RegEx(std::string cc, TokenType type);
 		RegEx(char content, std::string cc, TokenType type);
@@ -51,5 +50,4 @@ struct BacktrackElement
 	RegEx regex;
 };
 
-// struct 
 bool isMatch(std::string ex, std::string testStr);

@@ -3,9 +3,7 @@
 #include "../../_includes/GetMethod.hpp"
 #include "../../_includes/DeleteMethod.hpp"
 
-parser::parser()
-{
-}
+parser::parser(){}
 
 parser::parser(const parser &obj)
 {
@@ -18,8 +16,22 @@ parser &parser::operator=(const parser &obj)
     return *this;
 }
 
-parser::~parser()
+parser::~parser(){}
+
+int parse_startligne(std::string str)
 {
+	if(!isMatch("[A-Z]+ /.* HTTP/\\d+\\.\\d+\r\n", str))
+	{
+		return 0;
+	}
+	return 1;
+}
+
+int parse_header(std::string str)
+{
+	if(!isMatch("\\S+: .+\r\n", str))
+		return 0;
+	return 1;
 }
 
 int parser::parse(client &client)
@@ -36,11 +48,12 @@ int parser::parse(client &client)
 			client.buffer.erase(0, start_line.size());
 			if(client.data_rq.version != "HTTP/1.1" && client.data_rq.version != "HTTP/1.0")
 				throw (505); //HTTP Version Not Supported
+			//new request
 		}
 		else
 			throw (400); //Bad Request start line probl
 	}
-	if(client.flagProgress == 1)// check headers dup
+	if(client.flagProgress == 1)
 	{
 		std::string header = get_line(client.buffer);
 		while (header != "\r\n" && header.find("\r\n") != std::string::npos)

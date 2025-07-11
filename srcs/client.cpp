@@ -104,7 +104,7 @@ client::~client()
 		if (fileStream->is_open()) {
 			fileStream->close();
 		}
-		// delete fileStream;
+		//delete fileStream;
 		fileStream = NULL;
 	}
 	// close (server_fd);
@@ -260,14 +260,16 @@ void client::handleResponse(int currentFd)
 			this->data_rs.headers["Content-Length"] = to_string_98(content.size());
 			this->data_rs.body = content;
 			std::string response = buildResponse();
-			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+			if(send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
+				ServerLogger::serverError("Send failed ");
 			this->closeConnection = true;
 			return ;
 		}
 	}
     setDataResponse();
     std::string response = buildResponse();
-    send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
+    if(send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
+		ServerLogger::serverError("Send failed ");
 	this->closeConnection = true;
 }
 
@@ -342,9 +344,12 @@ void client::handleGetRequestWithChunking(int currentFd)
                 } else {
                     // Small file or directory listing - response complete
                     this->closeConnection = true;
+					delete fileStream;
                     return;
                 }
             }
+            else
+              ServerLogger::serverError("Send failed ");  
         } catch(const int &statusCode) {
             throw(statusCode);
         }
