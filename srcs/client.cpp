@@ -54,33 +54,6 @@ client::client(std::string buff, int fd) : parc(parser()), bytesRemaining(0), he
     setDescription();
 }
 
-client::client(const client& other) : parc(other.parc), bytesRemaining(0), headersSent(false), fileSize(0), fileStream(new std::ifstream())
-{
-	// Copy all basic data
-	this->buffer = other.buffer;
-	this->server_fd = other.server_fd;
-	this->flagProgress = other.flagProgress;
-	this->data_rq = other.data_rq;
-	this->data_rs = other.data_rs;
-	this->closeConnection = other.closeConnection;
-	this->myServer = other.myServer;
-	this->lastActivityTime = other.lastActivityTime;
-	this->sizeBody = other.sizeBody;
-	this->send_buffer = other.send_buffer;
-	
-	// CGI related data
-	this->cgi_pid = other.cgi_pid;
-	this->cgi_fd = other.cgi_fd;
-	this->cgi_buffer = other.cgi_buffer;
-	this->cgi_running = other.cgi_running;
-	this->cgi_start_time = other.cgi_start_time;
-	this->cgi_epoll_added = other.cgi_epoll_added;
-	
-	// File streaming data - create new stream, don't copy file handles
-	this->fileToSend = "";
-	// Note: We don't copy file stream state as it's not safe to share file handles
-}
-
 client &client::operator=(const client &obj)
 {
 	if (this != &obj)
@@ -131,7 +104,7 @@ client::~client()
 		if (fileStream->is_open()) {
 			fileStream->close();
 		}
-		delete fileStream;
+		// delete fileStream;
 		fileStream = NULL;
 	}
 	// close (server_fd);
@@ -185,7 +158,8 @@ void client::parseRequest()
 	{
 		this->data_rs.status_code = parc.parse(*this);
 		// if(checkRequestProgress())
-		// 	this->printClient();
+		// 	std::cout << "in parse request client " << this->server_fd << " requested " << data_rq.path << std::endl;
+
 	}
 	catch(const int status_code)
 	{
@@ -206,9 +180,12 @@ void client::setDataResponse()
 	
 	if(this->data_rs.flaIsRedirect)
 	{
-		if(isRedirect(this->data_rs.status_code))
+		if(isRedirect(this->data_rs.status_code))//without body
+		{
+			//location deja 3mraat fach kantrowi num of redirect
             this->data_rs.headers["Connection"] = "close";
-        else
+        }
+        else// body with location
         {
 			this->data_rs.body = this->data_rq.myCloseLocation->infos["redirect"][1];
 			this->data_rs.headers["Content-Type"] = "text/txt;";
@@ -283,16 +260,14 @@ void client::handleResponse(int currentFd)
 			this->data_rs.headers["Content-Length"] = to_string_98(content.size());
 			this->data_rs.body = content;
 			std::string response = buildResponse();
-			if(send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL) < 0)
-				ServerLogger::serverError("Send failed ");
+			send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 			this->closeConnection = true;
 			return ;
 		}
 	}
     setDataResponse();
     std::string response = buildResponse();
-    if(send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL) < 0)
-		ServerLogger::serverError("Send failed ");
+    send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
 	this->closeConnection = true;
 }
 

@@ -162,6 +162,57 @@ void handler(int sig)
     ctrC = false;
 }
 
+bool ServerManager::handleCgiFileDescriptor(int currentFd) {
+    for (std::map<int, client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        if (it->second.cgi_running && it->second.cgi_fd == currentFd) {
+            // Read CGI output
+            char cgiBuf[4096];
+            ssize_t n = read(currentFd, cgiBuf, sizeof(cgiBuf));
+            if (n > 0) {
+                it->second.cgi_buffer.append(cgiBuf, n);
+            }
+            // Check if CGI finished (EOF or timeout)
+            if (n == 0 || (std::time(NULL) - it->second.cgi_start_time > 5)) {
+                // Timeout or EOF
+                if (n != 0) {
+                    kill(it->second.cgi_pid, SIGKILL);
+                }
+                int status;
+                waitpid(it->second.cgi_pid, &status, 0);
+                
+                if (status != 0) {
+                    it->second.data_rs.status_code = 500;
+                    it->second.setDataResponse();
+                    std::string errorResponse = it->second.buildResponse();
+                    send(it->first, errorResponse.c_str(), errorResponse.size(), MSG_NOSIGNAL);
+                    epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
+                    close(it->second.cgi_fd);
+                    it->second.cgi_running = false;
+                    it->second.cgi_fd = -1;
+                    it->second.cgi_pid = -1;
+                    it->second.cgi_epoll_added = false;
+                    ClientDisconnected(it->first);
+                    return true;
+                }
+                
+                epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
+                close(it->second.cgi_fd);
+                // Remove cgi_fd from epoll
+                it->second.cgi_running = false;
+                it->second.cgi_fd = -1;
+                it->second.cgi_pid = -1;
+                it->second.cgi_epoll_added = false;
+                // Build and send response
+                std::string response = buildCgiHttpResponse(it->second.cgi_buffer);
+                send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
+                ClientDisconnected(it->first);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 void    ServerManager::RunServer()
 {
 	signal(SIGINT, handler);
@@ -180,54 +231,7 @@ void    ServerManager::RunServer()
         for(int i = 0; i < numEvents; i++){
             int currentFd = events[i].data.fd; 
             // --- Check if this is a CGI fd for any client ---
-            bool isCgiFd = false;
-            for (std::map<int, client>::iterator it = clients.begin(); it != clients.end(); ++it) {
-                if (it->second.cgi_running && it->second.cgi_fd == currentFd) {
-                    isCgiFd = true;
-                    // Read CGI output
-                    char cgiBuf[4096];
-                    ssize_t n = read(currentFd, cgiBuf, sizeof(cgiBuf));
-                    if (n > 0) {
-                        it->second.cgi_buffer.append(cgiBuf, n);
-                    }
-                    // Check if CGI finished (EOF or timeout)
-                    if (n == 0 || (std::time(NULL) - it->second.cgi_start_time > 5)) {
-                        // Timeout or EOF
-                        if (n != 0) {
-                            kill(it->second.cgi_pid, SIGKILL);
-                        }
-                        int status;
-                        waitpid(it->second.cgi_pid, &status, 0);
-                        
-                        if (status != 0) {
-                            it->second.data_rs.status_code = 500;
-                            it->second.setDataResponse();
-                            std::string errorResponse = it->second.buildResponse();
-                            send(it->first, errorResponse.c_str(), errorResponse.size(), MSG_NOSIGNAL);
-                            epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
-                            close(it->second.cgi_fd);
-                            it->second.cgi_running = false;
-                            it->second.cgi_fd = -1;
-                            it->second.cgi_pid = -1;
-                            it->second.cgi_epoll_added = false;
-                            ClientDisconnected(it->first);
-                            break;
-                        }
-                        
-                        epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
-                        close(it->second.cgi_fd);
-                        it->second.cgi_running = false;
-                        it->second.cgi_fd = -1;
-                        it->second.cgi_pid = -1;
-                        it->second.cgi_epoll_added = false;
-                        std::string response = buildCgiHttpResponse(it->second.cgi_buffer);
-                        send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
-                        ClientDisconnected(it->first);
-                    }
-                    break;
-                }
-            }
-            if (isCgiFd)
+            if (handleCgiFileDescriptor(currentFd))
                 continue;
             if(find(fds.begin(),fds.end(),currentFd) != fds.end()){ 
                 client_fd = accept(currentFd,NULL,NULL);

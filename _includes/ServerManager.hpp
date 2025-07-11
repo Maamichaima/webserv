@@ -28,6 +28,7 @@ class ServerManager{
         void                    checkTimeOut();
         void                    ClientDisconnected(int currentFd);
         std::string             findPort(int currentFd);
+        bool                    handleCgiFileDescriptor(int currentFd);
 		~ServerManager(); 
 };
 

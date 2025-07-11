@@ -76,7 +76,6 @@ class client
         ////////////////////////////
         client();
         client(std::string buff, int fd);
-        client(const client& other);  // Copy constructor
         client &operator=(const client &obj);
         ~client();
         void        printClient();
