@@ -196,22 +196,33 @@ void    ServerManager::RunServer()
                         if (n != 0) {
                             kill(it->second.cgi_pid, SIGKILL);
                         }
-                        waitpid(it->second.cgi_pid, NULL, 0);
+                        int status;
+                        waitpid(it->second.cgi_pid, &status, 0);
+                        
+                        if (status != 0) {
+                            it->second.data_rs.status_code = 500;
+                            it->second.setDataResponse();
+                            std::string errorResponse = it->second.buildResponse();
+                            send(it->first, errorResponse.c_str(), errorResponse.size(), MSG_NOSIGNAL);
+                            epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
+                            close(it->second.cgi_fd);
+                            it->second.cgi_running = false;
+                            it->second.cgi_fd = -1;
+                            it->second.cgi_pid = -1;
+                            it->second.cgi_epoll_added = false;
+                            ClientDisconnected(it->first);
+                            break;
+                        }
+                        
                         epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
                         close(it->second.cgi_fd);
-                        // Remove cgi_fd from epoll
                         it->second.cgi_running = false;
                         it->second.cgi_fd = -1;
                         it->second.cgi_pid = -1;
                         it->second.cgi_epoll_added = false;
-                        // Build and send response
                         std::string response = buildCgiHttpResponse(it->second.cgi_buffer);
                         send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
-                        // *********************************************************
-                        // it->second.closeConnection = true;
-                        // std::cout << "hohohohhohoho" << endl;
                         ClientDisconnected(it->first);
-                        // *********************************************************
                     }
                     break;
                 }

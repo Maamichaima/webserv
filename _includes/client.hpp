@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <time.h>
+#include <memory>
 
 #include "parser.hpp"
 #include "Server.hpp"
@@ -75,6 +76,7 @@ class client
         ////////////////////////////
         client();
         client(std::string buff, int fd);
+        client(const client& other);  // Copy constructor
         client &operator=(const client &obj);
         ~client();
         void        printClient();
@@ -93,7 +95,7 @@ class client
         std::string prepareGetResponse(data_request &req, location *loc);
         void        handleGetRequestWithChunking(int currentFd);
         void handleCgiRequest();
-        void handleDirectoryRedirect(int currentFd);
+        void handleDirectoryRedirect();
 };
 
 std::string                         get_line(std::string str);

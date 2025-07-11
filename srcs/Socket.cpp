@@ -47,6 +47,7 @@ bool   Socket::bind_Socket(){
     
     if (bind(fd_socket, host_info->ai_addr, host_info->ai_addrlen) < 0) {
         close(fd_socket);
+        fd_socket = -1;
         freeaddrinfo(host_info);
         return false;
     }

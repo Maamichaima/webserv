@@ -3,19 +3,7 @@
     + leaks (getaddrinfo)
     + / at end begin
 
-    bdel blaset find ??
-
-
-    path delete
-    
-    if execve failed should return 500 but we have a problem
-
     website 2 in webserv.conf nbadlo page html m9ada
 
     test leaks mzyaaan (filestream)
 
-    // 301 || 
-    
-
-//     masrcs/methods/executeCgi.cpp:281:42: error: unused parameter 'currentFd' [-Werror,-Wunused-parameter]
-// void client::handleDirectoryRedirect(int currentFd)

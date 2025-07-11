@@ -1,5 +1,6 @@
 #include "../_includes/client.hpp"
 # include "../_includes/executeCgi.hpp"
+#include "../_includes/GetMethod.hpp"
 #include "methods/DeleteMethod.hpp"
 
 
@@ -27,22 +28,99 @@ client::client() : bytesRemaining(0), headersSent(false), fileSize(0), fileStrea
     setDescription();
 }
 
-client::client(std::string buff, int fd) : parc(parser())
+client::client(std::string buff, int fd) : parc(parser()), bytesRemaining(0), headersSent(false), fileSize(0), fileStream(new std::ifstream())
 {
 	this->buffer 				= buff;
 	this->server_fd 			= fd;
 	this->flagProgress			= 0;
 	this->data_rq.size_body 	= 0;
-	this->closeConnection 		= false;
 	this->data_rq.size_chunked 	= -1;
+	this->data_rq.flag_chunked 	= 0;
+	this->closeConnection 		= false;
+	this->data_rq.is_chunked 	= 0;
+	this->data_rq.flag_error 	= 0;
+	this->data_rs.flaIsRedirect = 0;
+	this->data_rs.status_code 	= -1;
+	this->data_rq.isCgi			= 0;
+	this->sizeBody				= 0;
+	lastActivityTime = time(NULL);
+	cgi_pid = -1;
+	cgi_fd = -1;
+	cgi_running = false;
+	cgi_start_time = 0;
+	cgi_epoll_added = false;
+
+    setErrorPages();
+    setDescription();
+}
+
+client::client(const client& other) : parc(other.parc), bytesRemaining(0), headersSent(false), fileSize(0), fileStream(new std::ifstream())
+{
+	// Copy all basic data
+	this->buffer = other.buffer;
+	this->server_fd = other.server_fd;
+	this->flagProgress = other.flagProgress;
+	this->data_rq = other.data_rq;
+	this->data_rs = other.data_rs;
+	this->closeConnection = other.closeConnection;
+	this->myServer = other.myServer;
+	this->lastActivityTime = other.lastActivityTime;
+	this->sizeBody = other.sizeBody;
+	this->send_buffer = other.send_buffer;
+	
+	// CGI related data
+	this->cgi_pid = other.cgi_pid;
+	this->cgi_fd = other.cgi_fd;
+	this->cgi_buffer = other.cgi_buffer;
+	this->cgi_running = other.cgi_running;
+	this->cgi_start_time = other.cgi_start_time;
+	this->cgi_epoll_added = other.cgi_epoll_added;
+	
+	// File streaming data - create new stream, don't copy file handles
+	this->fileToSend = "";
+	// Note: We don't copy file stream state as it's not safe to share file handles
 }
 
 client &client::operator=(const client &obj)
 {
 	if (this != &obj)
 	{
+		// Clean up existing fileStream
+		if (fileStream != NULL) {
+			if (fileStream->is_open()) {
+				fileStream->close();
+			}
+			delete fileStream;
+			fileStream = NULL;
+		}
+		
+		// Copy all basic data
 		this->buffer = obj.buffer;
 		this->server_fd = obj.server_fd;
+		this->flagProgress = obj.flagProgress;
+		this->data_rq = obj.data_rq;
+		this->data_rs = obj.data_rs;
+		this->closeConnection = obj.closeConnection;
+		this->parc = obj.parc;
+		this->myServer = obj.myServer;
+		this->lastActivityTime = obj.lastActivityTime;
+		this->sizeBody = obj.sizeBody;
+		this->send_buffer = obj.send_buffer;
+		
+		// CGI related data
+		this->cgi_pid = obj.cgi_pid;
+		this->cgi_fd = obj.cgi_fd;
+		this->cgi_buffer = obj.cgi_buffer;
+		this->cgi_running = obj.cgi_running;
+		this->cgi_start_time = obj.cgi_start_time;
+		this->cgi_epoll_added = obj.cgi_epoll_added;
+		
+		// File streaming data - reset for safety (don't copy file streams)
+		this->fileStream = new std::ifstream();
+		this->bytesRemaining = 0;
+		this->headersSent = false;
+		this->fileSize = 0;
+		this->fileToSend = "";
 	}
 	return (*this);
 }
@@ -53,6 +131,7 @@ client::~client()
 		if (fileStream->is_open()) {
 			fileStream->close();
 		}
+		delete fileStream;
 		fileStream = NULL;
 	}
 	// close (server_fd);
@@ -65,7 +144,7 @@ client::~client()
         waitpid(cgi_pid, NULL, 0);
         cgi_pid = -1;
     }
-    cgi_epoll_added = false; // <--- Add this line
+    cgi_epoll_added = false;
 }
 
 void client::printClient()
@@ -165,7 +244,7 @@ void client::handleResponse(int currentFd)
         try
         {
             try {
-                handleDirectoryRedirect(currentFd);
+                handleDirectoryRedirect();
             } 
 			catch(const int &redirectStatus) 
 			{
@@ -262,6 +341,14 @@ void client::handleGetRequestWithChunking(int currentFd)
     if (!loc)
         throw(404);
 
+    // Safety check for fileStream
+    if (!this->fileStream) {
+        this->fileStream = new std::ifstream();
+        this->bytesRemaining = 0;
+        this->headersSent = false;
+        this->fileSize = 0;
+    }
+
     // If we're already sending a file in chunks
     if (this->fileStream->is_open() && this->bytesRemaining > 0) {
         this->sendFileChunk(currentFd);
@@ -275,7 +362,7 @@ void client::handleGetRequestWithChunking(int currentFd)
             ssize_t sent = send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
             if (sent > 0) {
                 // If this was a chunked response (large file), headers are sent
-                if (this->fileStream->is_open() && this->bytesRemaining > 0) {
+                if (this->fileStream && this->fileStream->is_open() && this->bytesRemaining > 0) {
                     this->headersSent = true;
                     this->sendFileChunk(currentFd);
                     return;
@@ -291,13 +378,13 @@ void client::handleGetRequestWithChunking(int currentFd)
     }
 
     // Continue sending file chunks if we're in the middle of a transfer
-    if (this->headersSent && this->fileStream->is_open() && this->bytesRemaining > 0) {
+    if (this->headersSent && this->fileStream && this->fileStream->is_open() && this->bytesRemaining > 0) {
         this->sendFileChunk(currentFd);
         return;
     }
 
     // File transfer complete
-    if (this->fileStream->is_open() && this->bytesRemaining == 0) {
+    if (this->fileStream && this->fileStream->is_open() && this->bytesRemaining == 0) {
         this->fileStream->close();
         this->closeConnection = true;
         return;
