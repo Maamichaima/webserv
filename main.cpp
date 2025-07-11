@@ -1,7 +1,6 @@
 #include "_includes/ServerManager.hpp"
 #include "_includes/Socket.hpp"
 #include "_includes/Server.hpp"
-#include "srcs/methods/DeleteMethod.hpp"
 #include "_includes/ServerLogger.hpp"
 
 

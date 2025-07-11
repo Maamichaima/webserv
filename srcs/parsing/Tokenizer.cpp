@@ -115,7 +115,7 @@ bool   parceConfigFile(int argc,char **argv,ServerManager &manager)
     std::string line;
     std::ifstream inputFile(argv[1]);
     if (!inputFile.is_open()) {
-        ServerLogger::serverError(" FAILED TO OPEN FILE !!  " );
+        ServerLogger::serverError(" FAILED TO OPEN CONFIGURATION FILE !!  " );
         return false;
     }
     

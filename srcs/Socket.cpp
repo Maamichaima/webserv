@@ -58,6 +58,7 @@ bool   Socket::bind_Socket(){
 bool    Socket::listen_socket(){
 
     if (listen(fd_socket, SOMAXCONN) != 0) {
+        fd_socket = -1;
         return false;
     }
     return true;

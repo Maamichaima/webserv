@@ -115,10 +115,14 @@ bool    Server::createLocation(Tokenizer& tokenizer) {
         return false;
     tokenizer.advance();
     tokenizer.braceStack.pop();
-    loc.path = "/" + path;
+    if(path[0] != '/')
+        loc.path = "/" + path;
+    else
+        loc.path = path;
+      
     locations[path] = loc;
     return true;
-}
+} 
 
 bool    Server::createParam(Tokenizer& tokenizer) {
 
@@ -198,7 +202,7 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
         else{
             if (!socket->initialize(port[i],getIpAddress()) || !socket->create_Socket())
             {
-                std::cout << " <getaddrinfo> error " << BOLD << RED << "✗ Failed to bind port " << port[i] << RESET << std::endl;
+                std::cout << " error " << BOLD << RED << "✗ Failed to create socket " << port[i] << RESET << std::endl;
                 return false;
             }
             if (!socket->bind_Socket()) {
@@ -212,11 +216,6 @@ bool Server::initialize(std::vector<Server>& allServers, int currentIndex) {
             ServerLogger::serverCreated(port[i]);
            
         }
-
-        // if (socket->host_info != NULL) {
-        //     freeaddrinfo(socket->host_info);
-        //     socket->host_info = NULL;
-        // }
     }
     return true;
 }
@@ -236,7 +235,7 @@ std::vector<std::string>* location::getInfos(std::string key){
             return &it->second;
         it++;
     }
-    // std::cout << "key is unavailable in the location" << std::endl;
+    
     return(NULL);
 }
 

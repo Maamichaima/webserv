@@ -16,13 +16,13 @@ std::string ServerLogger::getCurrentTime() {
     std::cout << BOLD << CYAN << "╰─────────────────────────────────────╯" << RESET << std::endl;
     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
               << " " << BOLD << CYAN << "[WebServ]" << RESET 
-              << " " << BOLD << GREEN << "Server "  << std::endl;
+              << " " << BOLD << GREEN << "Welcome to our Server "  << std::endl;
 }
 
 void ServerLogger::serverCreated( std::string port) {
     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
               << " " << BOLD << CYAN << "[WebServ]" << RESET 
-              << " " << BOLD << GREEN << "🚀 Server  created successfully!!! Listening on  port " 
+              << " " << BOLD << GREEN << "🚀 Server created and ready to accept connections on  port " 
               << BOLD << YELLOW  << ":" << port << RESET << std::endl;
 }
 
@@ -71,7 +71,7 @@ void ServerLogger::portListenError(std::string port) {
 void ServerLogger::clientConnected( std::string serverPort) {
     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
               << " " << BOLD << CYAN << "[WebServ]" << RESET 
-              << " " << BOLD << GREEN << "🔗 New connection " << RESET 
+              << " " << BOLD << GREEN << "🔗 New request " << RESET 
               << " → " << BOLD << BLUE << "server:" << serverPort << RESET << std::endl;
 }
 
@@ -79,7 +79,7 @@ void ServerLogger::clientConnected( std::string serverPort) {
 void ServerLogger::clientDisconnected() {
     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
               << " " << BOLD << CYAN << "[WebServ]" << RESET 
-              << " " << BOLD << YELLOW << "🔌 Client disconnected" << RESET ;
+              << " " << BOLD << YELLOW << "🔌 response sended " << RESET ;
     
     std::cout << std::endl;
 }
@@ -93,11 +93,3 @@ void ServerLogger::responseSent(int statusCode) {
               << BOLD << GREEN <<  " status code" << GREEN <<  std::endl;
 }
 
-
-// static void requestReceived(const std::string& method, const std::string& path, const std::string& clientIP) {
-//     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
-//               << " " << BOLD << CYAN << "[WebServ]" << RESET 
-//               << " " << BOLD << MAGENTA << "📥 " << method << RESET 
-//               << " " << BOLD << WHITE << path << RESET 
-//               << " from " << BOLD << GRAY << clientIP << RESET << std::endl;
-// }

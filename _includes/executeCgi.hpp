@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ServerManager.hpp"
 #include "GetMethod.hpp"
 

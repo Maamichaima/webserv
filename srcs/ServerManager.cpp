@@ -51,7 +51,7 @@ bool ServerManager::initializeAll() {
     }
     if(epollFds.empty())
     {   
-        ServerLogger::serverError( "No server available " );
+        ServerLogger::serverError( "No server available !!!!" );
         return false;
     }
     
@@ -124,11 +124,9 @@ void ServerManager::ClientDisconnected(int currentFd)
 {
 
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, currentFd, NULL) == -1) {
-		// std::cout << "client to be closed " << currentFd << " error string: " << strerror(errno) << "====" << std::endl;
-		// std::cout << epollFd << "\n==============\n";
+		
         ServerLogger::serverError("epoll_ctl: EPOLL_CTL_DEL");
     }
-    // std::cout <<"close fd " << currentFd << "\n==============\n";
     ServerLogger::clientDisconnected();
     clients.erase(currentFd);
     close(currentFd);
@@ -224,9 +222,6 @@ void    ServerManager::RunServer()
         int client_fd;
         std::vector<int> fds = getAllSocketFds();
         int numEvents = epoll_wait(epollFd,events,MAX_EVENTS,30);
-        // if(numEvents < 0){
-        //     ServerLogger::serverError("epoll_wait failed");
-        // }
        
         for(int i = 0; i < numEvents; i++){
             int currentFd = events[i].data.fd; 
@@ -243,22 +238,15 @@ void    ServerManager::RunServer()
                 continue ;
             }
             else if(events[i].events & (EPOLLRDHUP | EPOLLHUP))
-            {
                 clients[currentFd].closeConnection = true;
-            }
             else if(events[i].events & EPOLLIN){
                 ssize_t bytesRead = recv(currentFd, buffer, BUFFER_SIZE ,0);
-                // std::cout << "buffer" << buffer << "\n";
-                 clients[currentFd].lastActivityTime = std::time(NULL);
-                
-                if(bytesRead <= 0)
-                {      
+                clients[currentFd].lastActivityTime = std::time(NULL);
+                if(bytesRead <= 0)   
                     clients[currentFd].closeConnection = true;
-                }
-                else {
-                    
+                else 
+                {
                     clients[currentFd].buffer.append(buffer, bytesRead);
-
                     std::memset(buffer, 0, BUFFER_SIZE);   
                 }
             } 
@@ -277,13 +265,10 @@ void    ServerManager::RunServer()
                 }
             }
             if(clients[currentFd].closeConnection)
-			{
                 ClientDisconnected(currentFd);
-			}
         }
 
     }
-    // #close(epollFd);
 }
 
 Server     *chooseServer(std::vector<Server*> &routeServer,std::string host)

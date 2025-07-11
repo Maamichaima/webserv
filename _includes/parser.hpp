@@ -24,5 +24,6 @@ std::string trim(const std::string& str);
 void        checkKeyValueContent(std::string key, std::string value);
 void        toLower(std::string &str);
 std::string get_line_size(std::string str, size_t size);
+void post(client &client, std::string buffer);
 #include    "client.hpp"
 

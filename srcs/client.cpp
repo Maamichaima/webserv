@@ -1,7 +1,7 @@
 #include "../_includes/client.hpp"
 # include "../_includes/executeCgi.hpp"
 #include "../_includes/GetMethod.hpp"
-#include "methods/DeleteMethod.hpp"
+#include "../_includes/DeleteMethod.hpp"
 
 
 client::client() : bytesRemaining(0), headersSent(false), fileSize(0), fileStream(new std::ifstream())
