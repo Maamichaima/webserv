@@ -79,7 +79,7 @@ void ServerLogger::clientConnected( std::string serverPort) {
 void ServerLogger::clientDisconnected() {
     std::cout << BOLD << BLUE << "[" << getCurrentTime() << "]" << RESET 
               << " " << BOLD << CYAN << "[WebServ]" << RESET 
-              << " " << BOLD << YELLOW << "🔌 response sent " << RESET ;
+              << " " << BOLD << YELLOW << "📤 response sent  " << RESET ;
     
     std::cout << std::endl;
 }
