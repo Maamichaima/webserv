@@ -276,7 +276,6 @@ resultPage = f"""
         <div class="buttons">
           <button class="button" onclick="saveNote()" >Save notes</button>
           <a class="link" href="/"><div class="button">Home</div></a>
-          <button class="button delete" onclick="window.location.href = './logout.py'">Delete Acount</button>      
         </div>
     </div>
 </body>

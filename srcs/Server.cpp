@@ -252,7 +252,6 @@ void Server::printLocations() {
        
         std::cout << "Location key: " << it->first << std::endl;
         
-        // Print infos map
         std::cout << "  Infos:" << std::endl;
         if (it->second.infos.empty()) {
             std::cout << "    No infos defined." << std::endl;
@@ -262,7 +261,6 @@ void Server::printLocations() {
                 
                 std::cout << "    " << infoIt->first << ": ";
                 
-                // Print the vector of strings
                 std::cout << "[";
                 for (size_t i = 0; i < infoIt->second.size(); ++i) {
                     if (i > 0) std::cout << ", ";

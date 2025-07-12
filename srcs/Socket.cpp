@@ -6,10 +6,7 @@ Socket::Socket() :fd_socket(-1) {
     memset(&host_addr, 0, sizeof(host_addr));
 }
 
-Socket::~Socket() {
-	// std::cout << "========"<< fd_socket << "=========\n";
-    // close(fd_socket);
-}
+Socket::~Socket() {}
 
 int Socket::getSocketFd() {
     return(fd_socket);

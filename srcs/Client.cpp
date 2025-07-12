@@ -17,12 +17,12 @@ client::client() : bytesRemaining(0), headersSent(false), fileSize(0), fileStrea
 	this->data_rs.status_code 	= -1;
 	this->data_rq.isCgi			= 0;
 	this->sizeBody				= 0;
-	lastActivityTime = time(NULL);
+	lastActivityTime = std::time(NULL);
 	cgi_pid = -1;
 	cgi_fd = -1;
 	cgi_running = false;
 	cgi_start_time = 0;
-	cgi_epoll_added = false; // <--- Add this line
+	cgi_epoll_added = false;
 
     setErrorPages();
     setDescription();
@@ -43,7 +43,7 @@ client::client(std::string buff, int fd) : parc(parser()), bytesRemaining(0), he
 	this->data_rs.status_code 	= -1;
 	this->data_rq.isCgi			= 0;
 	this->sizeBody				= 0;
-	lastActivityTime = time(NULL);
+	lastActivityTime = std::time(NULL);
 	cgi_pid = -1;
 	cgi_fd = -1;
 	cgi_running = false;
@@ -56,7 +56,6 @@ client::client(std::string buff, int fd) : parc(parser()), bytesRemaining(0), he
 
 client::client(const client &obj) : bytesRemaining(0), headersSent(false), fileSize(0), fileStream(new std::ifstream())
 {
-	// Copy all basic data
 	this->buffer = obj.buffer;
 	this->server_fd = obj.server_fd;
 	this->flagProgress = obj.flagProgress;
@@ -69,7 +68,6 @@ client::client(const client &obj) : bytesRemaining(0), headersSent(false), fileS
 	this->sizeBody = obj.sizeBody;
 	this->send_buffer = obj.send_buffer;
 	
-	// CGI related data
 	this->cgi_pid = obj.cgi_pid;
 	this->cgi_fd = obj.cgi_fd;
 	this->cgi_buffer = obj.cgi_buffer;
@@ -77,8 +75,6 @@ client::client(const client &obj) : bytesRemaining(0), headersSent(false), fileS
 	this->cgi_start_time = obj.cgi_start_time;
 	this->cgi_epoll_added = obj.cgi_epoll_added;
 	
-	// File streaming data - reset for safety (don't copy file streams)
-	// fileStream is already initialized to new std::ifstream() in initializer list
 	this->bytesRemaining = 0;
 	this->headersSent = false;
 	this->fileSize = 0;
@@ -92,7 +88,6 @@ client &client::operator=(const client &obj)
 {
 	if (this != &obj)
 	{
-		// Clean up existing fileStream
 		if (fileStream != NULL) {
 				if (fileStream->is_open()) {
 					fileStream->close();
@@ -101,7 +96,6 @@ client &client::operator=(const client &obj)
 			fileStream = NULL;
 		}
 		
-		// Copy all basic data
 		this->buffer = obj.buffer;
 		this->server_fd = obj.server_fd;
 		this->flagProgress = obj.flagProgress;
@@ -114,7 +108,6 @@ client &client::operator=(const client &obj)
 		this->sizeBody = obj.sizeBody;
 		this->send_buffer = obj.send_buffer;
 		
-		// CGI related data
 		this->cgi_pid = obj.cgi_pid;
 		this->cgi_fd = obj.cgi_fd;
 		this->cgi_buffer = obj.cgi_buffer;
@@ -122,7 +115,6 @@ client &client::operator=(const client &obj)
 		this->cgi_start_time = obj.cgi_start_time;
 		this->cgi_epoll_added = obj.cgi_epoll_added;
 		
-		// File streaming data - reset for safety (don't copy file streams)
 		this->fileStream = new std::ifstream();
 		this->bytesRemaining = 0;
 		this->headersSent = false;
@@ -135,9 +127,8 @@ client &client::operator=(const client &obj)
 client::~client()
 {
 	if (fileStream != NULL) {
-			if (fileStream->is_open())
-				fileStream->close();
-		
+		if (fileStream->is_open())
+			fileStream->close();
 		delete fileStream;
 		fileStream = NULL;
 	}
@@ -216,7 +207,7 @@ void client::setDataResponse()
 		{
             this->data_rs.headers["Connection"] = "close";
         }
-        else// body with location
+        else
         {
 			this->data_rs.body = this->data_rq.myCloseLocation->infos["redirect"][1];
 			this->data_rs.headers["Content-Type"] = "text/txt;";
@@ -234,9 +225,9 @@ void client::setStatusCode()
 	if(this->data_rs.status_code < 0)
 	{
 		if(this->data_rq.method == "POST")	
-			this->data_rs.status_code = 201; // Created
+			this->data_rs.status_code = 201;
 		if(this->data_rq.method == "DELETE")	
-			this->data_rs.status_code = 204; // No Content
+			this->data_rs.status_code = 204;
 	}
 }
 
@@ -280,7 +271,7 @@ void client::handleResponse(int currentFd)
 			this->data_rs.status_code = statusCode;
 		}
 	}
-	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string_98(this->data_rs.status_code));// ila kanet tehet get 
+	std::map<std::string, std::string>::iterator it = this->myServer.errorPages.find(to_string_98(this->data_rs.status_code));
 	if(it != this->myServer.errorPages.end())
 	{
 		std::string content;
@@ -351,31 +342,26 @@ void client::handleGetRequestWithChunking(int currentFd)
         this->fileSize = 0;
         this->fileToSend = "";
 	}
-	// cout << "inGetRequestWithChunking" << endl;
-    // If we're already sending a file in chunks
+
     if (this->fileStream && this->fileStream->is_open() && this->bytesRemaining > 0) {
         this->sendFileChunk(currentFd);
         return;
     }
 
-    // If headers not sent yet, prepare and send the response
     if (!this->headersSent && this->fileStream && !this->fileStream->is_open()) {
         try {
             std::string response = handleGetRequest(this->data_rq, loc, this);
             ssize_t sent = send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
             if (sent > 0) {
-                // If this was a chunked response (large file), headers are sent
                 if (this->fileStream && this->fileStream->is_open() && this->bytesRemaining > 0) {
                     this->headersSent = true;
                     this->sendFileChunk(currentFd);
                     return;
                 } else {
-                    // Small file or directory listing - response complete
                     this->closeConnection = true;
                     if (fileStream && fileStream->is_open()) {
                         fileStream->close();
                     }
-                    // Reset file streaming state but don't delete fileStream yet
                     this->bytesRemaining = 0;
                     this->headersSent = false;
                     this->fileSize = 0;
@@ -390,13 +376,11 @@ void client::handleGetRequestWithChunking(int currentFd)
         }
     }
 
-    // Continue sending file chunks if we're in the middle of a transfer
     if (this->headersSent && this->fileStream && this->fileStream->is_open() && this->bytesRemaining > 0) {
         this->sendFileChunk(currentFd);
         return;
     }
 
-    // File transfer complete
     if (this->fileStream && this->fileStream->is_open() && this->bytesRemaining == 0) {
         this->fileStream->close();
         this->closeConnection = true;

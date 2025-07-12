@@ -29,14 +29,6 @@ std::string headersToOneString(std::map<std::string, std::string> headers)
 	return head;
 }
 
-// template <typename T>
-// std::string to_string_98(T value)
-// {
-// 	std::ostringstream oss;
-// 	oss << value;
-// 	return oss.str();
-// }
-
 std::string padLeftToThree(const std::string& input)
 {
     if (input.length() >= 3)

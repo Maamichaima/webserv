@@ -34,7 +34,6 @@ void client::setErrorPages()
 	"h1{font-size:48px;}p{font-size:18px;}"
 	"</style></head><body><div><h1>103 Early Hints</h1><p>Preliminary headers for resource optimization.</p></div></body></html>\n";
 
-	// Successful 2xx
 	errorPages[200] = "<!DOCTYPE html>\n"
 	"<html><head><meta charset=\"UTF-8\"><title>200 OK</title><style>"
 	"body{background-color:#d4edda;color:#155724;font-family:Arial,sans-serif;text-align:center;padding-top:100px;}"
@@ -363,7 +362,6 @@ void client::setErrorPages()
 	"h1{font-size:48px;}p{font-size:18px;}"
 	"</style></head><body><div><h1>451 Unavailable For Legal Reasons</h1><p>This resource is unavailable due to legal reasons.</p></div></body></html>\n";
 
-	// Server Errors (500-511)
 	errorPages[500] = "<!DOCTYPE html>\n"
 	"<html><head><meta charset=\"UTF-8\"><title>500 Internal Server Error</title><style>"
 	"body{background-color:#f8d7da;color:#721c24;font-family:Arial,sans-serif;text-align:center;padding-top:100px;}"
@@ -440,17 +438,6 @@ void client::setErrorPages()
 	"div{background:#f5c6cb;padding:40px;border-radius:8px;display:inline-block;border:1px solid #f1b0b7;}"
 	"h1{font-size:48px;}p{font-size:18px;}"
 	"</style></head><body><div><h1>511 Network Authentication Required</h1><p>Network authentication is required for access.</p></div></body></html>\n";
-	
-
-	
-	// client::description[400] = "Bad Request";
-	// client::description[404] = "Not Found";
-	// client::description[201] = "Created";
-	// client::description[500] = "Internal Server Error";
-	// client::description[411] = "Length Required";
-	// client::description[501] = "Not Implemented";
-	// client::description[505] = "Version Not Supported";
-	// client::description[405] = "Version Not Supported";
 }
 void client::setDescription()
 {

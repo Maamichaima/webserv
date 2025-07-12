@@ -8,7 +8,6 @@
 #define BOLD        "\033[1m"
 #define DIM         "\033[2m"
 
-// Colors
 #define RED         "\033[31m"
 #define GREEN       "\033[32m"
 #define YELLOW      "\033[33m"
@@ -18,7 +17,6 @@
 #define WHITE       "\033[37m"
 #define GRAY        "\033[90m"
 
-// Background Colors
 #define BG_RED      "\033[41m"
 #define BG_GREEN    "\033[42m"
 #define BG_YELLOW   "\033[43m"

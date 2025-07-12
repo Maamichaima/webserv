@@ -210,7 +210,7 @@ int inRange(std::string str, char c)
 	return 1;
 }
 
-bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
+bool test(std::string str, std::deque<RegEx> dq)
 {
     size_t i = 0;
     std::deque<RegEx>::iterator it = dq.begin();

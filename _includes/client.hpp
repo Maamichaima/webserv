@@ -80,15 +80,14 @@ class client
         void        parseRequest();
 		std::string buildResponse();
 		void        setDataResponse();
-		// void handleResponse(int currentFd);
         void        handleResponse(int currentFd);
         void        sendFileChunk(int currentFd);
 		void        setDescription();
 		void        setErrorPages();
 		void        setStatusCode();
         void        handleGetRequestWithChunking(int currentFd);
-        void handleCgiRequest();
-        void handleDirectoryRedirect();
+        void        handleCgiRequest();
+        void        handleDirectoryRedirect();
 };
 
 std::string                         get_line(std::string str);

@@ -13,8 +13,7 @@ int main(int argc,char **argv){
     if(manager.initializeAll())    
         manager.RunServer();
 
-
-    return 0;
+    return (0);
 }
 
 

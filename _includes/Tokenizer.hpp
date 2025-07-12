@@ -13,8 +13,6 @@
 #include <ctime>
 #include "ServerLogger.hpp"
 
-
-
 class Server;
 struct location;
 class ServerManager;

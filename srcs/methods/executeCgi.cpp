@@ -252,7 +252,7 @@ void client::handleCgiRequest()
                     char buffer[4096];
                     while (bodyFile.read(buffer, sizeof(buffer)) || bodyFile.gcount() > 0) {
                         ssize_t bytesRead = bodyFile.gcount();
-                        if (write(inputPipe[1], buffer, bytesRead) != bytesRead)
+                        if (write(inputPipe[1], buffer, bytesRead) != bytesRead || write(inputPipe[1], buffer, bytesRead) <= 0)
                             break;
                     }
                     bodyFile.close();

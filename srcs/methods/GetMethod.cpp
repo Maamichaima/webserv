@@ -74,10 +74,6 @@ int isDirectory(const std::string &fullPath) {
     return S_ISDIR(info.st_mode);
 }
 
-/// @brief existFiles function check fullPath is file and path is correct
-/// @param S_ISREG is a macro for check file is regular or not (wax file ou la directory ou xi 3jab akhur) n9adro ndirouha ta b access !
-/// @param stat functin kay jib linformations 3la file (kay9lb 3lih ou sf)
-/// @return 0 for success -1 for error
 bool existFile(string &path, location *loc)
 {
     struct stat st;
@@ -98,9 +94,6 @@ bool existFile(string &path, location *loc)
     return(stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode));
 }
         
-/// @brief 
-/// @param ios::binary : open mode bax bax maytbadalx lcontent dial file in read operation  
-/// @param ios::in : open mode for readed file
 string readFile(const string &path)
 {
     std::ifstream file(path.c_str(), ios::in | ios::binary);
@@ -232,22 +225,6 @@ std::string buildHttpResponse(int statusCode, const std::string &statusMessage, 
 
     return response;
 }
-
-// string checkIndexes(location* loc, const string &path) {
-//     std::vector<std::string>* indexes = loc->getInfos("index");
-//     if (!indexes)
-//         return "";
-//     for (size_t i = 0; i < indexes->size(); ++i) {
-//         std::string fullPath = path + indexes->at(i);
-//         cout << "Trying index file: " << fullPath << std::endl;
-//         std::ifstream file(fullPath.c_str());
-//         if (file.is_open()) {
-//             file.close();
-//             return fullPath;
-//         }
-//     }
-//     return "";
-// }
 
 string checkIndexes(location* loc, const std::string& path) {
     std::vector<std::string>* indexes = loc->getInfos("index");
