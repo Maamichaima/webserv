@@ -291,6 +291,12 @@ void client::sendFileChunk(int currentFd) {
     const size_t CHUNK_SIZE = 8192;
     char buffer[CHUNK_SIZE];
     
+    // Check if fileStream is NULL
+    if (!this->fileStream) {
+        this->closeConnection = true;
+        return;
+    }
+    
     size_t toRead = std::min(CHUNK_SIZE, this->bytesRemaining);
     if (!this->fileStream->is_open()) {
         this->closeConnection = true;
@@ -379,6 +385,9 @@ string handleGetRequest(data_request &req, location *loc, client* clientObj = NU
     const size_t CHUNKED_THRESHOLD = 1024 * 1024;
     
     if (fileSize > CHUNKED_THRESHOLD && clientObj != NULL) {
+        if (!clientObj->fileStream) {
+            throw(500);
+        }
         clientObj->fileStream->open(path.c_str(), std::ios::in | std::ios::binary);
         if (!clientObj->fileStream->is_open())
             throw(500);

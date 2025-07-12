@@ -54,16 +54,50 @@ client::client(std::string buff, int fd) : parc(parser()), bytesRemaining(0), he
     setDescription();
 }
 
+client::client(const client &obj) : bytesRemaining(0), headersSent(false), fileSize(0), fileStream(new std::ifstream())
+{
+	// Copy all basic data
+	this->buffer = obj.buffer;
+	this->server_fd = obj.server_fd;
+	this->flagProgress = obj.flagProgress;
+	this->data_rq = obj.data_rq;
+	this->data_rs = obj.data_rs;
+	this->closeConnection = obj.closeConnection;
+	this->parc = obj.parc;
+	this->myServer = obj.myServer;
+	this->lastActivityTime = obj.lastActivityTime;
+	this->sizeBody = obj.sizeBody;
+	this->send_buffer = obj.send_buffer;
+	
+	// CGI related data
+	this->cgi_pid = obj.cgi_pid;
+	this->cgi_fd = obj.cgi_fd;
+	this->cgi_buffer = obj.cgi_buffer;
+	this->cgi_running = obj.cgi_running;
+	this->cgi_start_time = obj.cgi_start_time;
+	this->cgi_epoll_added = obj.cgi_epoll_added;
+	
+	// File streaming data - reset for safety (don't copy file streams)
+	// fileStream is already initialized to new std::ifstream() in initializer list
+	this->bytesRemaining = 0;
+	this->headersSent = false;
+	this->fileSize = 0;
+	this->fileToSend = "";
+
+    setErrorPages();
+    setDescription();
+}
+
 client &client::operator=(const client &obj)
 {
 	if (this != &obj)
 	{
 		// Clean up existing fileStream
 		if (fileStream != NULL) {
-			if (fileStream->is_open()) {
-				fileStream->close();
-			}
-			// delete fileStream;
+				if (fileStream->is_open()) {
+					fileStream->close();
+				}
+			delete fileStream;
 			fileStream = NULL;
 		}
 		
@@ -101,10 +135,10 @@ client &client::operator=(const client &obj)
 client::~client()
 {
 	if (fileStream != NULL) {
-		if (fileStream->is_open()) {
-			fileStream->close();
-		}
-		//delete fileStream;
+			if (fileStream->is_open())
+				fileStream->close();
+		
+		delete fileStream;
 		fileStream = NULL;
 	}
 	// close (server_fd);
@@ -321,16 +355,17 @@ void client::handleGetRequestWithChunking(int currentFd)
         this->bytesRemaining = 0;
         this->headersSent = false;
         this->fileSize = 0;
+        this->fileToSend = "";
 	}
 	// cout << "inGetRequestWithChunking" << endl;
     // If we're already sending a file in chunks
-    if (this->fileStream->is_open() && this->bytesRemaining > 0) {
+    if (this->fileStream && this->fileStream->is_open() && this->bytesRemaining > 0) {
         this->sendFileChunk(currentFd);
         return;
     }
 
     // If headers not sent yet, prepare and send the response
-    if (!this->headersSent && !this->fileStream->is_open()) {
+    if (!this->headersSent && this->fileStream && !this->fileStream->is_open()) {
         try {
             std::string response = handleGetRequest(this->data_rq, loc, this);
             ssize_t sent = send(currentFd, response.c_str(), response.size(), MSG_NOSIGNAL);
@@ -343,7 +378,14 @@ void client::handleGetRequestWithChunking(int currentFd)
                 } else {
                     // Small file or directory listing - response complete
                     this->closeConnection = true;
-					// delete fileStream;
+                    if (fileStream && fileStream->is_open()) {
+                        fileStream->close();
+                    }
+                    // Reset file streaming state but don't delete fileStream yet
+                    this->bytesRemaining = 0;
+                    this->headersSent = false;
+                    this->fileSize = 0;
+                    this->fileToSend = "";
                     return;
                 }
             }
