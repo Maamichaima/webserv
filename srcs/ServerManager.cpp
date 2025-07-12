@@ -170,7 +170,7 @@ bool ServerManager::handleCgiFileDescriptor(int currentFd) {
                 it->second.cgi_buffer.append(cgiBuf, n);
             }
             // Check if CGI finished (EOF or timeout)
-            if (n == 0 || (std::time(NULL) - it->second.cgi_start_time > 5)) {
+            if (n == 0 || (std::time(NULL) - it->second.cgi_start_time >= TIMEOUT)) {
                 // Timeout or EOF
                 if (n != 0) {
                     kill(it->second.cgi_pid, SIGKILL);

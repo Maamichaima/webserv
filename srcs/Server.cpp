@@ -119,8 +119,7 @@ bool    Server::createLocation(Tokenizer& tokenizer) {
         loc.path = "/" + path;
     else
         loc.path = path;
-      
-    locations[path] = loc;
+    locations[loc.path] = loc;
     return true;
 } 
 

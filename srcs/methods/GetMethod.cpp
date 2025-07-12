@@ -25,9 +25,7 @@ std::string normalizePath(const std::string &path) {
 location *getClosestLocation(const Server &server, const std::string &requestPath) {
     location *bestMatch = NULL;
     size_t bestLength = 0;
-
     std::string normRequest = normalizePath(requestPath);
-
     for (std::map<std::string, location>::const_iterator it = server.locations.begin();
         it != server.locations.end(); ++it)
     {
@@ -43,7 +41,6 @@ location *getClosestLocation(const Server &server, const std::string &requestPat
             }
         }
     }
-
     return bestMatch;
 }
 

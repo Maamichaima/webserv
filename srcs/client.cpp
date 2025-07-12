@@ -63,7 +63,7 @@ client &client::operator=(const client &obj)
 			if (fileStream->is_open()) {
 				fileStream->close();
 			}
-			delete fileStream;
+			// delete fileStream;
 			fileStream = NULL;
 		}
 		
@@ -316,14 +316,13 @@ void client::handleGetRequestWithChunking(int currentFd)
     if (!loc)
         throw(404);
 
-    // Safety check for fileStream
     if (!this->fileStream) {
         this->fileStream = new std::ifstream();
         this->bytesRemaining = 0;
         this->headersSent = false;
         this->fileSize = 0;
-    }
-
+	}
+	// cout << "inGetRequestWithChunking" << endl;
     // If we're already sending a file in chunks
     if (this->fileStream->is_open() && this->bytesRemaining > 0) {
         this->sendFileChunk(currentFd);
@@ -344,12 +343,12 @@ void client::handleGetRequestWithChunking(int currentFd)
                 } else {
                     // Small file or directory listing - response complete
                     this->closeConnection = true;
-					delete fileStream;
+					// delete fileStream;
                     return;
                 }
             }
             else
-              ServerLogger::serverError("Send failed ");  
+              ServerLogger::serverError("Send failed ");
         } catch(const int &statusCode) {
             throw(statusCode);
         }

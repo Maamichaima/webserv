@@ -12,7 +12,7 @@
 #include "parser.hpp"
 #include "Server.hpp"
 
-#define    TIMEOUT 60
+#define    TIMEOUT 30
 
 struct data_request
 {
