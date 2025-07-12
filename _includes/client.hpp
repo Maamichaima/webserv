@@ -47,9 +47,7 @@ class client
         int                                 server_fd;
         data_request                        data_rq;
         int                                 flagProgress;
-        std::string                         send_buffer;    // la réponse HTTP à envoyer
-        // size_t send_offset = 0;     // combien d'octets ont été envoyés
-        // bool headers_parsed = false;
+        std::string                         send_buffer;
         parser                              parc;
         Server                              myServer;
 		bool                                closeConnection;
@@ -58,22 +56,18 @@ class client
 		data_response                       data_rs;
         time_t                              lastActivityTime;
 		size_t								sizeBody;
+        std::string                         fileToSend;
+        size_t                              bytesRemaining;
+        bool                                headersSent;
+        size_t                              fileSize;
+        std::ifstream*                      fileStream;
+        int                                 cgi_pid;
+        int                                 cgi_fd;
+        bool                                cgi_running;
+        std::string                         cgi_buffer;
+        time_t                              cgi_start_time;
+        bool                                cgi_epoll_added;
 
-        //////////////////////////////
-        std::string fileToSend;
-        size_t bytesRemaining;
-        bool headersSent;
-        size_t fileSize;
-        std::ifstream* fileStream;
-        ////////////////////////////
-        // --- Add for async CGI ---
-        int cgi_pid;           // PID of CGI child process
-        int cgi_fd;            // FD to read CGI output
-        std::string cgi_buffer;// Buffer for CGI output
-        bool cgi_running;      // Is CGI running?
-        time_t cgi_start_time; // When CGI started
-        bool cgi_epoll_added;  // <--- Add this line
-        ////////////////////////////
         client();
         client(std::string buff, int fd);
         client(const client &obj);
@@ -92,7 +86,6 @@ class client
 		void        setDescription();
 		void        setErrorPages();
 		void        setStatusCode();
-        std::string prepareGetResponse(data_request &req, location *loc);
         void        handleGetRequestWithChunking(int currentFd);
         void handleCgiRequest();
         void handleDirectoryRedirect();
@@ -104,7 +97,7 @@ void                                post(const client &client, const Server& ser
 Server                              *chooseServer(std::vector<Server*> &routeServer,std::string host);
 int                                 readFileContent(const std::string& filePath, std::string &content);
 template <typename T>
-std::string to_string_98(T value)
+std::string                         to_string_98(T value)
 {
 	std::ostringstream oss;
 	oss << value;
@@ -116,3 +109,4 @@ int                                 isRedirect(int red);
 std::string 						RandomString(size_t len);
 std::string 						getExtension(data_request data);
 extern std::map<int ,std::vector<Server*> >  SocketToServers;
+std::map<std::string, std::string>  createMimeTypeMap();

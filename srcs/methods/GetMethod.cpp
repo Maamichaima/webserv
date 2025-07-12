@@ -324,7 +324,7 @@ void client::sendFileChunk(int currentFd) {
             this->bytesRemaining += (bytesRead - bytesSent);
         }
     } 
-    else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+    else if (bytesSent == -1) {
         this->fileStream->seekg(-bytesRead, std::ios::cur);
         return;
     }

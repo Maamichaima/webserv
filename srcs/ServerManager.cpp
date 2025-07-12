@@ -182,7 +182,8 @@ bool ServerManager::handleCgiFileDescriptor(int currentFd) {
                     it->second.data_rs.status_code = 500;
                     it->second.setDataResponse();
                     std::string errorResponse = it->second.buildResponse();
-                    send(it->first, errorResponse.c_str(), errorResponse.size(), MSG_NOSIGNAL);
+                    if(send(it->first, errorResponse.c_str(), errorResponse.size(), MSG_NOSIGNAL) <= 0)
+		                ServerLogger::serverError("Send failed ");
                     epoll_ctl(epollFd, EPOLL_CTL_DEL, it->second.cgi_fd, NULL);
                     close(it->second.cgi_fd);
                     it->second.cgi_running = false;
@@ -202,7 +203,8 @@ bool ServerManager::handleCgiFileDescriptor(int currentFd) {
                 it->second.cgi_epoll_added = false;
                 // Build and send response
                 std::string response = buildCgiHttpResponse(it->second.cgi_buffer);
-                send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL);
+                if (send(it->first, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
+		                ServerLogger::serverError("Send failed ");
                 ClientDisconnected(it->first);
             }
             return true;

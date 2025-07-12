@@ -94,7 +94,7 @@ void deleteMethode(const client &client)
 		throw(403);
     if (pathType(pathtoDelete) == 1)//is dir
 	{
-		if(!pathtoDelete.empty() && pathtoDelete[pathtoDelete.length() - 1] != '/')// ila kan empty 
+		if(!pathtoDelete.empty() && pathtoDelete[pathtoDelete.length() - 1] != '/')
 			throw(409);
 		throw (deleteDir(pathtoDelete));
 	}
